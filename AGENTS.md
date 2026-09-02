@@ -4,7 +4,7 @@
 
 Plataforma de gestión de incubación de CataliTech / TEC Emprende Lab.
 
-El sistema centraliza el seguimiento de proyectos incubados, sus objetivos, actividades, evidencias, reuniones, minutas, cotizaciones, presupuesto, activos y alertas.
+El sistema centraliza el seguimiento de proyectos incubados, sus objetivos, actividades, evidencias, reuniones, minutas, finanzas y compras, documentos, chat y alertas.
 
 ## Documentación obligatoria
 
@@ -22,6 +22,8 @@ Antes de modificar código, revisar:
 10. `docs/09_INTEGRATIONS.md`
 11. `docs/10_ACCEPTANCE_CRITERIA.md`
 12. `docs/11_MVP_SCOPE.md`
+13. `docs/12_DEVELOPMENT_WORKFLOW.md`
+14. `docs/13_ARCHITECTURE.md`
 
 ## Reglas para agentes de IA
 
@@ -37,6 +39,7 @@ Antes de modificar código, revisar:
 - No eliminar información histórica salvo que exista un requerimiento explícito.
 - Priorizar una arquitectura simple y mantenible.
 - Evitar dependencias innecesarias.
+- Seguir el flujo de ramas, pull requests y verificaciones definido en `docs/12_DEVELOPMENT_WORKFLOW.md`.
 
 ## Fuente de verdad
 

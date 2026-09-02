@@ -1,16 +1,19 @@
 # Dependencies and generated builds
-prototype/node_modules/
-prototype/dist/
-prototype/.parcel-cache/
-prototype/.vite/
+visual/prototype/node_modules/
+visual/prototype/dist/
+visual/prototype/.parcel-cache/
+visual/prototype/.vite/
 
 # Unused scaffold files from the prototype initializer
-prototype/src/components/
-prototype/src/hooks/
-prototype/src/lib/
-prototype/src/assets/
-prototype/public/favicon.svg
-prototype/public/icons.svg
+visual/prototype/src/components/
+visual/prototype/src/hooks/
+visual/prototype/src/lib/
+visual/prototype/src/assets/
+visual/prototype/public/favicon.svg
+visual/prototype/public/icons.svg
+
+# Local cache left by the previous prototype location
+prototype/
 
 # Local configuration and logs
 .env

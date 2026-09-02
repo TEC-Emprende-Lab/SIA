@@ -34,7 +34,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react'
-import brandMark from '../../Vector.svg'
+import brandMark from '../../brand/logo.svg'
 import './App.css'
 
 type ProjectSection =

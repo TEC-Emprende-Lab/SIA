@@ -10,11 +10,11 @@ Campos iniciales:
 - `name`
 - `email`
 - `role`
-- `auth_provider`
+- `clerk_user_id`
 - `created_at`
 - `updated_at`
 
-En el MVP, `auth_provider` es Google. No existe contraseña local.
+En el MVP, Clerk gestiona la identidad y Google es el proveedor de inicio de sesión. `clerk_user_id` vincula el usuario de SIA con la identidad externa. No existe contraseña local.
 
 ---
 
@@ -30,7 +30,7 @@ En el MVP, `auth_provider` es Google. No existe contraseña local.
 - `used_at`
 - `created_at`
 
-Una invitación se asocia a un correo y rol inicial. `project_id` es obligatorio para invitaciones de emprendedores creadas por un Gestor. Solo puede utilizarse una vez y debe validarse contra el correo de Google autenticado.
+Una invitación se asocia a un correo y rol inicial. `project_id` es obligatorio para invitaciones de emprendedores creadas por un Gestor. Solo puede utilizarse una vez y FastAPI debe validarla contra el correo verificado de la identidad Clerk autenticada.
 
 ---
 

@@ -22,6 +22,16 @@ Los tokens de invitación deben ser aleatorios, tener expiración y quedar inval
 
 Los adjuntos del chat deben almacenarse de forma privada. Los archivos no seguros deben descargarse sin ejecutarse ni previsualizarse automáticamente.
 
+### NFR-SEC-006
+
+FastAPI debe validar en cada solicitud autenticada la firma, emisor, audiencia y vigencia del JWT emitido por Clerk antes de aplicar autorización de SIA.
+
+### NFR-SEC-007
+
+El sistema debe aplicar rate limiting distribuido mediante Redis a endpoints sensibles o costosos, al menos autenticación/activación, invitaciones, mensajes de chat, carga de archivos y generación de minutas.
+
+Al exceder un límite, FastAPI debe responder con `429 Too Many Requests` sin registrar ni ejecutar la acción solicitada.
+
 ---
 
 ## Privacidad

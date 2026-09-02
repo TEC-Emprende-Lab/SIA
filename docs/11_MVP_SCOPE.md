@@ -103,11 +103,11 @@
 - Los trámites aprobados son inmutables: no se modifican, anulan ni revierten presupuesto en el MVP.
 - Los reportes de trámites se consultan por sesión, mes y proyecto, según el alcance del rol.
 - Las minutas generadas con IA requieren revisión humana global antes de publicarse.
-- La autenticación usa Google mediante Better Auth y una invitación previa; cualquier cuenta Google puede acceder si coincide con una invitación vigente.
+- La autenticación usa Google mediante Clerk Cloud y una invitación previa; cualquier cuenta Google puede acceder si coincide con una invitación vigente.
 - El almacenamiento privado usa Cloudflare R2, el correo usa Resend y la IA para minutas usa OpenAI.
-- La aplicación usa Next.js con TypeScript, PostgreSQL y Coolify en servidor propio. PostgreSQL tendrá respaldos diarios con retención de 30 días.
+- La aplicación usa Next.js con TypeScript como frontend, FastAPI con Python como backend, PostgreSQL y Coolify en servidor propio. PostgreSQL tendrá respaldos diarios con retención de 30 días.
 - `develop` se despliega a staging y `main` a producción en Coolify. Ambos entornos mantienen datos, buckets y credenciales separados.
-- La aplicación usa Socket.IO para el chat en tiempo real y un worker interno con PostgreSQL como cola persistente. Redis no forma parte del MVP.
+- FastAPI sirve Socket.IO para el chat en tiempo real y un worker Python usa PostgreSQL como cola persistente. Redis gestiona rate limiting distribuido y permite escalar Socket.IO entre instancias API; no almacena datos de negocio ni reemplaza PostgreSQL.
 - Para emprendimientos nuevos, la plataforma reemplaza Teams. Los emprendimientos existentes permanecen en Teams como historial, sin migración ni integración.
 - Cada proyecto tiene un único chat general; no hay mensajes directos ni chats separados por trámite en el MVP.
 - El chat permite adjuntar cualquier tipo de archivo, menciones, notificaciones internas y por correo, edición y eliminación visual auditada de mensajes propios.

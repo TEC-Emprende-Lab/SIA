@@ -2,19 +2,23 @@
 
 Este documento define el flujo de desarrollo del MVP. Su objetivo es mantener un proceso sencillo para equipos pequeños, con pruebas suficientes antes de producción y sin dependencias operativas innecesarias.
 
+El diagrama y responsabilidades de los componentes están en `docs/13_ARCHITECTURE.md`.
+
 ## Arquitectura base
 
-- Aplicación web: Next.js con TypeScript.
+- Frontend web: Next.js con TypeScript.
+- Backend: FastAPI con Python.
 - Base de datos: PostgreSQL.
-- Autenticación: Better Auth con Google OAuth e invitaciones.
+- Identidad y sesión: Clerk Cloud con Google OAuth y JWT.
 - Archivos privados: Cloudflare R2.
 - Correo: Resend.
 - Minutas con IA: OpenAI.
 - Despliegue: Coolify en servidor propio.
-- Chat en tiempo real: Socket.IO integrado en el servicio web.
-- Procesamiento asíncrono: worker interno con PostgreSQL como cola persistente.
+- Chat en tiempo real: Socket.IO servido por FastAPI.
+- Procesamiento asíncrono: worker Python con PostgreSQL como cola persistente.
+- Redis: rate limiting distribuido y adaptador de Socket.IO para escalar varias instancias API.
 
-Redis no forma parte del MVP. Podrá incorporarse si se requiere escalar horizontalmente el chat, compartir eventos entre múltiples instancias web o resolver una necesidad de caché demostrada por métricas reales.
+Redis no almacena datos de negocio, roles, permisos, auditoría ni sustituye la cola persistente en PostgreSQL. Su uso se limita a controles temporales y coordinación entre procesos.
 
 ## Servicios por entorno
 
@@ -22,13 +26,19 @@ Cada entorno remoto dispone de estos servicios en Coolify:
 
 | Servicio | Responsabilidad |
 |---|---|
-| `web` | Next.js, Better Auth, API, autorización backend y Socket.IO. |
-| `worker` | Procesa correos, notificaciones, generación de minutas, reintentos y tareas asíncronas. |
+| `web` | Next.js, interfaz de usuario e integración cliente con Clerk. |
+| `api` | FastAPI, reglas de negocio, autorización, API, acceso a PostgreSQL/R2 y Socket.IO. |
+| `worker` | Proceso Python que maneja correos, notificaciones, generación de minutas, reintentos y tareas asíncronas. |
 | `postgres` | Fuente de verdad para datos de negocio, auditoría y cola de tareas. |
+| `redis` | Rate limiting distribuido y coordinación de eventos Socket.IO entre instancias API. |
 
-El servicio `web` guarda primero mensajes, notificaciones y demás datos en PostgreSQL antes de emitir eventos en tiempo real. El `worker` consume tareas persistidas en PostgreSQL mediante una cola basada en `pg-boss` o un patrón outbox equivalente.
+Clerk identifica a la persona, administra su sesión y emite JWT. FastAPI valida esos JWT y es la única capa que decide roles, invitaciones, relación con proyectos y permisos de SIA.
 
-Las tareas no deben depender de la memoria del proceso web. Si Resend u OpenAI falla temporalmente, el worker debe registrar el error y reintentar según una política definida.
+FastAPI guarda primero mensajes, notificaciones y demás datos en PostgreSQL antes de emitir eventos en tiempo real. El `worker` consume tareas persistidas mediante un patrón outbox o una cola PostgreSQL equivalente con bloqueos seguros.
+
+FastAPI aplica rate limiting con Redis a operaciones sensibles o costosas. Si el API escala a más de una instancia, Socket.IO usa Redis como adaptador para propagar eventos entre las salas de proyecto conectadas a cada instancia.
+
+Las tareas no deben depender de la memoria del proceso API. Si Resend u OpenAI falla temporalmente, el worker debe registrar el error y reintentar según una política definida.
 
 ## Entornos
 
@@ -43,7 +53,7 @@ Staging y producción usan la misma arquitectura, pero recursos y credenciales c
 - Base PostgreSQL independiente.
 - Bucket o prefijo de Cloudflare R2 independiente.
 - Variables de entorno independientes.
-- Credenciales o configuraciones OAuth con URLs de redirección propias.
+- Instancias o configuraciones Clerk separadas, con claves y URLs de redirección propias.
 - Configuración de Resend independiente.
 - Claves OpenAI separadas o límites de uso menores en staging.
 
@@ -94,7 +104,7 @@ Antes de fusionar, la rama debe estar actualizada con su rama destino y todas la
 GitHub Actions se ejecuta en pull requests hacia `develop` y `main`. Debe bloquear la fusión si falla alguno de estos controles:
 
 - formato y lint;
-- comprobación de tipos TypeScript;
+- comprobación de tipos TypeScript y Python;
 - pruebas unitarias;
 - pruebas de integración con PostgreSQL;
 - aplicación de migraciones desde una base vacía;
@@ -116,8 +126,11 @@ El repositorio debe incluir `docker-compose.yml` y `.env.example`. Cada desarrol
 
 | Servicio local | Uso |
 |---|---|
-| `app` | Next.js y Socket.IO durante desarrollo. |
+| `web` | Next.js y Clerk en modo desarrollo. |
+| `api` | FastAPI y Socket.IO durante desarrollo. |
+| `worker` | Worker Python para tareas asíncronas. |
 | `postgres` | Base de datos local. |
+| `redis` | Rate limiting y coordinación local de Socket.IO. |
 | `minio` | Almacenamiento compatible con S3 para simular R2. |
 | `mailpit` | Captura local de invitaciones y notificaciones por correo. |
 
@@ -127,7 +140,7 @@ Flujo local esperado:
 2. Iniciar dependencias con `docker compose up -d`.
 3. Aplicar migraciones.
 4. Cargar datos semilla con usuarios, proyectos, reuniones, trámites, documentos y mensajes de ejemplo.
-5. Iniciar la aplicación y el worker en modo desarrollo.
+5. Iniciar frontend, API y worker en modo desarrollo.
 6. Verificar correos en Mailpit y adjuntos en MinIO.
 7. Ejecutar las pruebas relevantes antes de abrir un pull request.
 
@@ -149,7 +162,7 @@ Cubren reglas puras y cálculos, especialmente:
 
 Cubren PostgreSQL y servicios internos:
 
-- autorización backend;
+- validación de JWT de Clerk y autorización backend;
 - invitaciones y activación con correo Google coincidente;
 - migraciones y restricciones de datos;
 - R2/MinIO mediante URLs firmadas;
@@ -177,7 +190,7 @@ Objetivos iniciales bajo carga normal esperada:
 - listas paginadas con 25 a 50 elementos por consulta;
 - adjuntos cargados directamente a R2 o MinIO mediante URLs firmadas.
 
-La aplicación debe evitar cascadas de solicitudes en cliente, cargar datos en servidor cuando corresponda y consultar solo las columnas necesarias. Chat, auditoría, documentos y trámites deben usar paginación por cursor o equivalente; no se carga el historial completo de una vez.
+El frontend debe evitar cascadas de solicitudes en cliente y consultar FastAPI solo cuando corresponda. FastAPI debe consultar únicamente las columnas necesarias. Chat, auditoría, documentos y trámites deben usar paginación por cursor o equivalente; no se carga el historial completo de una vez.
 
 ## Operación
 

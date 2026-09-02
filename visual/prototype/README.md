@@ -22,5 +22,5 @@ pnpm build
 
 - Dashboard de Coordinadora.
 - Navegación simulada de un proyecto.
-- Resumen, objetivos y actividades, reuniones, trámites, presupuesto, documentos y entregables, chat, alertas y equipo.
+- Resumen, objetivos y actividades con Kanban, reuniones, finanzas y compras, documentos y entregables, chat, alertas y equipo.
 - Paleta institucional y marca SIA.
