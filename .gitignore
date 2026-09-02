@@ -1,0 +1,22 @@
+# Dependencies and generated builds
+prototype/node_modules/
+prototype/dist/
+prototype/.parcel-cache/
+prototype/.vite/
+
+# Unused scaffold files from the prototype initializer
+prototype/src/components/
+prototype/src/hooks/
+prototype/src/lib/
+prototype/src/assets/
+prototype/public/favicon.svg
+prototype/public/icons.svg
+
+# Local configuration and logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Operating system files
+.DS_Store
