@@ -357,6 +357,7 @@ Debe dar acceso a:
 - finanzas y compras;
 - alertas.
 - chat del proyecto.
+- diagnósticos 360°, necesidades, ambiciones e informes técnicos.
 
 ---
 
@@ -376,3 +377,96 @@ Debe dar acceso a:
 - Las menciones y mensajes no leídos generan notificaciones dentro de la plataforma y por correo.
 - El autor puede editar o eliminar visualmente sus mensajes; ambos eventos quedan auditados.
 - No existen mensajes directos ni chats separados por trámite en el MVP.
+
+---
+
+## Diagnóstico evolutivo
+
+### US-024 — Completar diagnóstico 360°
+
+**Como** Emprendedor o Gestor autorizado
+**quiero** completar un diagnóstico por áreas
+**para** registrar la situación actual del emprendimiento.
+
+#### Criterios de aceptación
+
+- El diagnóstico registra fecha, tipo, realizador, áreas, notas y calificaciones de 1 a 5.
+- El Emprendedor solo opera diagnósticos de sus proyectos y los presenta para validación.
+- Un Gestor asignado o Coordinadora puede crear, revisar y aprobar diagnósticos.
+- Un diagnóstico aprobado conserva su contenido histórico.
+
+### US-025 — Comparar diagnósticos
+
+**Como** miembro autorizado de un proyecto
+**quiero** comparar el diagnóstico actual con el anterior
+**para** entender avances, estancamientos y retrocesos por área.
+
+#### Criterios de aceptación
+
+- Se muestran calificación anterior, actual y diferencia por área cuando existe un diagnóstico anterior aprobado.
+- Se muestra historial, necesidades y vínculos con objetivos, actividades y evidencias.
+- La comparación no infiere causalidad que no esté registrada.
+
+### US-026 — Gestionar necesidad detectada
+
+**Como** Gestor
+**quiero** validar y dar seguimiento a una necesidad detectada
+**para** conectarla con un plan de trabajo verificable.
+
+#### Criterios de aceptación
+
+- La necesidad conserva diagnóstico, área, prioridad, responsable e historial de estados.
+- Se pueden asociar objetivos, actividades, evidencias y reuniones.
+- Solo un Gestor asignado o Coordinadora puede validar, descartar o marcar una necesidad atendida.
+
+### US-027 — Organizar ambiciones
+
+**Como** Gestor o Emprendedor autorizado
+**quiero** registrar una ambición estratégica y relacionarla con necesidades y objetivos
+**para** distinguir dirección estratégica de trabajo operativo.
+
+#### Criterios de aceptación
+
+- Los campos visibles dependen del tipo de ambición.
+- Una ambición puede agrupar varios objetivos y relacionarse con varias necesidades.
+- Una ambición de tipo Objetivo vincula el objetivo operativo existente y respeta su aprobación.
+
+---
+
+## Informes técnicos
+
+### US-028 — Preparar informe técnico
+
+**Como** Gestor
+**quiero** preparar un informe técnico de seguimiento o cierre para un período
+**para** comunicar el avance del emprendimiento sin reconstruir manualmente su historial.
+
+#### Criterios de aceptación
+
+- El Gestor selecciona tipo, período y registros fuente aplicables de su proyecto.
+- El borrador presenta campos faltantes como `Pendiente de completar`.
+- Puede complementar la redacción sin modificar objetivos, actividades, diagnósticos ni otros registros fuente.
+
+### US-029 — Revisar y aprobar informe técnico
+
+**Como** Gestor o Coordinadora autorizada
+**quiero** revisar y aprobar una versión del informe
+**para** emitir una instantánea institucional trazable.
+
+#### Criterios de aceptación
+
+- Solo un Gestor asignado o Coordinadora puede enviar, revisar y aprobar el informe.
+- La aprobación registra actor y fecha, congela la versión y habilita su PDF.
+- Una corrección crea una nueva versión vinculada, sin modificar la aprobada.
+
+### US-030 — Consultar informe técnico emitido
+
+**Como** miembro autorizado del proyecto
+**quiero** consultar versiones anteriores y descargar el PDF aprobado
+**para** mantener acceso al historial técnico del emprendimiento.
+
+#### Criterios de aceptación
+
+- Solo se muestran versiones del proyecto autorizado.
+- Cada sección permite identificar sus registros fuente.
+- La versión firmada, cuando exista, permanece como adjunto privado de la versión aprobada.

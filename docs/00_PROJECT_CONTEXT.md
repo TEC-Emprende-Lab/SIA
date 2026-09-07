@@ -80,3 +80,11 @@ Un proyecto puede pertenecer a una persona o a un equipo.
 - reducción de trabajo manual;
 - conservación del historial;
 - soporte para usuarios con distintos niveles de experiencia tecnológica.
+
+## Seguimiento evolutivo
+
+El sistema incluye diagnósticos 360° periódicos como fotografías fechadas de un emprendimiento. La trazabilidad esperada es diagnóstico, necesidad detectada, ambición, objetivo, actividades, evidencias, resultado y nuevo diagnóstico. Este módulo conecta, pero no reemplaza, los registros operativos existentes.
+
+## Informes técnicos
+
+Los informes técnicos periódicos y de cierre reutilizan el historial del proyecto para comunicar planificación, ejecución, resultados, pendientes y evolución. Son instantáneas institucionales versionadas y trazables, no un repositorio paralelo de seguimiento.

@@ -122,3 +122,51 @@ Una minuta generada por IA debe iniciar como borrador y no puede publicarse sin 
 ## AC-018 — Archivos privados
 
 Una evidencia privada solo puede entregarse mediante acceso autorizado; no debe depender de una URL pública permanente.
+
+## AC-028 — Diagnóstico histórico
+
+Un diagnóstico aprobado no puede modificarse. Una corrección debe crear una nueva revisión vinculada y el historial debe conservar ambos registros, actores y fechas.
+
+## AC-029 — Evaluación y comparación
+
+Cada evaluación de área debe aceptar solo calificaciones enteras de 1 a 5. Para dos diagnósticos aprobados consecutivos, la comparación muestra la calificación anterior, actual y su diferencia por área.
+
+## AC-030 — Catálogo de áreas
+
+Se pueden activar, desactivar o agregar áreas y preguntas guía sin cambiar la estructura de `Diagnostic` o `DiagnosticAssessment`. Un diagnóstico histórico conserva la instantánea de área y pregunta guía utilizada.
+
+## AC-031 — Necesidad validada
+
+Una actividad completada no marca automáticamente una necesidad como `ADDRESSED`. Solo Gestor asignado o Coordinadora puede validar el cierre, con justificación y respaldo registrado.
+
+## AC-032 — Relaciones de necesidad
+
+Una necesidad puede asociarse a múltiples objetivos y un objetivo a múltiples necesidades, siempre dentro del mismo proyecto. Los vínculos con actividades, evidencias y reuniones se pueden consultar desde la necesidad.
+
+## AC-033 — Ambición sin duplicar objetivo
+
+Una ambición de tipo `OBJECTIVE` debe enlazarse con al menos un objetivo operativo y no crear una segunda entidad que participe en los cálculos de avance. El objetivo operativo mantiene su flujo de aprobación.
+
+## AC-034 — Permisos evolutivos
+
+El Emprendedor solo puede crear, editar y enviar borradores de sus proyectos. Un Gestor no asignado no puede aprobar diagnósticos ni validar necesidades. La Coordinadora puede consultar indicadores transversales.
+
+## AC-035 — Informe por período y fuentes
+
+Un informe de seguimiento o cierre identifica proyecto y período. Cada contenido incluido tiene al menos una referencia a un registro del mismo proyecto o una entrada manual trazable con fuentes de respaldo; una ausencia se representa como `Pendiente de completar`.
+
+## AC-036 — Congelamiento y versiones
+
+Al aprobar un informe, el sistema conserva su instantánea de contenido y fuentes. Cambiar un objetivo, actividad, diagnóstico, necesidad o presupuesto después de aprobar no altera la versión aprobada. Corregirla crea una nueva versión vinculada.
+
+## AC-037 — Revisión y PDF
+
+Solo una Coordinadora o Gestor asignado puede aprobar una versión. No se puede generar ni descargar `ISSUED_PDF` antes de esa aprobación. El PDF y la versión firmada permanecen privados.
+
+## AC-038 — Narrativa asistida
+
+El borrador narrativo solo usa fuentes seleccionadas. No puede crear afirmaciones sin fuente; impactos, conclusiones, aprobaciones o causalidades que no cuenten con respaldo quedan como `Pendiente de completar`.
+
+## AC-039 — Periodicidad sin emisión automática
+
+Al vencerse la periodicidad configurada de un proyecto, se genera una alerta de preparación para Gestor y Coordinadora. No se crea, aprueba, congela ni emite un informe hasta que un usuario autorizado lo inicie y complete el flujo de revisión.

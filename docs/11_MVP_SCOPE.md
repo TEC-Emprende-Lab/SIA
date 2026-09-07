@@ -27,6 +27,13 @@
 - vista Kanban de objetivos y actividades por proyecto;
 - avance.
 
+- diagnósticos 360° por proyecto, historial y comparación por área;
+- necesidades detectadas, sus vínculos de seguimiento y validación explícita de cierre;
+- ambiciones estratégicas vinculadas con objetivos operativos sin duplicarlos;
+- indicadores evolutivos para Coordinadora y Gestores.
+- informes técnicos de seguimiento y cierre, versionados, trazables y con PDF posterior a aprobación.
+- alertas de preparación de informes según la periodicidad configurada por proyecto.
+
 ### Reuniones
 
 - registro de reuniones;
@@ -76,6 +83,9 @@
 - integración o migración desde Microsoft Teams;
 - funcionalidades que no estén relacionadas con incubación y seguimiento.
 
+- análisis automatizado por IA de diagnósticos o recomendaciones automáticas de cierre.
+- generación autónoma de conclusiones, impactos o aprobaciones en informes técnicos.
+
 ---
 
 ## TBD antes de cerrar especificación
@@ -86,6 +96,8 @@
 4. Métricas adicionales del dashboard global, fuera de los reportes de trámites definidos.
 5. Política de almacenamiento y retención de grabaciones y transcripciones.
 6. Condición concreta para el autocompletado de actividades, si se incorpora después del MVP inicial.
+7. Campos estructurados del perfil del emprendimiento y catálogo de programas.
+8. Entidad y flujo de aprobación para cambios formales de alcance del proyecto.
 
 ---
 
@@ -103,11 +115,17 @@
 - Los trámites aprobados son inmutables: no se modifican, anulan ni revierten presupuesto en el MVP.
 - Los reportes de trámites se consultan por sesión, mes y proyecto, según el alcance del rol.
 - Las minutas generadas con IA requieren revisión humana global antes de publicarse.
-- La autenticación usa Google mediante Better Auth y una invitación previa; cualquier cuenta Google puede acceder si coincide con una invitación vigente.
+- La autenticación usa Google mediante Clerk Cloud y una invitación previa; cualquier cuenta Google puede acceder si coincide con una invitación vigente.
 - El almacenamiento privado usa Cloudflare R2, el correo usa Resend y la IA para minutas usa OpenAI.
-- La aplicación usa Next.js con TypeScript, PostgreSQL y Coolify en servidor propio. PostgreSQL tendrá respaldos diarios con retención de 30 días.
+- La aplicación usa Next.js con TypeScript como frontend, FastAPI con Python como backend, PostgreSQL y Coolify en servidor propio. PostgreSQL tendrá respaldos diarios con retención de 30 días.
 - `develop` se despliega a staging y `main` a producción en Coolify. Ambos entornos mantienen datos, buckets y credenciales separados.
-- La aplicación usa Socket.IO para el chat en tiempo real y un worker interno con PostgreSQL como cola persistente. Redis no forma parte del MVP.
+- FastAPI sirve Socket.IO para el chat en tiempo real y un worker Python usa PostgreSQL como cola persistente. Redis gestiona rate limiting distribuido y permite escalar Socket.IO entre instancias API; no almacena datos de negocio ni reemplaza PostgreSQL.
 - Para emprendimientos nuevos, la plataforma reemplaza Teams. Los emprendimientos existentes permanecen en Teams como historial, sin migración ni integración.
 - Cada proyecto tiene un único chat general; no hay mensajes directos ni chats separados por trámite en el MVP.
 - El chat permite adjuntar cualquier tipo de archivo, menciones, notificaciones internas y por correo, edición y eliminación visual auditada de mensajes propios.
+- El diagnóstico 360° es una fotografía histórica por proyecto; las áreas se administran mediante catálogo extensible y los diagnósticos aprobados son inmutables.
+- Las necesidades requieren validación explícita para cerrarse; actividades completadas no las atienden automáticamente.
+- Ambiciones es una capa estratégica. Su tipo Objetivo vincula un objetivo operativo existente o creado por el flujo normal, sin duplicarlo.
+- Los informes técnicos reutilizan datos existentes por período, conservan fuentes e instantáneas al aprobarse, y sus correcciones generan una nueva versión.
+- La periodicidad de informes solo genera alertas; no crea ni emite informes sin revisión humana.
+- Los campos estructurados del perfil, el programa del proyecto y los cambios formales de alcance no tienen entidad definida aún; el informe los presenta como `Pendiente de completar` hasta contar con registros fuente aprobados.

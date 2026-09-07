@@ -30,6 +30,17 @@ La autorización se valida siempre en backend. El alcance de la acción depende 
 | Leer y enviar mensajes en el chat del proyecto | Sí | Sí, si está asignado | Sí, en sus proyectos |
 | Adjuntar archivos y mencionar miembros en el chat | Sí | Sí, si está asignado | Sí, en sus proyectos |
 | Editar o eliminar visualmente mensajes propios | Sí | Sí, si está asignado | Sí, en sus proyectos |
+| Ver diagnósticos, necesidades y ambiciones | Sí | Sí, si está asignado | Sí, en sus proyectos |
+| Crear y editar borradores de diagnóstico | Sí | Sí, si está asignado | Sí, en sus proyectos |
+| Enviar y aprobar diagnósticos | Sí | Sí, si está asignado | Enviar borradores propios |
+| Validar, cerrar o descartar necesidades | Sí | Sí, si está asignado | No |
+| Crear y editar ambiciones | Sí | Sí, si está asignado | Sí, en sus proyectos |
+| Ver indicadores evolutivos transversales | Sí | No | No |
+| Ver informes técnicos y sus fuentes | Sí | Sí, si está asignado | Sí, en sus proyectos |
+| Crear y editar borradores de informes | Sí | Sí, si está asignado | Proponer información en borradores de sus proyectos |
+| Enviar, revisar y aprobar informes | Sí | Sí, si está asignado | No |
+| Generar PDF y adjuntar versión firmada | Sí | Sí, si está asignado | No |
+| Configurar periodicidad de informes | Sí | Sí, si está asignado | No |
 
 ## Coordinadora
 
@@ -42,3 +53,5 @@ El Gestor realiza las operaciones permitidas solo en los proyectos donde está a
 ## Emprendedor
 
 El Emprendedor solo puede acceder a los proyectos de los que forma parte. Puede proponer y modificar objetivos, gestionar actividades y evidencias, iniciar y corregir sus propios trámites financieros, y consultar la información de seguimiento indicada en la matriz. No puede aprobar objetivos propios ni realizar acciones administrativas o de aprobación financiera.
+
+Puede completar y enviar borradores de diagnóstico, necesidades y ambiciones en sus proyectos, pero no aprobar diagnósticos ni validar cierres de necesidades.

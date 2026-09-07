@@ -1,17 +1,20 @@
 # Integraciones
 
-## Google Authentication
+## Identidad y autenticación
 
 ### Objetivo
 
-Permitir inicio de sesión mediante Google OAuth para personas invitadas previamente.
+Permitir inicio de sesión con Google para personas invitadas previamente.
 
 ### Implementación definida
 
-- Better Auth integrado en la aplicación;
-- cuenta Google cuyo correo coincide con una invitación vigente;
-- rol inicial obtenido de la invitación;
+- Clerk Cloud gestiona Google OAuth, sesiones y JWT;
+- FastAPI valida los JWT emitidos por Clerk mediante el emisor y las claves públicas configuradas;
+- cuenta Google cuyo correo verificado coincide con una invitación vigente de SIA;
+- las invitaciones, roles, proyectos y permisos se almacenan y validan en PostgreSQL mediante FastAPI, no en Clerk;
 - sin autenticación local ni recuperación de contraseña en el MVP.
+
+Clerk se utiliza exclusivamente para identidad y sesión. No es fuente de verdad de autorización ni de datos de negocio.
 
 ## Correo electrónico
 
@@ -66,15 +69,26 @@ La integración `Excel -> Plataforma` y el registro de activos están fuera del 
 
 ## Infraestructura
 
-- aplicación: Next.js con TypeScript;
+- frontend: Next.js con TypeScript;
+- backend: FastAPI con Python;
+- identidad: Clerk Cloud;
 - base de datos: PostgreSQL;
 - despliegue: Coolify en servidor propio;
 - respaldos: diarios, con retención de 30 días;
 - entornos: staging desde `develop` y producción desde `main`;
-- tiempo real: Socket.IO integrado en la aplicación;
-- tareas asíncronas: worker interno con PostgreSQL como cola persistente;
-- Redis: fuera del MVP, salvo necesidad de escalado demostrada.
+- tiempo real: Socket.IO servido por FastAPI;
+- tareas asíncronas: worker Python con PostgreSQL como cola persistente;
+- Redis: rate limiting distribuido y adaptador de Socket.IO cuando existan múltiples instancias API;
+- PostgreSQL: fuente de verdad, auditoría y cola persistente; Redis no almacena datos de negocio ni reemplaza la cola principal.
 
 ## Microsoft Teams
 
 No existe integración ni migración con Microsoft Teams. Para emprendimientos nuevos, la plataforma reemplaza Teams como herramienta operativa; los emprendimientos existentes permanecen allí únicamente como historial.
+
+## Diagnóstico evolutivo
+
+Diagnóstico 360°, necesidades, ambiciones, comparaciones e indicadores se implementan con FastAPI y PostgreSQL como datos de negocio internos. No requieren integración externa ni automatización de análisis por IA en el MVP. Las evidencias contextuales reutilizan R2 cuando sean archivos.
+
+## Informes técnicos
+
+FastAPI compone informes desde PostgreSQL y conserva sus instantáneas y referencias. El worker genera el PDF únicamente para versiones aprobadas y lo almacena como archivo privado en R2. Si se habilita narrativa asistida, OpenAI recibe exclusivamente las fuentes seleccionadas y debe seguir las mismas restricciones de no invención que las minutas; su salida permanece en borrador y requiere revisión humana.
