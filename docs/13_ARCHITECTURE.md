@@ -88,3 +88,20 @@ flowchart LR
 | Producción | `main` | `web`, `api`, `worker`, `postgres`, `redis`. |
 
 Staging y producción usan PostgreSQL, Redis, configuración Clerk, bucket/prefijo R2 y credenciales de proveedores separados.
+
+## Diagnóstico evolutivo
+
+1. Next.js solicita a FastAPI el historial del proyecto y sus áreas autorizadas.
+2. FastAPI valida JWT, rol y relación con el proyecto antes de leer o modificar diagnósticos, necesidades o ambiciones.
+3. PostgreSQL conserva las fotografías, evaluaciones, vínculos operativos y auditoría.
+4. FastAPI calcula la diferencia entre diagnósticos aprobados consecutivos al consultar la comparación; no persiste una interpretación automática de causalidad.
+5. El dashboard global consulta indicadores agregados únicamente para la Coordinadora.
+
+### Informes técnicos
+
+1. El worker crea alertas al vencer periodicidades de informe configuradas, sin crear informes.
+2. Next.js solicita a FastAPI las fuentes del período para el proyecto autorizado y construye el borrador editable.
+3. FastAPI valida que todas las referencias pertenezcan al proyecto y guarda la versión con su trazabilidad.
+4. Tras la aprobación, FastAPI persiste la instantánea y publica una tarea de PDF en PostgreSQL.
+5. El worker genera el PDF idempotentemente, lo almacena en R2 y registra el documento emitido sin modificar la instantánea.
+6. FastAPI entrega PDF y copias firmadas solo mediante autorización y URL firmada.

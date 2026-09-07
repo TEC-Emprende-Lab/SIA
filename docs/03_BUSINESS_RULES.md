@@ -175,3 +175,63 @@ Cada proyecto tiene un único chat general. Los miembros del proyecto pueden lee
 Las menciones solo pueden dirigirse a miembros del mismo proyecto. Los archivos adjuntos son privados y se entregan únicamente tras validar autorización.
 
 El autor puede editar o eliminar visualmente sus mensajes. Una eliminación no destruye el historial: el mensaje deja de mostrar su contenido, pero se conserva la acción, el actor y la fecha en auditoría. No existen mensajes directos ni chats separados por trámite en el MVP.
+
+---
+
+## BR-020 — Diagnóstico como fotografía histórica
+
+Cada diagnóstico representa el estado de un proyecto en una fecha. Solo se comparan diagnósticos `APPROVED` ordenados por fecha de diagnóstico. Un diagnóstico aprobado no se edita: una corrección crea una nueva revisión en `DRAFT` que referencia al diagnóstico corregido, preservando ambos registros y su auditoría.
+
+---
+
+## BR-021 — Áreas de diagnóstico extensibles
+
+Las áreas y preguntas guía pertenecen a un catálogo administrable. Las evaluaciones almacenan una referencia al área y una instantánea de nombre y pregunta guía, para que los diagnósticos históricos no cambien al actualizar el catálogo.
+
+---
+
+## BR-022 — Necesidades y cierre validado
+
+Una necesidad nace en un diagnóstico y área concretos. Puede relacionarse N:M con ambiciones, objetivos, actividades, evidencias y reuniones. Completar actividades no cambia automáticamente una necesidad a `ADDRESSED`; solo un Gestor asignado o Coordinadora puede validar el cierre, con justificación y respaldo de evidencia o diagnóstico posterior.
+
+---
+
+## BR-023 — Ambiciones y objetivos operativos
+
+Ambición es una entidad estratégica y no participa directamente en el cálculo de avance del proyecto. Una ambición de tipo `OBJECTIVE` debe vincular una entidad `Objective` existente o creada por su flujo normal; no crea un objetivo duplicado ni omite su aprobación. Solo los objetivos operativos aprobados participan en el cálculo existente.
+
+---
+
+## BR-024 — Autorización del seguimiento evolutivo
+
+El Emprendedor puede proponer o completar borradores de diagnósticos, necesidades y ambiciones solo en sus proyectos. Gestores asignados y Coordinadora validan necesidades, aprueban diagnósticos y realizan transiciones de cierre. La Coordinadora puede consultar indicadores transversales; toda validación se aplica en backend.
+
+---
+
+## BR-025 — Informe técnico como instantánea trazable
+
+Un informe técnico se construye desde registros autorizados del mismo proyecto y período, o desde aportes manuales que identifican actor y fuentes de respaldo. Al aprobar una versión, el sistema conserva una instantánea de su contenido y referencias fuente; cambios posteriores en el proyecto no modifican esa versión.
+
+---
+
+## BR-026 — Versionado y emisión de informes
+
+Los informes soportan `FOLLOW_UP` y `CLOSURE`. El contenido y fuentes de una versión `APPROVED` son inmutables; su estado solo puede avanzar a `ISSUED` cuando el worker registra el PDF. Una corrección crea una nueva versión enlazada a la anterior. El PDF solo se genera desde una versión aprobada y una versión firmada se adjunta como documento privado, sin sustituir el PDF emitido ni su instantánea.
+
+---
+
+## BR-027 — Narrativa y datos faltantes del informe
+
+La generación asistida de narrativa solo sintetiza fuentes seleccionadas y no inventa hechos, impactos, conclusiones, evidencias, aprobaciones ni causalidad. La ausencia de datos se presenta como `Pendiente de completar`. Completar actividades no cierra necesidades ni modifica diagnósticos por la preparación o emisión de un informe.
+
+---
+
+## BR-028 — Fuentes de cambios e impactos
+
+Las modificaciones aprobadas de objetivos y presupuesto se obtienen de sus registros y auditoría existentes. Los campos estructurados del perfil del emprendimiento, el cambio formal de alcance y el catálogo de programa aún no cuentan con entidad de dominio definida; hasta que se definan, el informe debe indicarlos como `Pendiente de completar` y no puede declarar una aprobación o impacto sin fuente registrada.
+
+---
+
+## BR-029 — Periodicidad de informes
+
+La periodicidad del informe se configura por proyecto y solo genera una alerta de preparación al vencerse. La alerta no crea una versión, no congela datos y no sustituye la solicitud explícita y aprobación humana del informe.

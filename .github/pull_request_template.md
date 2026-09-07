@@ -7,6 +7,8 @@
 - User Story: <!-- US-XXX o N/A -->
 - Reglas de negocio: <!-- BR-XXX o N/A -->
 - Criterios de aceptación: <!-- AC-XXX o N/A -->
+- Diagnóstico / necesidad / ambición: <!-- Identificador o N/A -->
+- Informe técnico / versión: <!-- Identificador o N/A -->
 
 ## Cambios
 

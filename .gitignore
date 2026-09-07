@@ -13,7 +13,7 @@ visual/prototype/public/favicon.svg
 visual/prototype/public/icons.svg
 
 # Local cache left by the previous prototype location
-prototype/
+/prototype/
 
 # Local configuration and logs
 .env

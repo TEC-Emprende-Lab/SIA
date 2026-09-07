@@ -98,3 +98,31 @@ SLA formal: `TBD`.
 - evitar lógica de negocio duplicada;
 - documentación actualizada;
 - pruebas para reglas críticas.
+
+## Diagnóstico evolutivo
+
+### NFR-AUD-002
+
+El sistema debe auditar creación, envío, aprobación, archivo y creación de revisiones de diagnósticos; cambios de estado y cierre de necesidades; y vínculos de ambiciones con objetivos. Debe registrar actor, fecha, entidad y datos relevantes antes y después cuando aplique.
+
+### NFR-PRI-003
+
+Las comparaciones, necesidades, evidencias contextuales y respuestas de diagnóstico se rigen por el acceso al proyecto. Los indicadores transversales solo se exponen a la Coordinadora.
+
+### NFR-PER-001
+
+Las consultas de historial y dashboard deben obtener únicamente los diagnósticos, áreas y relaciones necesarios, con paginación para historiales extensos.
+
+## Informes técnicos
+
+### NFR-AUD-003
+
+El sistema debe auditar la creación, envío, aprobación, emisión, archivado y creación de versiones de informes; además de las fuentes seleccionadas, entradas manuales, generación de PDF y adjuntos firmados.
+
+### NFR-SEC-008
+
+Los PDFs y versiones firmadas de informes se almacenan de forma privada en R2 y se entregan solo mediante autorización backend y URLs firmadas de duración limitada.
+
+### NFR-PER-002
+
+La recopilación y PDF de un informe se ejecutan como tarea persistente del worker después de la aprobación. La operación debe ser idempotente por versión y no bloquear la solicitud interactiva.

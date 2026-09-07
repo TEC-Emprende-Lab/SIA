@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "build": "tsc -b && vite build && node scripts/bundle.mjs",
+    "lint": "oxlint --no-ignore src/App.tsx src/CatalitecApp.tsx src/main.tsx src/ui.tsx src/state.ts src/data src/views",
+    "preview": "vite preview",
+    "test": "node tests/domain.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.39.0",

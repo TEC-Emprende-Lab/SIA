@@ -56,6 +56,11 @@ Campos adicionales: `TBD`.
 - 1:N con `Expense`.
 - 1:N con `Alert`.
 - 1:N con `ProjectChatMessage`.
+- 1:N con `Diagnostic`.
+- 1:N con `Need`.
+- 1:N con `Ambition`.
+- 1:N con `TechnicalReport`.
+- 1:N con `TechnicalReportSchedule`.
 
 ---
 
@@ -365,3 +370,206 @@ Recomendado para acciones relevantes:
 - `created_at`
 
 La estrategia definitiva de auditoría está `TBD`.
+
+---
+
+## DiagnosticArea
+
+- `id`
+- `code`
+- `name`
+- `description`
+- `guide_question`
+- `icon`
+- `color`
+- `display_order`
+- `is_active`
+- `created_at`
+- `updated_at`
+
+Catálogo extensible. El conjunto inicial corresponde a las ocho áreas definidas en PR-DIA-002.
+
+---
+
+## Diagnostic
+
+- `id`
+- `project_id`
+- `performed_by`
+- `diagnosed_at`
+- `type`
+- `general_observation`
+- `status`
+- `submitted_at`
+- `approved_by`
+- `approved_at`
+- `supersedes_diagnostic_id`
+- `created_at`
+- `updated_at`
+
+`type` soporta `INITIAL`, `FOLLOW_UP` y `CLOSURE`. `status` soporta `DRAFT`, `SUBMITTED`, `APPROVED` y `ARCHIVED`. `supersedes_diagnostic_id` conserva la cadena de correcciones. Un registro `APPROVED` es inmutable.
+
+---
+
+## DiagnosticAssessment
+
+- `id`
+- `diagnostic_id`
+- `diagnostic_area_id`
+- `area_name_snapshot`
+- `guide_question_snapshot`
+- `score`
+- `observation`
+- `context_evidence`
+- `created_at`
+- `updated_at`
+
+La restricción `score` permite valores enteros de 1 a 5. Las respuestas o notas por aspecto se guardan en `DiagnosticAssessmentResponse`.
+
+## DiagnosticAssessmentResponse
+
+- `id`
+- `assessment_id`
+- `aspect`
+- `response`
+- `created_at`
+- `updated_at`
+
+---
+
+## Need
+
+- `id`
+- `project_id`
+- `diagnostic_area_id`
+- `detected_in_diagnostic_id`
+- `title`
+- `description`
+- `priority`
+- `status`
+- `responsible_id`
+- `detected_at`
+- `resolved_at`
+- `closure_justification`
+- `created_at`
+- `updated_at`
+
+`priority` soporta `HIGH`, `MEDIUM` y `LOW`. `status` soporta `IDENTIFIED`, `VALIDATED`, `IN_PLANNING`, `PARTIALLY_ADDRESSED`, `ADDRESSED` y `DISCARDED`.
+
+## NeedObjective, NeedActivity, NeedEvidence, NeedMeeting y NeedAmbition
+
+Tablas de relación N:M entre una necesidad y, respectivamente, `Objective`, `Activity`, `Evidence`, `Meeting` y `Ambition`. Las relaciones no cambian de manera automática el estado de la necesidad.
+
+---
+
+## Ambition
+
+- `id`
+- `project_id`
+- `type`
+- `title`
+- `work_area`
+- `category`
+- `description`
+- `status`
+- `responsible_id`
+- `start_at`
+- `due_at`
+- `measurement_method`
+- `verification_required`
+- `aggregated_progress`
+- `created_at`
+- `updated_at`
+
+`type` soporta `DREAM`, `VISION`, `PURPOSE`, `AMBITION`, `OBJECTIVE`, `GOAL`, `MILESTONE` y `PROJECT`. Las validaciones por tipo se aplican en backend conforme a PR-AMB-002.
+
+## AmbitionObjective
+
+- `ambition_id`
+- `objective_id`
+- `created_at`
+
+Relación N:M. Para `Ambition.type = OBJECTIVE` debe existir al menos un `objective_id`; los objetivos operativos no se duplican.
+
+---
+
+## TechnicalReport
+
+- `id`
+- `project_id`
+- `type`
+- `period_start`
+- `period_end`
+- `current_version_id`
+- `created_by`
+- `created_at`
+- `updated_at`
+
+Representa el informe lógico. `type` soporta `FOLLOW_UP` y `CLOSURE`. Cada informe agrupa versiones para un período y proyecto.
+
+## TechnicalReportSchedule
+
+- `id`
+- `project_id`
+- `period_days`
+- `next_due_at`
+- `is_active`
+- `created_by`
+- `created_at`
+- `updated_at`
+
+Configura la periodicidad por proyecto. Al vencer `next_due_at`, el worker crea una alerta de preparación y calcula el siguiente vencimiento; no crea un informe automáticamente.
+
+## TechnicalReportVersion
+
+- `id`
+- `technical_report_id`
+- `version_number`
+- `status`
+- `content_snapshot`
+- `created_by`
+- `submitted_at`
+- `approved_by`
+- `approved_at`
+- `issued_at`
+- `supersedes_version_id`
+- `created_at`
+- `updated_at`
+
+`status` soporta `DRAFT`, `SUBMITTED`, `APPROVED`, `ISSUED` y `ARCHIVED`. `content_snapshot` conserva secciones, redacción, valores, campos `Pendiente de completar` y metadatos de las fuentes al aprobar. Tras aprobar, contenido y fuentes no se modifican; el único cambio posterior permitido en esa versión es la transición técnica `APPROVED -> ISSUED` al registrar su PDF.
+
+## TechnicalReportSourceReference
+
+- `id`
+- `report_version_id`
+- `section`
+- `source_type`
+- `source_id`
+- `source_snapshot`
+- `selected_by`
+- `created_at`
+
+Referencia trazable a entidades del proyecto, incluyendo `Objective`, `Activity`, `Evidence`, `Meeting`, `MeetingMinutes`, `Diagnostic`, `Need`, `Ambition`, `Procedure`, `ProcedureDocument`, `Budget`, `Expense`, `Asset` si existe y `AuditLog`. `source_snapshot` evita que una modificación posterior cambie el informe emitido.
+
+## TechnicalReportManualEntry
+
+- `id`
+- `report_version_id`
+- `section`
+- `content`
+- `created_by`
+- `created_at`
+- `updated_at`
+
+Registra redacción complementaria sin modificar entidades fuente. Debe contar con una o más `TechnicalReportSourceReference`, salvo que el valor sea explícitamente `Pendiente de completar`.
+
+## TechnicalReportDocument
+
+- `id`
+- `report_version_id`
+- `type`
+- `storage_reference`
+- `uploaded_by`
+- `created_at`
+
+`type` soporta `ISSUED_PDF` y `SIGNED_COPY`. Ambos archivos son privados; `ISSUED_PDF` solo existe después de aprobar la versión.

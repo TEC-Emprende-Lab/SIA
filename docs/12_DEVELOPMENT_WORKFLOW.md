@@ -199,3 +199,13 @@ El frontend debe evitar cascadas de solicitudes en cliente y consultar FastAPI s
 - Los logs deben incluir nivel, servicio, solicitud o tarea, usuario cuando corresponda y contexto de error sin exponer secretos.
 - Los errores de worker deben ser observables y las tareas fallidas no deben perderse silenciosamente.
 - Se deben definir monitoreo y alertas de infraestructura antes de la salida a producción.
+
+## Diagnóstico evolutivo
+
+Las migraciones del módulo deben crear catálogo de áreas, diagnósticos, evaluaciones, respuestas, necesidades, ambiciones y sus relaciones N:M con claves foráneas e índices por proyecto, fecha, estado y área. FastAPI es responsable de validar permisos, transiciones, calificación de 1 a 5, inmutabilidad de aprobados y coherencia de relaciones dentro del mismo proyecto.
+
+Las pruebas unitarias deben cubrir comparación de diagnósticos, validaciones por tipo de ambición, cierre explícito de necesidad e inmutabilidad. Las pruebas de integración deben verificar restricciones e historial de revisiones. Las pruebas end-to-end deben cubrir crear, enviar y aprobar un diagnóstico, crear una necesidad, vincularla a un objetivo y comparar dos diagnósticos aprobados.
+
+## Informes técnicos
+
+Las migraciones deben añadir periodicidad, informes, versiones, referencias fuente, entradas manuales y documentos de informe con restricciones de proyecto, versión y estado. Las pruebas unitarias cubren selección de fuentes, valores faltantes, vencimientos, congelamiento y creación de versiones. Las pruebas de integración verifican autorización, instantáneas y privacidad de documentos. Las pruebas end-to-end cubren la preparación, envío, aprobación, generación de PDF y consulta de una versión firmada.

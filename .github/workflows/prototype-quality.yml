@@ -35,5 +35,8 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Mock domain tests
+        run: pnpm test
+
       - name: Build
         run: pnpm build

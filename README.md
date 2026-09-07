@@ -31,19 +31,22 @@ El mockup está en [`visual/prototype/`](visual/prototype/). No usa base de dato
 
 ```bash
 cd visual/prototype
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
 Abrir `http://localhost:5173/`.
 
-Para validar el build:
+Para validar el mockup y generar su versión autónoma:
 
 ```bash
+cd visual/prototype
+pnpm lint
+pnpm test
 pnpm build
 ```
 
-`visual/prototype/bundle.html` es una versión autónoma que puede abrirse directamente en un navegador.
+`visual/prototype/bundle.html` es una versión autónoma que puede abrirse directamente en un navegador, incluso sin servidor web ni conexión a internet. El prototipo usa datos ficticios en memoria y se reinicia al recargar la página.
 
 ## Documentación
 
@@ -77,3 +80,11 @@ Ver [`CONTRIBUTING.md`](CONTRIBUTING.md) para el flujo completo.
 ## Seguridad
 
 No subir secretos, archivos `.env`, claves privadas, tokens ni datos de producción. Las reglas de autorización y privacidad están documentadas en `docs/03_BUSINESS_RULES.md`, `docs/04_ROLES_PERMISSIONS.md` y `docs/07_NON_FUNCTIONAL_REQUIREMENTS.md`.
+
+## Diagnóstico 360°
+
+El MVP incluye la especificación del módulo Diagnóstico 360°, necesidades y ambiciones para seguimiento evolutivo. El prototipo incluye su simulación frontend navegable; la implementación con API y persistencia sigue pendiente; el alcance aprobado está en `docs/01_PRODUCT_REQUIREMENTS.md` y sus reglas en `docs/03_BUSINESS_RULES.md`.
+
+## Informes técnicos
+
+El MVP también especifica informes técnicos periódicos y de cierre con versiones inmutables, fuentes trazables y PDF posterior a aprobación. El prototipo permite preparar, revisar y versionar borradores locales con fuentes trazables. La implementación con servicios y emisión institucional de PDF se planificará sobre el stack y datos de seguimiento existentes.

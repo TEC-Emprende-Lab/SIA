@@ -84,3 +84,11 @@ La integración `Excel -> Plataforma` y el registro de activos están fuera del 
 ## Microsoft Teams
 
 No existe integración ni migración con Microsoft Teams. Para emprendimientos nuevos, la plataforma reemplaza Teams como herramienta operativa; los emprendimientos existentes permanecen allí únicamente como historial.
+
+## Diagnóstico evolutivo
+
+Diagnóstico 360°, necesidades, ambiciones, comparaciones e indicadores se implementan con FastAPI y PostgreSQL como datos de negocio internos. No requieren integración externa ni automatización de análisis por IA en el MVP. Las evidencias contextuales reutilizan R2 cuando sean archivos.
+
+## Informes técnicos
+
+FastAPI compone informes desde PostgreSQL y conserva sus instantáneas y referencias. El worker genera el PDF únicamente para versiones aprobadas y lo almacena como archivo privado en R2. Si se habilita narrativa asistida, OpenAI recibe exclusivamente las fuentes seleccionadas y debe seguir las mismas restricciones de no invención que las minutas; su salida permanece en borrador y requiere revisión humana.

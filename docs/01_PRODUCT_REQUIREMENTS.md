@@ -72,6 +72,8 @@ La vista debe permitir acceder al menos a:
 - finanzas y compras;
 - alertas.
 - chat del proyecto.
+- diagnósticos 360°, necesidades y ambiciones.
+- informes técnicos.
 
 ---
 
@@ -341,3 +343,91 @@ El autor puede editar o eliminar visualmente sus mensajes. La eliminación no bo
 ### PR-CHAT-005
 
 El MVP no contempla mensajes directos ni chats separados por trámite.
+
+---
+
+## 14. Diagnóstico 360°
+
+### PR-DIA-001
+
+Cada proyecto debe poder registrar diagnósticos 360° como fotografías fechadas. Un diagnóstico incluye fecha, proyecto, persona realizadora, tipo `INITIAL`, `FOLLOW_UP` o `CLOSURE`, observación general y estado `DRAFT`, `SUBMITTED`, `APPROVED` o `ARCHIVED`.
+
+### PR-DIA-002
+
+Un diagnóstico evalúa áreas configurables. El catálogo inicial contiene modelo de negocio y propuesta de valor; producto o prototipo; clientes y mercado; marketing y ventas; finanzas y financiamiento; equipo y operaciones; legal y propiedad intelectual; y tecnología e impacto.
+
+### PR-DIA-003
+
+Cada área evaluada debe registrar pregunta guía, calificación de 1 a 5, observaciones, respuestas o notas por aspecto y evidencia contextual cuando exista.
+
+### PR-DIA-004
+
+Un diagnóstico aprobado es inmutable. Una corrección crea un nuevo diagnóstico en borrador vinculado al diagnóstico corregido; no modifica ni elimina la fotografía aprobada.
+
+### PR-DIA-005
+
+La vista del proyecto debe mostrar el diagnóstico más reciente, historial, comparación con el diagnóstico aprobado anterior, avance, estancamiento o retroceso por área, necesidades y la relación con objetivos y actividades vinculados.
+
+---
+
+## 15. Necesidades
+
+### PR-NEE-001
+
+El sistema debe registrar necesidades asociadas a proyecto, área de diagnóstico y diagnóstico de detección. Incluyen título, descripción, prioridad `HIGH`, `MEDIUM` o `LOW`, estado, responsable, fecha de detección, fecha de resolución y justificación de cierre cuando corresponda.
+
+### PR-NEE-002
+
+Los estados son `IDENTIFIED`, `VALIDATED`, `IN_PLANNING`, `PARTIALLY_ADDRESSED`, `ADDRESSED` y `DISCARDED`. Una necesidad no pasa automáticamente a `ADDRESSED` por completar actividades; requiere validación de Gestor o Coordinadora, con evidencia o un diagnóstico posterior como respaldo.
+
+### PR-NEE-003
+
+Una necesidad puede relacionarse con varias ambiciones, objetivos, actividades, evidencias y reuniones. Un objetivo puede contribuir a varias necesidades.
+
+---
+
+## 16. Ambiciones
+
+### PR-AMB-001
+
+El sistema debe ofrecer Ambiciones como capa estratégica separada de los objetivos operativos. Sus tipos son `DREAM`, `VISION`, `PURPOSE`, `AMBITION`, `OBJECTIVE`, `GOAL`, `MILESTONE` y `PROJECT`.
+
+### PR-AMB-002
+
+La interfaz debe aplicar campos por tipo: fecha, responsable y medición opcionales para sueño, visión y propósito; fecha recomendada y responsable obligatorio para ambición; fecha, responsable y medición obligatorias para objetivo y meta; fecha, responsable y verificación obligatorios para hito; e inicio, fin, responsable y progreso agregado para proyecto.
+
+### PR-AMB-003
+
+El tipo `OBJECTIVE` de Ambición no crea una segunda entidad de objetivo. Debe vincular un objetivo operativo existente o crearlo mediante el flujo normal de `Objective`, incluyendo su aprobación. Esta decisión preserva PR-OBJ-002 y evita duplicar cálculos de avance.
+
+---
+
+## 17. Informes técnicos
+
+### PR-REP-001
+
+Cada proyecto debe disponer de una vista de Informes para preparar informes técnicos de `FOLLOW_UP` o `CLOSURE` para un período definido. Un informe identifica proyecto, período, tipo y su versión histórica.
+
+### PR-REP-002
+
+El informe debe integrar, según disponibilidad y pertinencia en el período, el perfil del proyecto, programa y modalidad, objetivos, actividades, evidencias, reuniones, minutas, acuerdos, diagnósticos 360°, necesidades, ambiciones, trámites, cotizaciones, presupuesto, activos si existen y cambios aprobados de plan, alcance o presupuesto.
+
+### PR-REP-003
+
+El contenido institucional debe incluir identificación y período; descripción del emprendimiento; avance por objetivo; modificaciones aprobadas; impactos; formalización; evolución del diagnóstico 360°; riesgos, dificultades y próximos pasos; y evidencias y anexos seleccionados. Una sección sin fuentes suficientes muestra `Pendiente de completar`.
+
+### PR-REP-004
+
+Cada contenido incluido debe conservar referencias a sus registros fuente. El usuario puede complementar la redacción del borrador sin alterar los registros fuente; los aportes manuales deben registrar autor, fecha y fuentes de respaldo seleccionadas.
+
+### PR-REP-005
+
+Una versión aprobada es una instantánea inmutable de sus fuentes y redacción. Toda corrección posterior crea una nueva versión que referencia la anterior. La generación de PDF ocurre solo después de la aprobación y la versión firmada puede adjuntarse de forma privada.
+
+### PR-REP-006
+
+El sistema puede generar un borrador narrativo desde las fuentes seleccionadas, pero no puede inventar datos, impactos, evidencias, conclusiones, aprobaciones o relaciones de causalidad.
+
+### PR-REP-007
+
+Un proyecto puede configurar la periodicidad de preparación de informes. Al terminar un período, el sistema genera una alerta o recordatorio para Gestor y Coordinadora; no crea, aprueba ni emite informes automáticamente. Un Gestor asignado puede iniciar un informe en cualquier momento.

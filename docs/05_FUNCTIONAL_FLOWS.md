@@ -147,3 +147,51 @@ La importación de activos desde Excel está fuera del MVP actual. Si se impleme
 5. El sistema actualiza los mensajes no leídos y crea notificaciones internas y por correo para las personas destinatarias.
 6. El autor puede editar el mensaje; la modificación queda registrada en auditoría.
 7. El autor puede eliminar visualmente el mensaje; el contenido deja de mostrarse, mientras el registro de eliminación queda auditado.
+
+---
+
+## FL-013 — Diagnóstico 360° y aprobación
+
+1. Un miembro autorizado crea o completa un diagnóstico en `DRAFT` para uno de sus proyectos.
+2. Registra fecha, tipo, observación general y evaluación de las áreas aplicables con calificación de 1 a 5, notas y evidencia contextual.
+3. Puede guardar el borrador o enviarlo en `SUBMITTED`.
+4. Un Gestor asignado o Coordinadora revisa las áreas y necesidades detectadas.
+5. Puede devolverlo a borrador o aprobarlo en `APPROVED`, registrando actor y fecha.
+6. Al aprobarse, el contenido queda inmutable y pasa a formar parte del historial comparativo.
+7. Si requiere corrección, se crea un nuevo `DRAFT` con referencia al diagnóstico aprobado original; este no se sobrescribe.
+
+---
+
+## FL-014 — Necesidad detectada y plan de trabajo
+
+1. Una evaluación de diagnóstico crea o relaciona una necesidad con su proyecto y área.
+2. El Emprendedor puede proponer información; Gestor asignado o Coordinadora valida la necesidad.
+3. Se relacionan ambiciones, objetivos operativos, actividades, evidencias y reuniones cuando correspondan.
+4. El trabajo operativo avanza mediante los flujos existentes de objetivo, actividad y evidencia.
+5. El Gestor o Coordinadora puede cambiar la necesidad a atendida parcialmente, atendida o descartada con justificación.
+6. El sistema conserva el historial y muestra el cambio de su área en diagnósticos posteriores.
+
+---
+
+## FL-015 — Ambición estratégica
+
+1. El usuario autorizado abre el panel de Ambiciones del proyecto.
+2. Selecciona el tipo y el sistema muestra solo los campos aplicables.
+3. Registra título, área de trabajo, categoría, plazo, responsable, descripción, medición, estado y necesidades relacionadas.
+4. Puede vincular objetivos y actividades existentes.
+5. Si el tipo es `OBJECTIVE`, selecciona o crea un objetivo operativo mediante FL-004; no se crea un duplicado estratégico.
+
+---
+
+## FL-016 — Preparación, revisión y emisión de informe técnico
+
+1. Al vencerse una periodicidad configurada, el sistema genera una alerta para preparar el informe; un Gestor asignado también puede iniciarlo sin alerta.
+2. Un Gestor asignado o Coordinadora abre Informes en un proyecto y selecciona tipo `FOLLOW_UP` o `CLOSURE` y período.
+3. FastAPI reúne los registros autorizados del período y muestra las secciones, fuentes y campos faltantes.
+4. El usuario selecciona evidencias y anexos, y complementa la redacción sin alterar los registros fuente.
+5. Puede solicitar un borrador narrativo, que solo usa las fuentes seleccionadas y deja datos ausentes como `Pendiente de completar`.
+6. El informe se guarda como `DRAFT` o se envía en `SUBMITTED` para revisión.
+7. Un Gestor asignado o Coordinadora revisa y aprueba la versión en `APPROVED`, registrando actor y fecha; la instantánea queda inmutable.
+8. Solo entonces el worker genera el PDF, registra el documento `ISSUED_PDF` y cambia la versión a `ISSUED`.
+9. La versión firmada, si aplica, se adjunta como documento privado.
+10. Una corrección posterior crea una nueva versión en `DRAFT` vinculada a la versión aprobada, sin modificar la anterior.

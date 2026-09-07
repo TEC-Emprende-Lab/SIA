@@ -104,3 +104,26 @@ Resultado: `docs/13_ARCHITECTURE.md` contiene el diagrama Mermaid, responsabilid
 - [x] Verificar el build del prototipo en su nueva ubicación.
 
 Resultado: la marca se organiza en `visual/brand/` y el mockup en `visual/prototype/`. README, CI, imports e ignores se actualizaron; lint, build y `bundle.html` se verificaron desde la nueva ubicación.
+
+## Diagnóstico 360° y seguimiento evolutivo
+
+- [x] Documentar requisitos, historias, reglas, permisos y flujos.
+- [x] Documentar modelo de datos, arquitectura, UX, alcance y criterios de aceptación.
+- [ ] Implementar migraciones, API, interfaz y pruebas del módulo.
+
+Resultado: se definió el seguimiento `diagnóstico -> necesidad -> ambición -> objetivo -> actividades -> evidencias -> resultado -> nuevo diagnóstico`. Los diagnósticos aprobados son inmutables, las áreas son extensibles, una necesidad requiere validación explícita de cierre y el tipo Objetivo de Ambición enlaza el objetivo operativo existente sin duplicarlo.
+
+## Informes técnicos periódicos y de cierre
+
+- [x] Documentar requisitos, historias, reglas, permisos y flujo de informe.
+- [x] Documentar versión, fuentes, instantáneas, PDF, UX, arquitectura y criterios.
+- [ ] Implementar migraciones, API, interfaz, PDF y pruebas del módulo.
+
+Resultado: los informes reutilizan registros fuente del proyecto para un período, muestran faltantes como `Pendiente de completar`, se aprueban antes de generar PDF y preservan cada versión como instantánea inmutable. Programa y cambios formales de alcance permanecen `TBD` hasta disponer de entidades fuente aprobadas.
+
+## Verificación del mockup local
+
+- [x] Ejecutar lint, pruebas de dominio y build del prototipo.
+- [x] Verificar el recorrido de navegador sobre el archivo autónomo `bundle.html`.
+
+Resultado: `visual/prototype/bundle.html` se genera sin recursos externos y funciona al abrirse directamente. Playwright verificó el flujo de diagnóstico, necesidad, ambición, actividad, evidencia, informe, permisos y vistas móviles sin errores de consola ni solicitudes externas.
