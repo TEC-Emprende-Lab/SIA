@@ -1,0 +1,30 @@
+# Only send files needed for the prototype image.
+**
+!Dockerfile
+!deploy/
+!deploy/coolify/
+!deploy/coolify/nginx.conf
+!visual/
+!visual/brand/
+!visual/brand/logo.svg
+!visual/prototype/
+!visual/prototype/package.json
+!visual/prototype/pnpm-lock.yaml
+!visual/prototype/tsconfig*.json
+!visual/prototype/vite.config.ts
+!visual/prototype/.oxlintrc.json
+!visual/prototype/index.html
+!visual/prototype/src/
+!visual/prototype/src/**
+!visual/prototype/scripts/
+!visual/prototype/scripts/bundle.mjs
+!visual/prototype/tests/
+!visual/prototype/tests/domain.mjs
+# Exclude unused initializer code and local configuration even under src.
+visual/prototype/src/components/
+visual/prototype/src/hooks/
+visual/prototype/src/lib/
+visual/prototype/src/assets/
+**/.env
+**/.env.*
+**/*.log

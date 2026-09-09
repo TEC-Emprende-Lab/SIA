@@ -6,7 +6,7 @@ import type { Report, Source } from '../data/types'
 import { Badge, Button, Empty, Field, Heading, Modal, Notice, Panel, Steps } from '../ui'
 import { dateLabel, useData, type Section } from '../state'
 
-function sourceSection(source: Source): Section { return ({ Proyecto: 'Resumen', Objetivo: 'Objetivos y actividades', Actividad: 'Objetivos y actividades', Evidencia: 'Evidencias', Diagnóstico: 'Diagnóstico 360°', Necesidad: 'Necesidades', Reunión: 'Reuniones' } as Record<string, Section>)[source.kind] ?? 'Resumen' }
+function sourceSection(source: Source): Section { return ({ Proyecto: 'Resumen', Objetivo: 'Objetivos y actividades', Actividad: 'Objetivos y actividades', Evidencia: 'Evidencias', Diagnóstico: 'Diagnóstico 360°', Reunión: 'Reuniones' } as Record<string, Section>)[source.kind] ?? 'Resumen' }
 export function Reports({ focusId }: { focusId?: string }) {
   const { data, role, run, busy } = useData()
   const [create, setCreate] = useState(false)

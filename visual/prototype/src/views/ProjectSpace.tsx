@@ -1,24 +1,443 @@
-import { useState } from 'react'
-import { CalendarDays, ChevronRight, Lightbulb, Send, Target, Wallet, ArrowRight } from 'lucide-react'
-import { objectiveProgress, projectProgress } from '../data/repository'
-import { people, procedures, project } from '../data/seed'
-import { Badge, Button, Empty, Heading, Modal, Notice, Panel, Progress, TextLink } from '../ui'
-import { dateLabel, initials, useData, type Section } from '../state'
+import { useState } from "react";
+import {
+  CalendarDays,
+  ChevronRight,
+  Send,
+  Target,
+  Wallet,
+  ArrowRight,
+} from "lucide-react";
+import { objectiveProgress, projectProgress } from "../data/repository";
+import { people, procedures, project } from "../data/seed";
+import {
+  Badge,
+  Button,
+  Empty,
+  Heading,
+  Modal,
+  Notice,
+  Panel,
+  Progress,
+  TextLink,
+} from "../ui";
+import { dateLabel, initials, useData, type Section } from "../state";
 
 export function Summary() {
-  const { data, navigate } = useData()
-  const progress = projectProgress(data)
-  return <><Heading eyebrow="Un proyecto con propósito" title="Ideas que se convierten en impacto." description={project.description} /><div className="summary-hero"><div><p className="eyebrow">Lumen Biotech · Prototipado</p><h2>Acompañamos el camino.<br />Construimos el siguiente paso.</h2><p>Del primer hallazgo a la evidencia de lo que hemos logrado.</p><Button variant="secondary" onClick={() => navigate('Diagnóstico 360°')}>Explorar diagnóstico <ArrowRight size={16} /></Button></div><div className="summary-ring" style={{ background: `conic-gradient(#e4c99a ${progress}%, #ffffff25 0)` }}><span><strong>{Math.round(progress)}%</strong><small>avance del proyecto</small></span></div></div><div className="summary-grid"><Panel title="Lo que sigue" action={<TextLink onClick={() => navigate('Alertas')}>Ver alertas</TextLink>}><button className="record-row" onClick={() => navigate('Necesidades', 'n2')}><Lightbulb size={20} /><div><strong>Revisar la proyección de caja</strong><p>Necesidad de prioridad alta · Finanzas</p></div><ChevronRight size={16} /></button><button className="record-row" onClick={() => navigate('Objetivos y actividades', 'o3')}><Target size={20} /><div><strong>Validar el modelo de ingresos</strong><p>Consultar objetivo y aprobación</p></div><ChevronRight size={16} /></button><button className="record-row" onClick={() => navigate('Reuniones', 'm2')}><CalendarDays size={20} /><div><strong>Seguimiento mensual</strong><p>17 de septiembre · 09:00</p></div><ChevronRight size={16} /></button></Panel><Panel title="El plan compartido">{data.objectives.map(o => <div className="summary-objective" key={o.id}><TextLink onClick={() => navigate('Objetivos y actividades', o.id)}>{o.title}</TextLink><div className="inline"><Progress value={objectiveProgress(data, o.id)} /><span className="small">{Math.round(objectiveProgress(data, o.id))}%</span></div><Badge status={o.status} /></div>)}</Panel></div><Panel title="Historial reciente">{data.audit.toReversed().slice(0, 5).map(a => <div className="record-row" key={a.id}><span className="avatar">{initials(a.actor)}</span><div><strong>{a.action}</strong><p>{a.actor} · {dateLabel(a.date)}</p></div></div>)}</Panel></>
+  const { data, navigate } = useData();
+  const progress = projectProgress(data);
+  return (
+    <>
+      <Heading
+        eyebrow="Un proyecto con propósito"
+        title="Ideas que se convierten en impacto."
+        description={project.description}
+      />
+      <div className="summary-hero">
+        <div>
+          <p className="eyebrow">Lumen Biotech · Prototipado</p>
+          <h2>
+            Acompañamos el camino.
+            <br />
+            Construimos el siguiente paso.
+          </h2>
+          <p>Del primer hallazgo a la evidencia de lo que hemos logrado.</p>
+          <Button
+            variant="secondary"
+            onClick={() => navigate("Diagnóstico 360°")}
+          >
+            Explorar diagnóstico <ArrowRight size={16} />
+          </Button>
+        </div>
+        <div
+          className="summary-ring"
+          style={{
+            background: `conic-gradient(#e4c99a ${progress}%, #ffffff25 0)`,
+          }}
+        >
+          <span>
+            <strong>{Math.round(progress)}%</strong>
+            <small>avance del proyecto</small>
+          </span>
+        </div>
+      </div>
+      <div className="summary-grid">
+        <Panel
+          title="Lo que sigue"
+          action={
+            <TextLink onClick={() => navigate("Alertas")}>Ver alertas</TextLink>
+          }
+        >
+          <button
+            className="record-row"
+            onClick={() => navigate("Objetivos y actividades", "o3")}
+          >
+            <Target size={20} />
+            <div>
+              <strong>Revisar la proyección de caja</strong>
+              <p>Objetivo pendiente de aprobación · Modelo de negocio</p>
+            </div>
+            <ChevronRight size={16} />
+          </button>
+          <button
+            className="record-row"
+            onClick={() => navigate("Objetivos y actividades", "o3")}
+          >
+            <Target size={20} />
+            <div>
+              <strong>Validar el modelo de ingresos</strong>
+              <p>Consultar objetivo y aprobación</p>
+            </div>
+            <ChevronRight size={16} />
+          </button>
+          <button
+            className="record-row"
+            onClick={() => navigate("Reuniones", "m2")}
+          >
+            <CalendarDays size={20} />
+            <div>
+              <strong>Seguimiento mensual</strong>
+              <p>17 de septiembre · 09:00</p>
+            </div>
+            <ChevronRight size={16} />
+          </button>
+        </Panel>
+        <Panel title="El plan compartido">
+          {data.objectives.map((o) => (
+            <div className="summary-objective" key={o.id}>
+              <TextLink
+                onClick={() => navigate("Objetivos y actividades", o.id)}
+              >
+                {o.title}
+              </TextLink>
+              <div className="inline">
+                <Progress value={objectiveProgress(data, o.id)} />
+                <span className="small">
+                  {Math.round(objectiveProgress(data, o.id))}%
+                </span>
+              </div>
+              <Badge status={o.status} />
+            </div>
+          ))}
+        </Panel>
+      </div>
+      <Panel title="Historial reciente">
+        {data.audit
+          .toReversed()
+          .slice(0, 5)
+          .map((a) => (
+            <div className="record-row" key={a.id}>
+              <span className="avatar">{initials(a.actor)}</span>
+              <div>
+                <strong>{a.action}</strong>
+                <p>
+                  {a.actor} · {dateLabel(a.date)}
+                </p>
+              </div>
+            </div>
+          ))}
+      </Panel>
+    </>
+  );
 }
-export function ProjectSpace({ section, focusId }: { section: Section; focusId?: string }) {
-  const { data, role, run, busy, navigate } = useData()
-  const [detail, setDetail] = useState(focusId ?? '')
-  const [message, setMessage] = useState('')
-  const [filter, setFilter] = useState('all')
-  const colones = (n: number) => new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(n)
-  if (section === 'Finanzas y compras') { const approved = procedures.filter(p => p.status === 'APPROVED').reduce((s, p) => s + p.amount, 0); const process = procedures.filter(p => p.status !== 'APPROVED').reduce((s, p) => s + p.amount, 0); const item = procedures.find(p => p.id === detail); return <><Heading eyebrow="Recursos para avanzar" title="Finanzas y compras" description="Presupuesto, solicitudes y gastos en un mismo lugar." /><div className="finance-metrics">{[['Asignado', project.budget], ['Aprobado', approved], ['En proceso', process], ['Disponible', project.budget - approved]].map(([label, value]) => <div key={label}><Wallet size={20} /><span>{label}</span><strong>{colones(Number(value))}</strong></div>)}</div><Notice>Solo los trámites aprobados descuentan presupuesto. Los montos en proceso se muestran por separado.</Notice><Panel title="Solicitudes del proyecto" action={<select aria-label="Filtrar solicitudes" value={filter} onChange={e => setFilter(e.target.value)}><option value="all">Todas</option><option value="APPROVED">Aprobadas</option><option value="UNDER_REVIEW">En revisión</option><option value="IN_SIGNATURE_PROCESS">En firmas</option></select>}>{procedures.filter(p => filter === 'all' || p.status === filter).map(p => <button className="record-row" key={p.id} onClick={() => setDetail(p.id)}><Wallet size={18} /><div><strong>{p.title}</strong><p>{p.type} · {dateLabel(p.date)}</p></div><b>{colones(p.amount)}</b><Badge status={p.status} /><ChevronRight size={16} /></button>)}</Panel>{item && <Modal title={item.title} onClose={() => setDetail('')}><Badge status={item.status} /><div className="definition-grid"><div><span>Proveedor</span><strong>{item.supplier}</strong></div><div><span>Monto</span><strong>{colones(item.amount)}</strong></div><div><span>Tipo</span><strong>{item.type}</strong></div></div><Notice>{item.status === 'APPROVED' ? 'Trámite aprobado e inmutable. Su monto está contabilizado una única vez.' : 'Solicitud en proceso de gestión administrativa.'}</Notice><p className="muted">La gestión administrativa completa se conserva como alcance de la futura aplicación.</p></Modal>}</> }
-  if (section === 'Reuniones') { const meeting = data.meetings.find(m => m.id === detail); return <><Heading eyebrow="Conversaciones que orientan" title="Reuniones y minutas" description="Los acuerdos del acompañamiento, siempre dentro de su contexto." /><Panel>{data.meetings.toReversed().map(m => <button className="meeting-row" key={m.id} onClick={() => setDetail(m.id)}><span className="calendar-block"><small>{new Intl.DateTimeFormat('es', { month: 'short' }).format(new Date(m.date + 'T12:00:00'))}</small><b>{m.date.slice(-2)}</b></span><div><h3>{m.title}</h3><p>{m.time} · Google Meet</p></div><span className={`badge ${m.minutes ? 'olive' : 'blue'}`}>{m.minutes ? 'Minuta publicada' : 'Programada'}</span><ChevronRight size={17} /></button>)}</Panel>{meeting && <Modal title={meeting.title} description={`${dateLabel(meeting.date)} · ${meeting.time}`} onClose={() => setDetail('')}><h3>Minuta</h3><p>{meeting.minutes || 'La minuta estará disponible después de la reunión.'}</p><h3>Acuerdos y próximos pasos</h3><p>{meeting.agreements || 'Pendiente de la sesión de seguimiento.'}</p>{meeting.minutes && <TextLink onClick={() => navigate('Necesidades', 'n1')}>Ver necesidad vinculada</TextLink>}<p className="small muted">Sesión de ejemplo. No hay enlace a una reunión real.</p></Modal>}</> }
-  if (section === 'Chat') return <><Heading eyebrow="Un equipo, una conversación" title="Chat del proyecto" description="El espacio compartido de Lumen Biotech." /><Panel className="chat-panel"><div className="chat-messages">{data.messages.map(m => <div className="chat-message" key={m.id}><span className="avatar sand">{initials(m.author)}</span><div><strong>{m.author}<small>{dateLabel(m.date)}</small></strong><p>{m.content}</p></div></div>)}</div><form className="chat-composer" onSubmit={async e => { e.preventDefault(); if (await run({ type: 'message.send', content: message }, 'Mensaje agregado a la conversación local')) setMessage('') }}><input required aria-label="Mensaje al proyecto" placeholder="Comparte una actualización con el equipo…" value={message} onChange={e => setMessage(e.target.value)} /><Button disabled={busy} type="submit"><Send size={17} />Enviar</Button></form></Panel><p className="footnote">Los mensajes de esta demostración solo se muestran en esta sesión.</p></>
-  if (section === 'Equipo') return <><Heading eyebrow="Personas que acompañan" title="Equipo del proyecto" description="El talento y el acompañamiento detrás de Lumen Biotech." /><Panel>{people.map((p, i) => <div className="record-row" key={p}><span className={`avatar ${i % 2 ? 'blue' : 'sand'}`}>{initials(p)}</span><div><strong>{p}</strong><p>{i === 0 ? 'Coordinadora' : i === 1 ? 'Gestor asignado' : 'Emprendedor · Miembro del proyecto'}</p></div><span className="badge olive">Activo</span></div>)}</Panel></>
-  return <><Heading eyebrow="El siguiente paso merece atención" title="Alertas del proyecto" description="Pendientes del acompañamiento que puedes revisar desde aquí." /><Panel>{data.objectives.filter(o => o.status === 'PENDING_APPROVAL').map(o => <button className="record-row" key={o.id} onClick={() => navigate('Objetivos y actividades', o.id)}><Target size={20} /><div><strong>{o.title}</strong><p>{role === 'Emprendedor' ? 'En espera de aprobación del gestor' : 'Requiere aprobación'}</p></div><ChevronRight size={16} /></button>)}{data.needs.filter(n => n.status === 'IDENTIFIED').map(n => <button className="record-row" key={n.id} onClick={() => navigate('Necesidades', n.id)}><Lightbulb size={20} /><div><strong>{n.title}</strong><p>Necesidad pendiente de validación</p></div><Badge status={n.priority} /><ChevronRight size={16} /></button>)}{!data.objectives.some(o => o.status === 'PENDING_APPROVAL') && !data.needs.some(n => n.status === 'IDENTIFIED') && <Empty title="Estás al día" text="No hay necesidades ni objetivos pendientes de validación." />}</Panel></>
+export function ProjectSpace({
+  section,
+  focusId,
+}: {
+  section: Section;
+  focusId?: string;
+}) {
+  const { data, role, run, busy, navigate } = useData();
+  const [detail, setDetail] = useState(focusId ?? "");
+  const [message, setMessage] = useState("");
+  const [filter, setFilter] = useState("all");
+  const colones = (n: number) =>
+    new Intl.NumberFormat("es-CR", {
+      style: "currency",
+      currency: "CRC",
+      maximumFractionDigits: 0,
+    }).format(n);
+  if (section === "Finanzas y compras") {
+    const approved = procedures
+      .filter((p) => p.status === "APPROVED")
+      .reduce((s, p) => s + p.amount, 0);
+    const process = procedures
+      .filter((p) => p.status !== "APPROVED")
+      .reduce((s, p) => s + p.amount, 0);
+    const item = procedures.find((p) => p.id === detail);
+    return (
+      <>
+        <Heading
+          eyebrow="Recursos para avanzar"
+          title="Finanzas y compras"
+          description="Presupuesto, solicitudes y gastos en un mismo lugar."
+        />
+        <div className="finance-metrics">
+          {[
+            ["Asignado", project.budget],
+            ["Aprobado", approved],
+            ["En proceso", process],
+            ["Disponible", project.budget - approved],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <Wallet size={20} />
+              <span>{label}</span>
+              <strong>{colones(Number(value))}</strong>
+            </div>
+          ))}
+        </div>
+        <Notice>
+          Solo los trámites aprobados descuentan presupuesto. Los montos en
+          proceso se muestran por separado.
+        </Notice>
+        <Panel
+          title="Solicitudes del proyecto"
+          action={
+            <select
+              aria-label="Filtrar solicitudes"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="all">Todas</option>
+              <option value="APPROVED">Aprobadas</option>
+              <option value="UNDER_REVIEW">En revisión</option>
+              <option value="IN_SIGNATURE_PROCESS">En firmas</option>
+            </select>
+          }
+        >
+          {procedures
+            .filter((p) => filter === "all" || p.status === filter)
+            .map((p) => (
+              <button
+                className="record-row"
+                key={p.id}
+                onClick={() => setDetail(p.id)}
+              >
+                <Wallet size={18} />
+                <div>
+                  <strong>{p.title}</strong>
+                  <p>
+                    {p.type} · {dateLabel(p.date)}
+                  </p>
+                </div>
+                <b>{colones(p.amount)}</b>
+                <Badge status={p.status} />
+                <ChevronRight size={16} />
+              </button>
+            ))}
+        </Panel>
+        {item && (
+          <Modal title={item.title} onClose={() => setDetail("")}>
+            <Badge status={item.status} />
+            <div className="definition-grid">
+              <div>
+                <span>Proveedor</span>
+                <strong>{item.supplier}</strong>
+              </div>
+              <div>
+                <span>Monto</span>
+                <strong>{colones(item.amount)}</strong>
+              </div>
+              <div>
+                <span>Tipo</span>
+                <strong>{item.type}</strong>
+              </div>
+            </div>
+            <Notice>
+              {item.status === "APPROVED"
+                ? "Trámite aprobado e inmutable. Su monto está contabilizado una única vez."
+                : "Solicitud en proceso de gestión administrativa."}
+            </Notice>
+            <p className="muted">
+              La gestión administrativa completa se conserva como alcance de la
+              futura aplicación.
+            </p>
+          </Modal>
+        )}
+      </>
+    );
+  }
+  if (section === "Reuniones") {
+    const meeting = data.meetings.find((m) => m.id === detail);
+    return (
+      <>
+        <Heading
+          eyebrow="Conversaciones que orientan"
+          title="Reuniones y minutas"
+          description="Los acuerdos del acompañamiento, siempre dentro de su contexto."
+        />
+        <Panel>
+          {data.meetings.toReversed().map((m) => (
+            <button
+              className="meeting-row"
+              key={m.id}
+              onClick={() => setDetail(m.id)}
+            >
+              <span className="calendar-block">
+                <small>
+                  {new Intl.DateTimeFormat("es", { month: "short" }).format(
+                    new Date(m.date + "T12:00:00"),
+                  )}
+                </small>
+                <b>{m.date.slice(-2)}</b>
+              </span>
+              <div>
+                <h3>{m.title}</h3>
+                <p>{m.time} · Google Meet</p>
+              </div>
+              <span className={`badge ${m.minutes ? "olive" : "blue"}`}>
+                {m.minutes ? "Minuta publicada" : "Programada"}
+              </span>
+              <ChevronRight size={17} />
+            </button>
+          ))}
+        </Panel>
+        {meeting && (
+          <Modal
+            title={meeting.title}
+            description={`${dateLabel(meeting.date)} · ${meeting.time}`}
+            onClose={() => setDetail("")}
+          >
+            <h3>Minuta</h3>
+            <p>
+              {meeting.minutes ||
+                "La minuta estará disponible después de la reunión."}
+            </p>
+            <h3>Acuerdos y próximos pasos</h3>
+            <p>
+              {meeting.agreements || "Pendiente de la sesión de seguimiento."}
+            </p>
+            {meeting.minutes && (
+              <TextLink onClick={() => navigate("Objetivos y actividades", "o1")}>
+                Ver objetivo vinculado
+              </TextLink>
+            )}
+            <p className="small muted">
+              Sesión de ejemplo. No hay enlace a una reunión real.
+            </p>
+          </Modal>
+        )}
+      </>
+    );
+  }
+  if (section === "Chat")
+    return (
+      <>
+        <Heading
+          eyebrow="Un equipo, una conversación"
+          title="Chat del proyecto"
+          description="El espacio compartido de Lumen Biotech."
+        />
+        <Panel className="chat-panel">
+          <div className="chat-messages">
+            {data.messages.map((m) => (
+              <div className="chat-message" key={m.id}>
+                <span className="avatar sand">{initials(m.author)}</span>
+                <div>
+                  <strong>
+                    {m.author}
+                    <small>{dateLabel(m.date)}</small>
+                  </strong>
+                  <p>{m.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <form
+            className="chat-composer"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (
+                await run(
+                  { type: "message.send", content: message },
+                  "Mensaje agregado a la conversación local",
+                )
+              )
+                setMessage("");
+            }}
+          >
+            <input
+              required
+              aria-label="Mensaje al proyecto"
+              placeholder="Comparte una actualización con el equipo…"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+            <Button disabled={busy} type="submit">
+              <Send size={17} />
+              Enviar
+            </Button>
+          </form>
+        </Panel>
+        <p className="footnote">
+          Los mensajes de esta demostración solo se muestran en esta sesión.
+        </p>
+      </>
+    );
+  if (section === "Equipo")
+    return (
+      <>
+        <Heading
+          eyebrow="Personas que acompañan"
+          title="Equipo del proyecto"
+          description="El talento y el acompañamiento detrás de Lumen Biotech."
+        />
+        <Panel>
+          {people.map((p, i) => (
+            <div className="record-row" key={p}>
+              <span className={`avatar ${i % 2 ? "blue" : "sand"}`}>
+                {initials(p)}
+              </span>
+              <div>
+                <strong>{p}</strong>
+                <p>
+                  {i === 0
+                    ? "Coordinadora"
+                    : i === 1
+                      ? "Gestor asignado"
+                      : "Emprendedor · Miembro del proyecto"}
+                </p>
+              </div>
+              <span className="badge olive">Activo</span>
+            </div>
+          ))}
+        </Panel>
+      </>
+    );
+  return (
+    <>
+      <Heading
+        eyebrow="El siguiente paso merece atención"
+        title="Alertas del proyecto"
+        description="Pendientes del acompañamiento que puedes revisar desde aquí."
+      />
+      <Panel>
+        {data.objectives
+          .filter((o) => o.status === "PENDING_APPROVAL")
+          .map((o) => (
+            <button
+              className="record-row"
+              key={o.id}
+              onClick={() => navigate("Objetivos y actividades", o.id)}
+            >
+              <Target size={20} />
+              <div>
+                <strong>{o.title}</strong>
+                <p>
+                  {role === "Emprendedor"
+                    ? "En espera de aprobación del gestor"
+                    : "Requiere aprobación"}
+                </p>
+              </div>
+              <ChevronRight size={16} />
+            </button>
+          ))}
+        {!data.objectives.some((o) => o.status === "PENDING_APPROVAL") && (
+            <Empty
+              title="Estás al día"
+              text="No hay objetivos pendientes de validación."
+            />
+          )}
+      </Panel>
+    </>
+  );
 }

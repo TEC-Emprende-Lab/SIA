@@ -3,6 +3,8 @@
 ## Reglas comunes
 
 - Cada programa define sus propias areas, canvas y entregables.
+- Cada objetivo pertenece a un area del canvas de su programa. Puede vincularse opcionalmente a una ambicion del emprendimiento; la ambicion no sustituye ni duplica el objetivo.
+- Las ambiciones se conservan como aspiraciones visibles del emprendimiento y pueden existir sin objetivos asociados.
 - Un entregable debe desagregarse en objetivos y actividades; no basta marcar un tema amplio como completado.
 - Cada actividad se asocia al objetivo y entregable de su programa y puede alimentar un calendario o cronograma.
 - Objetivos y actividades no tienen pesos manuales configurables. Su calculo de avance, si aplica, usa pesos equivalentes.

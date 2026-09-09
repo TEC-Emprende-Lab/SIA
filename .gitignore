@@ -23,3 +23,7 @@ visual/prototype/public/icons.svg
 
 # Operating system files
 .DS_Store
+
+# Python test cache
+__pycache__/
+*.pyc

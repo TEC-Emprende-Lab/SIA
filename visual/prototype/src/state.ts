@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 import type { Command } from './data/repository'
 import type { Store, Role } from './data/types'
 
-export type Section = 'Resumen' | 'Diagnóstico 360°' | 'Necesidades' | 'Ambiciones' | 'Objetivos y actividades' | 'Evidencias' | 'Evolución' | 'Informes' | 'Reuniones' | 'Finanzas y compras' | 'Chat' | 'Equipo' | 'Alertas'
+export type Section = 'Resumen' | 'Diagnóstico 360°' | 'Ambiciones' | 'Objetivos y actividades' | 'Evidencias' | 'Evolución' | 'Informes' | 'Reuniones' | 'Finanzas y compras' | 'Chat' | 'Equipo' | 'Alertas'
 export interface Context { data: Store; role: Role; busy: boolean; run: (command: Command, message?: string) => Promise<Store | null>; navigate: (section: Section, id?: string) => void; notify: (text: string) => void }
 export const DataContext = createContext<Context | null>(null)
 export const useData = () => useContext(DataContext)!

@@ -27,5 +27,9 @@
     "parcel-resolver-tspaths": "^0.0.9",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=24 <27"
   }
 }

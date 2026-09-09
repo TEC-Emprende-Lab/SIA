@@ -48,6 +48,12 @@ pnpm build
 
 `visual/prototype/bundle.html` es una versión autónoma que puede abrirse directamente en un navegador, incluso sin servidor web ni conexión a internet. El prototipo usa datos ficticios en memoria y se reinicia al recargar la página.
 
+## Despliegue del prototipo en Coolify
+
+El repositorio incluye un `Dockerfile` que compila el prototipo y lo sirve con Nginx en el puerto `8080`, con health check y prueba HTTP en CI. Configurar Coolify con build pack **Dockerfile**, directorio base **/** y ubicación **/Dockerfile**.
+
+La [guía de Coolify](deploy/coolify/README.md) contiene los valores exactos, ramas, dominio, validación y actualización. Este despliegue conserva el carácter de demostración: datos ficticios en memoria, sin API ni persistencia.
+
 ## Documentación
 
 | Documento | Propósito |
