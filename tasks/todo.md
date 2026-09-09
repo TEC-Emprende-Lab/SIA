@@ -95,7 +95,7 @@ Resultado: Redis se utiliza para rate limiting distribuido y para coordinar Sock
 - [x] Documentar componentes y flujos de arquitectura.
 - [x] Enlazar el diagrama desde la documentación principal.
 
-Resultado: `docs/13_ARCHITECTURE.md` contiene el diagrama Mermaid, responsabilidades, flujos de autenticación/chat/tareas y servicios por entorno.
+Resultado: la arquitectura objetivo, responsabilidades y servicios por entorno se consolidaron en `docs/00-nucleo-comun/vision-y-alcance.md`.
 
 ## Organización visual del repositorio
 
@@ -127,3 +127,12 @@ Resultado: los informes reutilizan registros fuente del proyecto para un períod
 - [x] Verificar el recorrido de navegador sobre el archivo autónomo `bundle.html`.
 
 Resultado: `visual/prototype/bundle.html` se genera sin recursos externos y funciona al abrirse directamente. Playwright verificó el flujo de diagnóstico, necesidad, ambición, actividad, evidencia, informe, permisos y vistas móviles sin errores de consola ni solicitudes externas.
+
+## Reorganización documental por programas
+
+- [x] Consolidar decisiones de la reunión del 8 de septiembre de 2026.
+- [x] Reemplazar la estructura documental plana por núcleo común y programas.
+- [x] Documentar Prototipado y Puesta en marcha como alcance inicial.
+- [x] Marcar decisiones de programa no definidas como `TBD`.
+
+Resultado: la documentación se organiza en `00-nucleo-comun`, `01-pre-incubacion`, `02-prototipado` y `03-puesta-en-marcha`. El expediente se conserva entre programas; Pre-incubación queda fuera del primer alcance y los vacíos de canvas, entregables, validaciones y finanzas se mantienen explícitos como `TBD`.

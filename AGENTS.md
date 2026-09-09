@@ -10,20 +10,8 @@ El sistema centraliza el seguimiento de proyectos incubados, sus objetivos, acti
 
 Antes de modificar código, revisar:
 
-1. `docs/00_PROJECT_CONTEXT.md`
-2. `docs/01_PRODUCT_REQUIREMENTS.md`
-3. `docs/02_USER_STORIES.md`
-4. `docs/03_BUSINESS_RULES.md`
-5. `docs/04_ROLES_PERMISSIONS.md`
-6. `docs/05_FUNCTIONAL_FLOWS.md`
-7. `docs/06_DATA_MODEL.md`
-8. `docs/07_NON_FUNCTIONAL_REQUIREMENTS.md`
-9. `docs/08_UI_UX_GUIDELINES.md`
-10. `docs/09_INTEGRATIONS.md`
-11. `docs/10_ACCEPTANCE_CRITERIA.md`
-12. `docs/11_MVP_SCOPE.md`
-13. `docs/12_DEVELOPMENT_WORKFLOW.md`
-14. `docs/13_ARCHITECTURE.md`
+1. Todos los documentos de `docs/00-nucleo-comun/`.
+2. Los documentos del programa afectado: `docs/01-pre-incubacion/`, `docs/02-prototipado/` o `docs/03-puesta-en-marcha/`.
 
 ## Reglas para agentes de IA
 
@@ -39,20 +27,17 @@ Antes de modificar código, revisar:
 - No eliminar información histórica salvo que exista un requerimiento explícito.
 - Priorizar una arquitectura simple y mantenible.
 - Evitar dependencias innecesarias.
-- Seguir el flujo de ramas, pull requests y verificaciones definido en `docs/12_DEVELOPMENT_WORKFLOW.md`.
-- Para Diagnóstico 360°, necesidades y ambiciones, respetar además BR-020 a BR-024 y las decisiones explícitas de no duplicar objetivos ni editar diagnósticos aprobados.
-- Para Informes técnicos, respetar además BR-025 a BR-029: las versiones aprobadas son inmutables y todo contenido requiere fuentes trazables.
+- Seguir el flujo de ramas, pull requests y verificaciones definido por el repositorio.
+- Para informes técnicos, respetar `docs/00-nucleo-comun/ia-e-informes.md`: las versiones aprobadas son inmutables y todo contenido requiere fuentes trazables.
 
 ## Fuente de verdad
 
 En caso de conflicto, usar este orden:
 
-1. `03_BUSINESS_RULES.md`
-2. `02_USER_STORIES.md`
-3. `01_PRODUCT_REQUIREMENTS.md`
-4. `04_ROLES_PERMISSIONS.md`
-5. `11_MVP_SCOPE.md`
-6. `08_UI_UX_GUIDELINES.md`
+1. Decisiones confirmadas y reglas del documento de programa aplicable.
+2. `docs/00-nucleo-comun/actores-roles-y-permisos.md`.
+3. `docs/00-nucleo-comun/vision-y-alcance.md`.
+4. Historias de usuario del programa aplicable.
 
 ## Convenciones
 

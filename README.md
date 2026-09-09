@@ -23,7 +23,7 @@ El alcance funcional y técnico del MVP está documentado. El repositorio contie
 - Redis para rate limiting distribuido y escalabilidad de Socket.IO.
 - Coolify para staging y producción.
 
-La especificación completa está en [`docs/12_DEVELOPMENT_WORKFLOW.md`](docs/12_DEVELOPMENT_WORKFLOW.md).
+La especificación completa está organizada por núcleo y programa en [`docs/`](docs/).
 
 ## Prototipo visual
 
@@ -52,20 +52,10 @@ pnpm build
 
 | Documento | Propósito |
 |---|---|
-| [`docs/00_PROJECT_CONTEXT.md`](docs/00_PROJECT_CONTEXT.md) | Contexto y propósito de SIA. |
-| [`docs/01_PRODUCT_REQUIREMENTS.md`](docs/01_PRODUCT_REQUIREMENTS.md) | Requerimientos funcionales. |
-| [`docs/02_USER_STORIES.md`](docs/02_USER_STORIES.md) | Historias de usuario y aceptación. |
-| [`docs/03_BUSINESS_RULES.md`](docs/03_BUSINESS_RULES.md) | Fuente principal de reglas de negocio. |
-| [`docs/04_ROLES_PERMISSIONS.md`](docs/04_ROLES_PERMISSIONS.md) | Matriz de autorización. |
-| [`docs/05_FUNCTIONAL_FLOWS.md`](docs/05_FUNCTIONAL_FLOWS.md) | Flujos funcionales. |
-| [`docs/06_DATA_MODEL.md`](docs/06_DATA_MODEL.md) | Modelo conceptual de datos. |
-| [`docs/07_NON_FUNCTIONAL_REQUIREMENTS.md`](docs/07_NON_FUNCTIONAL_REQUIREMENTS.md) | Seguridad, rendimiento y mantenibilidad. |
-| [`docs/08_UI_UX_GUIDELINES.md`](docs/08_UI_UX_GUIDELINES.md) | Lineamientos de experiencia e interfaz. |
-| [`docs/09_INTEGRATIONS.md`](docs/09_INTEGRATIONS.md) | Servicios e integraciones definidas. |
-| [`docs/10_ACCEPTANCE_CRITERIA.md`](docs/10_ACCEPTANCE_CRITERIA.md) | Criterios globales verificables. |
-| [`docs/11_MVP_SCOPE.md`](docs/11_MVP_SCOPE.md) | Alcance, exclusiones y decisiones confirmadas. |
-| [`docs/12_DEVELOPMENT_WORKFLOW.md`](docs/12_DEVELOPMENT_WORKFLOW.md) | Desarrollo, entornos, pruebas y despliegue. |
-| [`docs/13_ARCHITECTURE.md`](docs/13_ARCHITECTURE.md) | Diagrama, componentes y flujos de arquitectura. |
+| [`docs/00-nucleo-comun/`](docs/00-nucleo-comun/) | Reglas, expediente, roles, seguimiento, canales, alertas, IA e informe comunes. |
+| [`docs/01-pre-incubacion/`](docs/01-pre-incubacion/) | Programa futuro de estructuración y validación inicial. |
+| [`docs/02-prototipado/`](docs/02-prototipado/) | Programa inicial de construcción y validación de prototipos. |
+| [`docs/03-puesta-en-marcha/`](docs/03-puesta-en-marcha/) | Programa inicial de preparación operativa y comercial. |
 
 ## Colaboración
 
@@ -79,11 +69,11 @@ Ver [`CONTRIBUTING.md`](CONTRIBUTING.md) para el flujo completo.
 
 ## Seguridad
 
-No subir secretos, archivos `.env`, claves privadas, tokens ni datos de producción. Las reglas de autorización y privacidad están documentadas en `docs/03_BUSINESS_RULES.md`, `docs/04_ROLES_PERMISSIONS.md` y `docs/07_NON_FUNCTIONAL_REQUIREMENTS.md`.
+No subir secretos, archivos `.env`, claves privadas, tokens ni datos de producción. Las reglas de autorización, privacidad y arquitectura están documentadas en `docs/00-nucleo-comun/`.
 
 ## Diagnóstico 360°
 
-El MVP incluye la especificación del módulo Diagnóstico 360°, necesidades y ambiciones para seguimiento evolutivo. El prototipo incluye su simulación frontend navegable; la implementación con API y persistencia sigue pendiente; el alcance aprobado está en `docs/01_PRODUCT_REQUIREMENTS.md` y sus reglas en `docs/03_BUSINESS_RULES.md`.
+El MVP inicial se concentra en Prototipado y Puesta en marcha, con canvas, entregables, evidencias, validaciones y evolución trazable por programa. La implementación con API y persistencia sigue pendiente.
 
 ## Informes técnicos
 

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura objetivo de SIA",
+    "output": "visual/architecture/sia-architecture.html",
+    "viewBox": [1280, 820],
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/TEC-Emprende-Lab/SIA",
+      "revision": "8ad04e680f36da38b66428b3b93600fd8b89dedc"
+    },
+    "views": [
+      { "id": "request-path", "label": "Solicitud autorizada", "focus": ["users", "web", "clerk", "api", "postgres"], "note": "El navegador inicia sesion con Clerk y FastAPI decide la autorizacion antes de escribir datos." },
+      { "id": "async-work", "label": "Trabajo asincrono", "focus": ["api", "postgres", "worker", "resend", "openai", "r2"], "note": "El worker toma tareas persistentes para correo, IA y documentos privados." },
+      { "id": "realtime-and-limits", "label": "Tiempo real y limites", "focus": ["web", "api", "redis", "postgres"], "note": "Socket.IO entrega eventos y Redis coordina escalamiento y rate limiting." }
+    ]
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Usuarios SIA", "sublabel": "navegador web", "pos": [40, 355], "size": [140, 64], "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 41, "end_line": 50, "label": "Arquitectura objetivo" }] },
+    { "id": "clerk", "type": "security", "label": "Clerk Cloud", "sublabel": "Google OAuth y JWT", "pos": [250, 110], "size": [150, 68], "tag": "identidad", "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 44, "end_line": 44, "label": "Identidad" }] },
+    { "id": "web", "type": "frontend", "label": "Web", "sublabel": "Next.js y TypeScript", "pos": [250, 355], "size": [150, 64], "tag": "interfaz", "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 41, "end_line": 42, "label": "Frontend" }] },
+    { "id": "api", "type": "backend", "label": "API", "sublabel": "FastAPI y Socket.IO", "pos": [500, 355], "size": [160, 64], "tag": "reglas y permisos", "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 42, "end_line": 52, "label": "Backend y seguridad" }] },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "datos, auditoria y cola", "pos": [760, 355], "size": [165, 64], "tag": "fuente de verdad", "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 43, "end_line": 43, "label": "Datos y cola" }] },
+    { "id": "redis", "type": "database", "label": "Redis", "sublabel": "rate limiting y Socket.IO", "pos": [760, 170], "size": [165, 64], "tag": "coordinacion", "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 49, "end_line": 49, "label": "Redis" }] },
+    { "id": "r2", "type": "cloud", "label": "Cloudflare R2", "sublabel": "archivos privados", "pos": [760, 545], "size": [165, 64], "tag": "URLs firmadas", "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 45, "end_line": 45, "label": "Archivos privados" }] },
+    { "id": "worker", "type": "backend", "label": "Worker", "sublabel": "tareas asincronas", "pos": [1010, 355], "size": [150, 64], "tag": "idempotente", "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 48, "end_line": 48, "label": "Worker" }] },
+    { "id": "resend", "type": "external", "label": "Resend", "sublabel": "correo transaccional", "pos": [1010, 130], "size": [150, 64], "sources": [{ "path": "docs/00-nucleo-comun/vision-y-alcance.md", "line": 46, "end_line": 46, "label": "Correo" }] },
+    { "id": "openai", "type": "external", "label": "OpenAI", "sublabel": "borradores de IA", "pos": [1010, 545], "size": [150, 64], "sources": [{ "path": "docs/00-nucleo-comun/ia-e-informes.md", "line": 3, "end_line": 13, "label": "Uso de IA" }] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Coolify: entorno de SIA", "wraps": ["web", "api", "postgres", "redis", "r2", "worker"], "pad": 28 }
+  ],
+  "connections": [
+    { "id": "users-web", "from": "users", "to": "web", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "web-clerk", "from": "web", "to": "clerk", "label": "inicio de sesion", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "web-api", "from": "web", "to": "api", "label": "JWT y API", "variant": "emphasis" },
+    { "id": "api-clerk", "from": "api", "to": "clerk", "label": "valida JWT", "variant": "security", "fromSide": "top", "toSide": "right" },
+    { "id": "api-postgres", "from": "api", "to": "postgres", "label": "datos y tareas", "variant": "emphasis" },
+    { "id": "api-redis", "from": "api", "to": "redis", "label": "limites y eventos", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "api-r2", "from": "api", "to": "r2", "label": "URLs firmadas", "variant": "security", "fromSide": "bottom", "toSide": "top" },
+    { "id": "worker-postgres", "from": "worker", "to": "postgres", "label": "reclama tareas", "variant": "dashed" },
+    { "id": "worker-resend", "from": "worker", "to": "resend", "label": "envia correo", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "id": "worker-openai", "from": "worker", "to": "openai", "label": "genera borradores", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "worker-r2", "from": "worker", "to": "r2", "label": "guarda PDF", "variant": "dashed", "fromSide": "bottom", "toSide": "right" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Autorizacion", "items": ["Clerk identifica a la persona", "FastAPI valida JWT y permisos", "PostgreSQL conserva relaciones y auditoria"] },
+    { "dot": "emerald", "title": "Datos privados", "items": ["PostgreSQL es la fuente de verdad", "R2 entrega archivos con URLs firmadas", "Redis no almacena datos de negocio"] },
+    { "dot": "violet", "title": "Trabajo asincrono", "items": ["La cola persiste en PostgreSQL", "El worker procesa correo, IA y PDF", "La aprobacion humana sigue siendo obligatoria"] }
+  ]
+}

@@ -57,7 +57,7 @@ pnpm lint
 pnpm build
 ```
 
-La aplicación real deberá añadir pruebas unitarias, integración y end-to-end conforme a `docs/12_DEVELOPMENT_WORKFLOW.md`.
+La aplicación real deberá añadir pruebas unitarias, integración y end-to-end conforme al núcleo común y al programa afectado.
 
 ## Reglas de datos y seguridad
 
