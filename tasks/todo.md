@@ -111,7 +111,16 @@ Resultado: la marca se organiza en `visual/brand/` y el mockup en `visual/protot
 - [x] Documentar modelo de datos, arquitectura, UX, alcance y criterios de aceptación.
 - [ ] Implementar migraciones, API, interfaz y pruebas del módulo.
 
-Resultado: se definió el seguimiento `diagnóstico -> necesidad -> ambición -> objetivo -> actividades -> evidencias -> resultado -> nuevo diagnóstico`. Los diagnósticos aprobados son inmutables, las áreas son extensibles, una necesidad requiere validación explícita de cierre y el tipo Objetivo de Ambición enlaza el objetivo operativo existente sin duplicarlo.
+Resultado histórico reemplazado: el seguimiento vigente es `diagnóstico por área -> objetivo -> actividad -> evidencia -> resultado -> nuevo diagnóstico`. Las ambiciones permanecen visibles y se vinculan opcionalmente desde el objetivo; los diagnósticos aprobados son inmutables.
+
+## Simplificación del Diagnóstico 360°
+
+- [x] Reemplazar necesidades por el vínculo directo área de diagnóstico -> objetivo.
+- [x] Definir el Cubo 360 por programa con seis áreas y ambiciones visibles opcionales.
+- [x] Actualizar el mockup, documentación y criterios afectados.
+- [x] Verificar el recorrido y el build del prototipo.
+
+Resultado: Prototipado usa Identidad y dirección estratégica, Modelo de negocio, Mercado segmentado, Canales definidos, Producto mínimo viable y Constitución de sociedad. Puesta en marcha usa Modelo de negocio, Marca y canales, Marketing y comercialización, Protección de propiedad intelectual, Formalización y operaciones y Financiamiento. El mockup de Prototipado eliminó necesidades; cada objetivo requiere un área y puede vincular una ambición opcional.
 
 ## Informes técnicos periódicos y de cierre
 
@@ -121,12 +130,22 @@ Resultado: se definió el seguimiento `diagnóstico -> necesidad -> ambición ->
 
 Resultado: los informes reutilizan registros fuente del proyecto para un período, muestran faltantes como `Pendiente de completar`, se aprueban antes de generar PDF y preservan cada versión como instantánea inmutable. Programa y cambios formales de alcance permanecen `TBD` hasta disponer de entidades fuente aprobadas.
 
+## Simplificar el Diagnóstico 360°
+
+- [x] Editor de una página: fuera asistente de 3 pasos; solo `score` + `observación` por área.
+- [x] Cubo solo con botones: fuera arrastre, touch y orientación por teclado; queda giro izquierda/derecha/superior/reiniciar y clic en cara.
+- [x] Quitar `notes` y `evidenceIds` de la evaluación de diagnóstico (tipo, seed, modal).
+- [x] Actualizar tests de navegador y de dominio.
+- [x] Verificar lint, tests, build y actualizar `bundle.html`.
+
+Resultado: el editor quedó en una sola página con las seis áreas a la vez (calificación + observación). El cubo se gira con arrastre de mouse o botones; se eliminaron el touch táctil, la orientación por teclado y los campos `notes` y `evidenceIds` de la evaluación. El seguimiento evolutivo (múltiples fotografías, comparación, deltas, radar) se conserva. `pnpm test` (11), `pnpm lint`, `pnpm build` y el recorrido Playwright pasan.
+
 ## Verificación del mockup local
 
 - [x] Ejecutar lint, pruebas de dominio y build del prototipo.
 - [x] Verificar el recorrido de navegador sobre el archivo autónomo `bundle.html`.
 
-Resultado: `visual/prototype/bundle.html` se genera sin recursos externos y funciona al abrirse directamente. Playwright verificó el flujo de diagnóstico, necesidad, ambición, actividad, evidencia, informe, permisos y vistas móviles sin errores de consola ni solicitudes externas.
+Resultado: `visual/prototype/bundle.html` se genera sin recursos externos y funciona al abrirse directamente. Playwright verificó el flujo de diagnóstico, ambición, objetivo, actividad, evidencia, informe, permisos y vistas móviles sin errores de consola ni solicitudes externas.
 
 ## Reorganización documental por programas
 

@@ -22,7 +22,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 9.15.9
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -42,3 +42,17 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Build deployment image
+        working-directory: .
+        run: docker build --tag sia-prototype:ci .
+
+      - name: Verify production HTTP server
+        run: |
+          docker run --detach --name sia-prototype-ci --publish 127.0.0.1:8080:8080 sia-prototype:ci
+          trap 'docker rm --force sia-prototype-ci' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz; then break; fi
+            sleep 1
+          done
+          python3 tests/deployment.py http://127.0.0.1:8080

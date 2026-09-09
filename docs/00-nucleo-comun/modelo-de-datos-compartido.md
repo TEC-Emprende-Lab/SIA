@@ -14,7 +14,8 @@ Este modelo conceptual define entidades comunes y no prescribe un motor adiciona
 ## Seguimiento
 
 - `ProgramCanvas`, `CanvasArea` y `Deliverable`: definiciones versionadas por programa.
-- `Objective`, `Activity` y `Evidence`: plan de trabajo, ejecucion y respaldo.
+- `Ambition`: aspiracion visible del emprendimiento; puede no tener objetivos asociados.
+- `Objective`, `Activity` y `Evidence`: plan de trabajo, ejecucion y respaldo. Cada objetivo pertenece a un area del canvas aplicable y puede vincular una ambicion de forma opcional.
 - `ScheduleItem`: actividad o hito visible en cronograma.
 - `Validation`: actor, decision, fecha, observacion y entidad validada.
 - `EvolutionSnapshot`: momento o version comparable segun reglas del programa.

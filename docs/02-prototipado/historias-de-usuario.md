@@ -23,3 +23,15 @@ Como Emprendedor, quiero consultar el monto asignado, ejecutado, disponible y po
 Como Gestor, quiero preparar un informe mensual desde avances, evidencias, minutas, acuerdos y finanzas para comunicar el estado del programa con fuentes trazables.
 
 **Aceptacion:** el informe es un borrador antes de aprobarse y sus fuentes y version aprobada son inmutables.
+
+## US-PRO-005 - Registrar el Cubo 360 de Prototipado
+
+Como Emprendedor, quiero registrar la evaluación de las seis áreas de Prototipado para priorizar objetivos de trabajo con mi Gestor.
+
+**Aceptacion:** cada diagnóstico evalúa Identidad y dirección estratégica, Modelo de negocio, Mercado segmentado, Canales definidos, Producto mínimo viable y Constitución de sociedad; una fotografía aprobada es inmutable y se puede comparar con otra aprobada.
+
+## US-PRO-006 - Vincular una ambición a un objetivo
+
+Como Emprendedor, quiero mantener visibles las ambiciones del proyecto y vincularlas opcionalmente a objetivos para entender el propósito estratégico del trabajo.
+
+**Aceptacion:** una ambición puede existir sin objetivos; cada objetivo pertenece a un área del Cubo 360 y puede tener cero o una ambición vinculada, sin duplicar el avance ni las actividades.

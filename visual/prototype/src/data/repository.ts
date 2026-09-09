@@ -1,5 +1,5 @@
-import type { Activity, Ambition, Diagnostic, Evidence, Need, NeedStatus, Objective, Report, Role, Source, Store } from './types'
-import { createSeed, project, TODAY } from './seed'
+import type { Activity, Ambition, Diagnostic, Evidence, Objective, Report, Role, Source, Store } from './types'
+import { areas, createSeed, project, TODAY } from './seed'
 
 export const uid = () => globalThis.crypto?.randomUUID?.() ?? `mock-${Date.now()}-${Math.random().toString(36).slice(2)}`
 export const actorFor = (role: Role) => role === 'Coordinadora' ? 'María Calderón' : role === 'Gestor' ? 'Javier Soto' : 'Andrea Morales'
@@ -25,7 +25,6 @@ export function reportSources(s: Store, start: string, end: string): Source[] {
     ...s.evidence.filter(e => inPeriod(e.date)).map(e => ({ id: e.id, kind: 'Evidencia', title: e.title, date: e.date, content: e.content })),
     ...s.meetings.filter(m => inPeriod(m.date) && m.minutes).map(m => ({ id: m.id, kind: 'Reunión', title: m.title, date: m.date, content: `${m.minutes} Acuerdos: ${m.agreements}` })),
     ...diagnostics.map(d => ({ id: d.id, kind: 'Diagnóstico', title: `Diagnóstico ${d.date}${d.id === baseline?.id ? ' · línea base anterior' : ''}`, date: d.date, content: d.assessments.map(a => `${a.name}: ${a.score}/5. ${a.observation}`).join('\n') })),
-    ...s.needs.filter(n => inPeriod(n.date)).map(n => ({ id: n.id, kind: 'Necesidad', title: n.title, date: n.date, content: n.description })),
   ]
 }
 export function makeReport(s: Store, start: string, end: string, type: Report['type'], sourceIds: string[], role: Role): Report {
@@ -44,14 +43,12 @@ export function makeReport(s: Store, start: string, end: string, type: Report['t
     }
   }
   const id = uid()
-  return { id, groupId: id, projectId: project.id, type, start, end, version: 1, status: 'DRAFT', author: actorFor(role), createdAt: TODAY, sources: structuredClone(sources), sections: [section('Identificación y emprendimiento', ['Proyecto']), { title: 'Programa y perfil estructurado', content: 'Pendiente de completar', sourceIds: [] }, section('Objetivos y avances', ['Objetivo', 'Actividad']), { title: 'Modificaciones aprobadas de plan, alcance y presupuesto', content: 'Pendiente de completar', sourceIds: [] }, { title: 'Impactos', content: 'Pendiente de completar', sourceIds: [] }, { title: 'Formalización', content: 'Pendiente de completar', sourceIds: [] }, evolution, section('Necesidades, dificultades y próximos pasos', ['Necesidad', 'Reunión']), section('Evidencias y anexos', ['Evidencia'])] }
+  return { id, groupId: id, projectId: project.id, type, start, end, version: 1, status: 'DRAFT', author: actorFor(role), createdAt: TODAY, sources: structuredClone(sources), sections: [section('Identificación y emprendimiento', ['Proyecto']), { title: 'Programa y perfil estructurado', content: 'Pendiente de completar', sourceIds: [] }, section('Objetivos y avances', ['Objetivo', 'Actividad']), { title: 'Modificaciones aprobadas de plan, alcance y presupuesto', content: 'Pendiente de completar', sourceIds: [] }, { title: 'Impactos', content: 'Pendiente de completar', sourceIds: [] }, { title: 'Formalización', content: 'Pendiente de completar', sourceIds: [] }, evolution, section('Dificultades y próximos pasos', ['Reunión']), section('Evidencias y anexos', ['Evidencia'])] }
 }
 export type Command =
   | { type: 'diagnostic.save'; value: Diagnostic }
   | { type: 'diagnostic.status'; id: string; status: 'SUBMITTED' | 'APPROVED' | 'DRAFT' }
   | { type: 'diagnostic.revise'; id: string }
-  | { type: 'need.save'; value: Need }
-  | { type: 'need.status'; id: string; status: NeedStatus; justification?: string; supportId?: string }
   | { type: 'ambition.save'; value: Ambition }
   | { type: 'objective.save'; value: Objective }
   | { type: 'objective.approve'; id: string }
@@ -95,42 +92,20 @@ export function applyCommand(original: Store, command: Command, role: Role): Sto
       const revision: Diagnostic = { ...structuredClone(d), id: uid(), status: 'DRAFT', author: actor, supersedes: d.id, approvedAt: undefined, approvedBy: undefined }
       entityId = revision.id; s.diagnostics.push(revision); break
     }
-    case 'need.save': {
-      const n = command.value
-      ensure(n.projectId === project.id && s.diagnostics.some(d => d.id === n.diagnosticId && d.assessments.some(a => a.areaId === n.areaId)), 'La necesidad debe pertenecer a un diagnóstico y área del proyecto.')
-      ensure(n.title.trim() && n.description.trim() && n.owner, 'Completa título, descripción y responsable.')
-      ensure(n.objectiveIds.every(id => s.objectives.some(o => o.id === id)), 'El objetivo vinculado no existe.')
-      const old = s.needs.find(x => x.id === n.id)
-      ensure(!old || old.status === n.status, 'Usa la revisión de estado para validar esta necesidad.')
-      if (!old) ensure(n.status === 'IDENTIFIED', 'Las necesidades nuevas empiezan como identificadas.')
-      upsert(s.needs, n); break
-    }
-    case 'need.status': {
-      ensure(manager, 'Solo un Gestor o Coordinadora puede validar necesidades.')
-      const n = s.needs.find(x => x.id === command.id)!
-      ensure(n, 'No se encontró la necesidad.')
-      if (['PARTIALLY_ADDRESSED', 'ADDRESSED', 'DISCARDED'].includes(command.status)) ensure(command.justification?.trim(), 'Incluye una justificación para este cambio.')
-      if (command.status === 'ADDRESSED') ensure(s.evidence.some(e => e.id === command.supportId && (n.evidenceIds.includes(e.id) || n.activityIds.includes(e.activityId) || n.objectiveIds.includes(s.activities.find(a => a.id === e.activityId)?.objectiveId ?? ''))) || s.diagnostics.some(d => d.id === command.supportId && d.status === 'APPROVED' && d.date > n.date && d.assessments.some(a => a.areaId === n.areaId)), 'Selecciona una evidencia vinculada o un diagnóstico aprobado posterior.')
-      n.status = command.status; n.justification = command.justification; n.supportId = command.supportId
-      if (command.status === 'ADDRESSED') n.resolvedAt = TODAY
-      break
-    }
     case 'ambition.save': {
       const a = command.value
       ensure(a.projectId === project.id && a.title.trim(), 'La ambición necesita un título y proyecto.')
-      ensure(a.needIds.every(id => s.needs.some(n => n.id === id)) && a.objectiveIds.every(id => s.objectives.some(o => o.id === id)), 'Revisa los vínculos seleccionados.')
       if (!['DREAM', 'VISION', 'PURPOSE'].includes(a.type)) ensure(a.owner, 'Selecciona una persona responsable.')
       if (['OBJECTIVE', 'GOAL', 'MILESTONE', 'PROJECT'].includes(a.type)) ensure(a.due, 'Indica la fecha de cumplimiento.')
       if (['OBJECTIVE', 'GOAL'].includes(a.type)) ensure(a.measurement.trim(), 'Indica cómo medir el cumplimiento.')
       if (a.type === 'MILESTONE') ensure(a.verification.trim(), 'Indica la verificación del hito.')
       if (a.type === 'PROJECT') ensure(a.start && a.start <= a.due, 'Indica inicio y fin válidos.')
-      if (a.type === 'OBJECTIVE') ensure(a.objectiveIds.length > 0, 'Vincula al menos un objetivo operativo existente.')
       upsert(s.ambitions, a)
-      for (const n of s.needs.filter(n => a.needIds.includes(n.id))) n.objectiveIds = [...new Set([...n.objectiveIds, ...a.objectiveIds])]
       break
     }
     case 'objective.save': {
-      ensure(command.value.projectId === project.id && command.value.title.trim(), 'Indica el título del objetivo.')
+      ensure(command.value.projectId === project.id && command.value.title.trim() && areas.some(area => area.id === command.value.areaId), 'Indica el título y el área del Cubo 360.')
+      ensure(!command.value.ambitionId || s.ambitions.some(a => a.id === command.value.ambitionId), 'La ambición seleccionada no existe.')
       upsert(s.objectives, { ...command.value, status: 'PENDING_APPROVAL', approvedBy: undefined, approvedAt: undefined }); break
     }
     case 'objective.approve': {
@@ -161,7 +136,7 @@ export function applyCommand(original: Store, command: Command, role: Role): Sto
     }
     case 'message.send': ensure(command.content.trim(), 'Escribe un mensaje.'); s.messages.push({ id: uid(), author: actor, content: command.content.trim(), date: TODAY }); break
   }
-  const findEntity = (store: Store) => [...store.diagnostics, ...store.needs, ...store.ambitions, ...store.objectives, ...store.activities, ...store.evidence, ...store.reports, ...store.messages].find(x => x.id === entityId)
+  const findEntity = (store: Store) => [...store.diagnostics, ...store.ambitions, ...store.objectives, ...store.activities, ...store.evidence, ...store.reports, ...store.messages].find(x => x.id === entityId)
   s.audit.push({ id: uid(), entityId, action: command.type, actor, date: TODAY, before: structuredClone(findEntity(original)), after: structuredClone(findEntity(s)) })
   return s
 }

@@ -65,5 +65,5 @@ La aplicación real deberá añadir pruebas unitarias, integración y end-to-end
 - Toda autorización debe validarse en backend.
 - No sobrescribir ni eliminar historial relevante silenciosamente.
 - No ampliar el MVP ni inventar reglas de negocio sin documentarlo y aprobarlo.
-- Los cambios al seguimiento evolutivo deben referenciar las User Stories, reglas y criterios de diagnóstico, necesidades o ambiciones aplicables.
+- Los cambios al seguimiento evolutivo deben referenciar las User Stories, reglas y criterios de diagnóstico, áreas, objetivos o ambiciones aplicables.
 - Los cambios a informes técnicos deben indicar las fuentes de datos, reglas de versionado, permisos y criterios de aprobación aplicables.

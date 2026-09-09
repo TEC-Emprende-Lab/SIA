@@ -19,9 +19,9 @@ try {
   await test('Seed relations resolve within one project; initial progress = 50%', () => {
     const s = createSeed()
     assert.equal(projectProgress(s), 50)
-    for (const n of s.needs) { assert(s.diagnostics.some(d => d.id === n.diagnosticId && d.projectId === n.projectId)); for (const id of n.objectiveIds) assert(s.objectives.some(o => o.id === id && o.projectId === n.projectId)) }
+    for (const o of s.objectives) { assert(o.areaId); assert(!o.ambitionId || s.ambitions.some(a => a.id === o.ambitionId)) }
     for (const e of s.evidence) assert(s.activities.some(a => a.id === e.activityId))
-    for (const d of s.diagnostics) for (const a of d.assessments) for (const id of a.evidenceIds) assert(s.evidence.find(e => e.id === id).date <= d.date, 'Diagnostic cannot cite future evidence')
+    for (const d of s.diagnostics) for (const a of d.assessments) assert(a.score >= 1 && a.score <= 5)
   })
   await test('Approved diagnostics reject edits and preserve the source when revised', () => {
     const s = createSeed(), original = structuredClone(s.diagnostics[0])
@@ -39,25 +39,18 @@ try {
     assert.throws(() => applyCommand(next, { type: 'diagnostic.status', id: 'draft', status: 'APPROVED' }, 'Emprendedor'))
     assert.throws(() => applyCommand(next, { type: 'objective.approve', id: 'o3' }, 'Emprendedor'))
   })
-  await test('Comparison includes advancement, stagnation and regression', () => {
-    const s = createSeed(); const changes = compareDiagnostics(s.diagnostics[1], s.diagnostics[2]); assert.equal(changes.filter(a => a.delta > 0).length, 5); assert.equal(changes.filter(a => a.delta === 0).length, 2); assert.equal(changes.find(a => a.areaId === 'finance').delta, -1)
+  await test('Comparison covers all six Cubo 360 areas', () => {
+    const s = createSeed(); const changes = compareDiagnostics(s.diagnostics[1], s.diagnostics[2]); assert.equal(changes.length, 6); assert.equal(changes.filter(a => a.delta > 0).length, 4); assert.equal(changes.filter(a => a.delta === 0).length, 2)
   })
-  await test('Completing activities changes progress but never auto-closes needs', () => {
+  await test('Completing activities changes project progress', () => {
     const s = createSeed(); const next = applyCommand(s, { type: 'activity.status', id: 'a3', status: 'DONE' }, 'Emprendedor')
-    assert.equal(projectProgress(next), 62.5); assert.equal(next.needs[0].status, 'PARTIALLY_ADDRESSED'); assert.equal(next.activities.find(a => a.id === 'a3').completedAt, '2026-09-07')
+    assert.equal(projectProgress(next), 62.5); assert.equal(next.activities.find(a => a.id === 'a3').completedAt, '2026-09-07')
   })
-  await test('Need closure requires manager, justification and linked support', () => {
-    const s = createSeed(), command = { type: 'need.status', id: 'n1', status: 'ADDRESSED', justification: 'Hallazgos revisados', supportId: 'e2' }
-    assert.throws(() => applyCommand(s, { ...command, justification: '' }, 'Gestor'))
-    assert.throws(() => applyCommand(s, { ...command, supportId: 'e3' }, 'Gestor'))
-    assert.throws(() => applyCommand(s, command, 'Emprendedor'))
-    assert.equal(applyCommand(s, command, 'Gestor').needs[0].status, 'ADDRESSED')
-  })
-  await test('Objective ambition reuses existing objective and validates its type fields', () => {
-    const s = createSeed(), ambition = { ...s.ambitions[1], id: 'new-ambition' }
-    assert.throws(() => applyCommand(s, { type: 'ambition.save', value: { ...ambition, objectiveIds: [] } }, 'Gestor'))
-    assert.throws(() => applyCommand(s, { type: 'ambition.save', value: { ...ambition, measurement: '' } }, 'Gestor'))
-    const next = applyCommand(s, { type: 'ambition.save', value: ambition }, 'Gestor'); assert.equal(next.objectives.length, s.objectives.length); assert.equal(projectProgress(next), projectProgress(s))
+  await test('Objective owns an optional ambition link', () => {
+    const s = createSeed()
+    const next = applyCommand(s, { type: 'objective.save', value: { ...s.objectives[2], ambitionId: 'am2' } }, 'Gestor')
+    assert.equal(next.objectives.find(o => o.id === 'o3').ambitionId, 'am2')
+    assert.throws(() => applyCommand(s, { type: 'objective.save', value: { ...s.objectives[2], ambitionId: 'missing' } }, 'Gestor'))
   })
   await test('Changing an approved objective invalidates approval and changes the eligible average', () => {
     const s = createSeed(); const next = applyCommand(s, { type: 'objective.save', value: { ...s.objectives[0], title: 'Objetivo ajustado' } }, 'Emprendedor'); assert.equal(next.objectives[0].status, 'PENDING_APPROVAL'); assert.equal(next.objectives[0].approvedAt, undefined); assert(next.audit.some(a => a.entityId === 'o1')); assert.equal(next.audit.at(-1).before.status, 'APPROVED'); assert.equal(next.audit.at(-1).after.title, 'Objetivo ajustado')
