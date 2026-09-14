@@ -1,4 +1,4 @@
-# Only send files needed for the prototype image.
+# Send only inputs used by the prototype or Phase 0 application images.
 **
 !Dockerfile
 !deploy/
@@ -20,6 +20,21 @@
 !visual/prototype/scripts/bundle.mjs
 !visual/prototype/tests/
 !visual/prototype/tests/domain.mjs
+!apps/
+!apps/api/
+!apps/api/**
+!apps/worker/
+!apps/worker/**
+!apps/web/
+!apps/web/**
+!packages/
+!packages/contracts/
+!packages/contracts/**
+!packages/tsconfig/
+!packages/tsconfig/**
+!package.json
+!pnpm-workspace.yaml
+!pnpm-lock.yaml
 # Exclude unused initializer code and local configuration even under src.
 visual/prototype/src/components/
 visual/prototype/src/hooks/

@@ -51,7 +51,7 @@ Un pull request hacia `main` se crea únicamente desde `develop` para liberar un
 Antes de abrir un pull request, ejecutar las verificaciones aplicables. Para el prototipo actual:
 
 ```bash
-cd prototype
+cd visual/prototype
 pnpm install
 pnpm lint
 pnpm build

@@ -1,0 +1,16 @@
+{
+  "name": "sia",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=24 <27"
+  },
+  "scripts": {
+    "lint": "pnpm --filter @sia/web lint && pnpm --filter @sia/contracts lint",
+    "typecheck": "pnpm --filter @sia/web typecheck && pnpm --filter @sia/contracts typecheck",
+    "contract:check": "pnpm --filter @sia/contracts check"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.12.0"
+  }
+}

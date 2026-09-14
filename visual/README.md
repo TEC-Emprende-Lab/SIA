@@ -4,6 +4,10 @@
 
 Recursos institucionales de marca: logo y paleta oficial.
 
+## `architecture/`
+
+Recursos de arquitectura: `sia-architecture.json` (especificación del diagrama de arquitectura objetivo) y `asistenciaProyecto_v3.excalidraw` (diagrama C4 editable en Excalidraw).
+
 ## `prototype/`
 
 Mockup navegable para validar navegación, jerarquía visual y experiencia de SIA antes de implementar servicios reales.

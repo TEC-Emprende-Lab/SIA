@@ -1,0 +1,222 @@
+from typing import Any
+
+
+def _diagnostic(
+    diagnostic_id: str, date: str, scores: list[int], diagnostic_type: str
+) -> dict[str, Any]:
+    names = [
+        "Identidad y dirección estratégica",
+        "Modelo de negocio",
+        "Mercado segmentado",
+        "Canales definidos",
+        "Producto mínimo viable",
+        "Constitución de sociedad",
+    ]
+    area_ids = [
+        "identity",
+        "business-model",
+        "segmented-market",
+        "channels",
+        "mvp",
+        "incorporation",
+    ]
+    return {
+        "id": diagnostic_id,
+        "projectId": "lumen",
+        "date": date,
+        "type": diagnostic_type,
+        "author": "Javier Soto",
+        "status": "APPROVED",
+        "approvedBy": "María Calderón",
+        "approvedAt": date,
+        "observation": "Diagnóstico de referencia.",
+        "assessments": [
+            {
+                "areaId": area_id,
+                "name": name,
+                "question": "Pregunta de diagnóstico.",
+                "score": score,
+                "observation": "Observación de referencia.",
+            }
+            for area_id, name, score in zip(area_ids, names, scores, strict=True)
+        ],
+    }
+
+
+def create_seed() -> dict[str, Any]:
+    return {
+        "diagnostics": [
+            _diagnostic("d1", "2026-03-06", [2, 2, 2, 2, 2, 1], "INITIAL"),
+            _diagnostic("d2", "2026-06-05", [3, 3, 2, 2, 3, 2], "FOLLOW_UP"),
+            _diagnostic("d3", "2026-09-04", [4, 3, 3, 2, 4, 3], "FOLLOW_UP"),
+        ],
+        "ambitions": [
+            {
+                "id": "am1",
+                "projectId": "lumen",
+                "type": "VISION",
+                "title": "Visión",
+                "description": "",
+                "category": "",
+                "owner": "Andrea Morales",
+                "start": "",
+                "due": "",
+                "measurement": "",
+                "verification": "",
+            },
+            {
+                "id": "am2",
+                "projectId": "lumen",
+                "type": "AMBITION",
+                "title": "Piloto",
+                "description": "",
+                "category": "",
+                "owner": "Andrea Morales",
+                "start": "",
+                "due": "2026-09-30",
+                "measurement": "",
+                "verification": "",
+            },
+            {
+                "id": "am3",
+                "projectId": "lumen",
+                "type": "MILESTONE",
+                "title": "Ruta regulatoria",
+                "description": "",
+                "category": "",
+                "owner": "Javier Soto",
+                "start": "",
+                "due": "2026-10-15",
+                "measurement": "",
+                "verification": "Matriz revisada",
+            },
+        ],
+        "objectives": [
+            {
+                "id": "o1",
+                "projectId": "lumen",
+                "areaId": "mvp",
+                "ambitionId": "am2",
+                "title": "Piloto",
+                "description": "Validar el dispositivo.",
+                "status": "APPROVED",
+                "date": "2026-03-10",
+                "approvedBy": "Javier Soto",
+                "approvedAt": "2026-03-12",
+            },
+            {
+                "id": "o2",
+                "projectId": "lumen",
+                "areaId": "incorporation",
+                "ambitionId": "am3",
+                "title": "Constitución",
+                "description": "Preparar requisitos.",
+                "status": "APPROVED",
+                "date": "2026-06-10",
+                "approvedBy": "Javier Soto",
+                "approvedAt": "2026-06-12",
+            },
+            {
+                "id": "o3",
+                "projectId": "lumen",
+                "areaId": "business-model",
+                "ambitionId": "am1",
+                "title": "Ingresos",
+                "description": "Contrastar precio.",
+                "status": "PENDING_APPROVAL",
+                "date": "2026-09-05",
+            },
+        ],
+        "activities": [
+            {
+                "id": "a1",
+                "objectiveId": "o1",
+                "title": "Reclutar",
+                "owner": "Andrea Morales",
+                "date": "2026-08-18",
+                "status": "DONE",
+                "autoComplete": False,
+                "completedAt": "2026-08-18",
+            },
+            {
+                "id": "a2",
+                "objectiveId": "o1",
+                "title": "Sesiones",
+                "owner": "Andrea Morales",
+                "date": "2026-08-29",
+                "status": "DONE",
+                "autoComplete": False,
+                "completedAt": "2026-08-29",
+            },
+            {
+                "id": "a3",
+                "objectiveId": "o1",
+                "title": "Analizar",
+                "owner": "Carlos Rojas",
+                "date": "2026-09-10",
+                "status": "IN_PROGRESS",
+                "autoComplete": False,
+            },
+            {
+                "id": "a4",
+                "objectiveId": "o1",
+                "title": "Documentar",
+                "owner": "Andrea Morales",
+                "date": "2026-09-18",
+                "status": "TODO",
+                "autoComplete": False,
+            },
+            {
+                "id": "a5",
+                "objectiveId": "o2",
+                "title": "Mapear",
+                "owner": "Javier Soto",
+                "date": "2026-08-28",
+                "status": "DONE",
+                "autoComplete": False,
+                "completedAt": "2026-08-28",
+            },
+            {
+                "id": "a6",
+                "objectiveId": "o2",
+                "title": "Matriz",
+                "owner": "Carlos Rojas",
+                "date": "2026-09-15",
+                "status": "IN_REVIEW",
+                "autoComplete": False,
+            },
+        ],
+        "evidence": [
+            {
+                "id": "e1",
+                "activityId": "a1",
+                "title": "Registro",
+                "type": "FILE",
+                "date": "2026-08-18",
+                "author": "Andrea Morales",
+                "content": "Registro de participantes.",
+            },
+            {
+                "id": "e2",
+                "activityId": "a2",
+                "title": "Bitácora",
+                "type": "FILE",
+                "date": "2026-08-29",
+                "author": "Andrea Morales",
+                "content": "Bitácora de sesiones.",
+            },
+        ],
+        "meetings": [
+            {
+                "id": "m1",
+                "projectId": "lumen",
+                "title": "Avance",
+                "date": "2026-08-31",
+                "minutes": "Se revisó el avance.",
+                "agreements": "Consolidar resultados.",
+            }
+        ],
+        "reports": [],
+        "audit": [],
+        "messages": [],
+    }

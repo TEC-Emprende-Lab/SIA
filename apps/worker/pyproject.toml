@@ -1,0 +1,13 @@
+[project]
+name = "sia-worker"
+version = "0.0.0"
+description = "Worker de tareas persistentes de SIA"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = ["ruff>=0.11,<1.0"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

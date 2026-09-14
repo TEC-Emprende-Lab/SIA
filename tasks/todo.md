@@ -1,5 +1,31 @@
 # Consolidacion de decisiones
 
+## Fase 0 - Fundaciones
+
+- [x] Crear el monorepo y los contratos compartidos.
+- [x] Crear las aplicaciones base web, API y worker con health checks.
+- [x] Configurar el entorno local con PostgreSQL, Redis y MinIO.
+- [x] Portar y verificar las reglas puras del prototipo en Python.
+- [x] Añadir calidad y CI iniciales para las aplicaciones reales.
+- [x] Revisar la Fase 0 y documentar el resultado.
+
+User Stories de referencia: US-PRO-001, US-PRO-002, US-PRO-004, US-PRO-005 y US-PRO-006. Esta fase solo porta reglas puras y su prueba de paridad; no implementa persistencia, endpoints funcionales ni autorización de negocio, que pertenecen a las Fases 1 y 2.
+
+Resultado: el monorepo quedó montado con `apps/web` (Next 16), `apps/api` (FastAPI), `apps/worker` y `packages/contracts` con OpenAPI y drift check. La web, la API y las dependencias se levantan con `infra/docker-compose.yml` (Postgres 16, Redis 7, MinIO) y exponen `/healthz` y `/api/health`. El dominio puro se portó a `apps/api/app/domain/prototype.py` con 12 pruebas (`pytest`) en paridad con las 11 del prototipo; no se toca el Dockerfile del prototipo ni su despliegue.
+
+## Fase 1 - Identidad y autorización
+
+- [x] Configurar base de datos, migraciones y sesión asíncrona.
+- [x] Implementar verificación JWT de Clerk y dependencia de usuario actual.
+- [x] Implementar invitaciones, registro y política central por rol.
+- [x] Añadir rate limiting distribuido y auditoría base.
+- [x] Exponer endpoints, contrato y pruebas de la fase.
+- [x] Revisar la Fase 1 y documentar el resultado.
+
+Referencias: `docs/00-nucleo-comun/actores-roles-y-permisos.md`, `docs/00-nucleo-comun/modelo-de-datos-compartido.md` (User, Invitation, AuditLog) y `docs/00-nucleo-comun/vision-y-alcance.md` (Clerk/JWT, Redis, auditoría). `Revisor financiero` permanece `TBD`.
+
+Resultado: API valida JWT de Clerk (JWKS o `SIA_CLERK_SECRET_KEY` para dev/test), crea usuarios solo con invitación vigente (bootstrap: primer usuario es Coordinadora), aplica política central (`Coordinadora` invita a todos, `Gestor` solo a `Emprendedor`) y rate limiting en Redis (429). Invitaciones y usuarios persisten en Postgres con auditoría (`audit_logs`) y migración `001`. Endpoints `/users/me`, `/users`, `/invitations` expuestos y tipados en `packages/contracts`. 19 pruebas (12 paridad + 7 identidad) y compose verificado: `/healthz`/`/readyz` y flujo Coordinadora→Gestor→Emprendedor probado en contenedor.
+
 - [x] Actualizar requisitos, historias, reglas y permisos.
 - [x] Actualizar flujos, modelo de datos e integraciones.
 - [x] Actualizar criterios de aceptacion y alcance del MVP.
