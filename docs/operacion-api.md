@@ -146,11 +146,24 @@ El primer acceso sigue necesitando esa invitación vigente y el mismo correo ver
 la primera persona que llegue a una base vacía **no** se convierte automáticamente en Coordinadora.
 La aceptación registra auditoría y no permite reasignar una identidad por coincidencia de correo.
 
-- Configurar en Clerk Google OAuth y claims firmados `email` y `email_verified` (booleano `true`
-  para ese correo), además de `sub`, `exp`, `iat`, `iss` y `aud`.
+- Configurar en Clerk Google OAuth (proveedor exclusivo del núcleo) y una plantilla JWT
+  llamada `sia` con claims `email`, `email_verified` (booleano `true` o estado `verified`),
+  además de `sub`, `exp`, `iat`, `iss` y `aud` igual a `SIA_CLERK_AUDIENCE` (por defecto `sia`).
+- La web (`apps/web`) inicia sesión con Clerk y llama `GET /users/me` mediante
+  `GET /api/sia/me`. El token de plantilla `sia` se emite con `clerkClient().sessions.getToken`
+  (Backend API). `auth().getToken({ template: "sia" })` usa el Frontend API y puede responder
+  404 aunque la plantilla exista en el dashboard/BAPI; en ese caso el JWT de sesión (sin `aud`)
+  hacía que FastAPI devolviera `Token inválido`. Un registro en Clerk **no** crea
+  Coordinadora ni consume invitación: sin invitación vigente del mismo correo la API responde 403.
+  La plantilla usa `email` = `{{user.primary_email_address}}` y `email_verified` =
+  `{{user.email_verified}}` (la API acepta booleano `true`, el string `true` o el estado
+  `verified`). El shortcode `primary_email_address.verification.status` no se interpola y
+  deja el literal en el JWT.
+- En `apps/web`, `clerk env pull` escribe claves locales (ignoradas por git). No usar
+  `SIA_CLERK_SECRET_KEY` como Secret Key de Clerk Cloud.
 - `SIA_CLERK_ISSUER` y `SIA_CLERK_AUDIENCE` son obligatorios en todos los entornos.
-- Staging/producción: configurar `SIA_CLERK_JWKS_URL` de la instancia y dejar
-  `SIA_CLERK_SECRET_KEY` sin definir. La verificación utiliza RS256/JWKS.
+- Staging/producción y OAuth local contra Clerk Cloud: configurar `SIA_CLERK_JWKS_URL` de la
+  instancia y dejar `SIA_CLERK_SECRET_KEY` sin definir. La verificación utiliza RS256/JWKS.
 - `SIA_CLERK_SECRET_KEY` es una clave simétrica para JWT locales de prueba, no una API key
   de Clerk. HS256 solo se permite cuando `SIA_ENVIRONMENT` es exactamente `development` o `test`.
   Si se configura esa clave en otro entorno, la autenticación falla cerrada con 401.
@@ -248,21 +261,8 @@ del host y avisó de engine no soportado; los controles finales se repitieron co
 - Validación real en staging con Clerk/Google OAuth, Redis y servicios externos configurados.
 - Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
   actual documentado del prototipo no equivale a desplegar esta API.
-- UI conectada, binarios privados R2, informes/PDF y finanzas según los requisitos de cada programa.
-- Comunicación: taxonomía definitiva y permisos particulares de canales, límites MIME/tamaño,
-  grabaciones/referencias excepcionales Zoom/Meet y plantilla de informe: `TBD`.
-  Interfaces y stubs explícitos en `comunicacion/interfaces.py`; no hay categorías sembradas
-  ni endpoints de adjuntos, grabaciones o informes que simulen estar implementados.
-- Resend y Socket.IO/Redis reales pendientes (`TODO(TBD)`): solo hay notificaciones internas
-  persistentes. Los stubs externos fallan con `NotImplementedError`, sin marcar entregas ficticias.
-- Generador IA/worker real pendiente: `MinutesGenerator` tiene un stub que conserva la
-  transcripción y muestra `Pendiente de completar`; no invoca modelos ni extrae acuerdos.
-  El borrador asistido requiere revisión humana antes de publicarse, igual que el manual.
-- Periodicidad, escalamiento, cierre de alertas, estados de acuerdos y definición independiente
-  de `MeetingAction`: `TBD`. Se registra el próximo paso textual sin automatizar actividades.
-  Menciones generan alertas/notificaciones; `emit_alert` permite ingestión interna idempotente
-  para futuros eventos de seguimiento, validaciones, acuerdos, actividades, entregables,
-  presupuesto e informes, sin un programador ni creación pública arbitraria.
+- UI conectada del expediente y seguimiento, binarios privados R2, informes/PDF, reuniones/minutas, canales,
+  notificaciones y finanzas según los requisitos de cada programa.
 - Escalas de diagnóstico, catálogo oficial de entregables, evidencia mínima, transiciones y
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes

@@ -5,6 +5,14 @@ from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException
 from jwt import PyJWTError
+from jwt.exceptions import (
+    ExpiredSignatureError,
+    ImmatureSignatureError,
+    InvalidAudienceError,
+    InvalidIssuerError,
+    InvalidSignatureError,
+    MissingRequiredClaimError,
+)
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
@@ -18,6 +26,11 @@ from app.modules.identity.service import lock_invitation_email
 from app.security.clerk import verify_clerk_token
 
 
+def _email_verified_claim(value: object) -> bool:
+    """Clerk may emit boolean true, status 'verified', or string 'true' from templates."""
+    return value is True or value in {"verified", "true"}
+
+
 async def get_current_user(
     authorization: Annotated[str | None, Header()] = None,
     db: AsyncSession = Depends(get_db),
@@ -27,12 +40,24 @@ async def get_current_user(
     token = authorization.removeprefix("Bearer ").strip()
     try:
         claims = verify_clerk_token(token)
+    except MissingRequiredClaimError as exc:
+        raise HTTPException(status_code=401, detail=f"Token inválido: falta {exc.claim}") from exc
+    except InvalidAudienceError as exc:
+        raise HTTPException(status_code=401, detail="Token inválido: audiencia") from exc
+    except InvalidIssuerError as exc:
+        raise HTTPException(status_code=401, detail="Token inválido: emisor") from exc
+    except ExpiredSignatureError as exc:
+        raise HTTPException(status_code=401, detail="Token inválido: expirado") from exc
+    except ImmatureSignatureError as exc:
+        raise HTTPException(status_code=401, detail="Token inválido: nbf") from exc
+    except InvalidSignatureError as exc:
+        raise HTTPException(status_code=401, detail="Token inválido: firma") from exc
     except (PyJWTError, ValueError) as exc:
         raise HTTPException(status_code=401, detail="Token inválido") from exc
     clerk_user_id = claims.get("sub")
     if not isinstance(clerk_user_id, str) or not clerk_user_id or len(clerk_user_id) > 128:
         raise HTTPException(status_code=401, detail="Token sin identidad")
-    if claims.get("email_verified") is not True:
+    if not _email_verified_claim(claims.get("email_verified")):
         raise HTTPException(status_code=401, detail="Se requiere correo verificado")
     try:
         email = str(TypeAdapter(EmailStr).validate_python(claims.get("email"))).lower().strip()
