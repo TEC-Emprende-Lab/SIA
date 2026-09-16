@@ -10,6 +10,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.session import engine
+from app.modules.comunicacion.routes import router as comunicacion_router
 from app.modules.expediente.routes import router as expediente_router
 from app.modules.identity.routes import router as identity_router
 from app.modules.seguimiento.routes import router as seguimiento_router
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(identity_router)
     app.include_router(expediente_router)
     app.include_router(seguimiento_router)
+    app.include_router(comunicacion_router)
 
     return app
 

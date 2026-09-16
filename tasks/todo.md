@@ -1,5 +1,31 @@
 # Consolidacion de decisiones
 
+## Fase 4 — comunicación backend, 2026-09-16
+
+Referencias: US-PRO-004 / US-PM-003 (fuentes trazables del informe futuro),
+`reuniones-minutas-y-canales.md`, `notificaciones-y-alertas.md`, roles y modelo común.
+
+- [x] Revisar núcleo común, Prototipado, Puesta en marcha, operación, plan §11, políticas y contratos actuales.
+- [x] Crear migración 004 exclusivamente para comunicación; conservar FK, scope, fuentes e historial sin modificar 001–003.
+- [x] Implementar modelos, schemas, policy, service y rutas REST con autorización backend reutilizada, auditoría y revisiones.
+- [x] Reuniones, minutas manuales/borrador asistido, aprobación humana inmutable y acuerdos con responsable autorizado.
+- [x] Canales sin taxonomía inventada, mensajes, menciones, no leídos y notificaciones internas por ámbito exacto.
+- [x] Interfaces/stubs explícitos y `TODO(TBD)` para integraciones y decisiones pendientes; documentar límites de IA y alertas.
+- [x] Regenerar OpenAPI/TypeScript; verificar `check.mjs`, lint y tipos; habilitar pruebas de comunicación PostgreSQL en CI.
+- [x] Verificar pytest completo, `test_comunicacion.py`, Ruff, mypy y `alembic check` en base desechable.
+
+Resultado local: **109 passed** con PostgreSQL (94 previos + 15 comunicación), sin
+omisiones; SQLite comunicación **14 passed, 1 skipped** por concurrencia exclusiva
+de PostgreSQL. Ruff lint/formato, mypy, migración 004 y drift Alembic/OpenAPI/TS
+correctos. `pnpm lint` y `pnpm typecheck` pasan. Dos avisos preexistentes de
+Starlette/AnyIO. Evidencia y pendientes en [operación](../docs/operacion-api.md#fase-4--comunicación-backend-2026-09-16)
+y [módulo](../apps/api/app/modules/comunicacion/README.md).
+
+Backend-only: sin UI, proveedor IA real, Resend, Socket.IO ni despliegue. No se
+tocaron `identity/service.py`, `security/`, `expediente/policy.py` ni migraciones
+001–003. La aceptación completa de informes, chat con servicios externos y MVP
+sigue pendiente. No se hizo commit, push ni migración de datos persistentes.
+
 ## Actualización documental del estado real — 2026-09-16
 
 Plan de trabajo (documentación; no cambia requisitos ni reglas de negocio):
