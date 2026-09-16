@@ -640,7 +640,7 @@ async def test_expired_jwt_and_used_invitation_are_denied(identity_client, db):
     assert (
         await identity_client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
     ).status_code == 403
-    expired = create_test_token("used", "used@test.cr", exp_seconds=-1)
+    expired = create_test_token("used", "used@test.cr", exp_seconds=-180)
     assert (
         await identity_client.get("/users/me", headers={"Authorization": f"Bearer {expired}"})
     ).status_code == 401
