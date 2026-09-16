@@ -189,10 +189,13 @@ Las fases son una secuencia técnica, no una redefinición del MVP. **Nota hist�
 - **Fase 1 — Identidad y autorización, backend implementado**: JWT, invitaciones, usuarios/roles, política, auditoría y rate limiting. OAuth real/Clerk Cloud y staging pendientes.
 - **Fase 2 — Núcleo común, backend integrado / entrega en curso**: expediente, canvas, ambiciones, objetivos, actividades, referencias HTTP(S), validaciones y cronograma. UI y binarios pendientes; no automatizar decisiones `TBD`.
 - **Fase 3 — Diagnóstico y evolución, backend descriptivo integrado**: fotografías de seis áreas, aprobación inmutable y comparación entre aprobadas. UI del cubo pendiente; escalas y deltas numéricos del prototipo no confirmados.
-- **Fase 4 — Comunicación, pendiente**: reuniones/minutas/acuerdos, canales conforme al núcleo común (taxonomía y permisos particulares `TBD`), Socket.IO/Redis, menciones, no leídos, alertas y Resend. La referencia histórica a «un único chat» no sustituye la definición vigente de canales diferenciados.
+- **Fase 4 — Comunicación, backend integrado**: reuniones, minutas con aprobación humana inmutable, acuerdos, canales, mensajes, menciones, no leídos, alertas y notificaciones internas. La taxonomía y permisos particulares de canales, Socket.IO/Redis, Resend, adjuntos, grabaciones y proveedor IA real permanecen `TBD` o pendientes de integración.
 - **Fase 5 — Informes técnicos e IA, pendiente**: worker/cola, borradores con fuentes, versiones aprobadas inmutables y PDF privado; plantilla/campos del informe `TBD`. El prototipo no constituye este backend.
 - **Fase 6 — Finanzas por programa, pendiente**: implementar solo definiciones confirmadas; partidas, flujo exacto, integración administrativa, rol Revisor financiero y habilitación en Puesta en marcha siguen `TBD`.
-- **Fase 7 — Experiencia y despliegue, pendiente para el MVP real**: UI conectada, R2, staging/producción y validación operativa. La preparación Docker/Coolify del prototipo está disponible y su imagen pasa CI; no acredita despliegue del MVP.
+- **Fase 7 — UI conectada, pendiente**: conectar `apps/web` con la API real para identidad, expediente, seguimiento y comunicación; sustituir datos ficticios por respuestas autorizadas, cubrir carga, errores, paginación y permisos, y probar los recorridos críticos de navegador a API. Finanzas se incorpora cuando su Fase 6 esté implementada.
+- **Fase 8 — Staging, pendiente**: desplegar `develop` con migraciones, probes y configuración real de Clerk, PostgreSQL, Redis, R2 y demás servicios habilitados; verificar observabilidad, backups y rollback. La imagen del prototipo y el CI verde no acreditan este entorno.
+- **Fase 9 — Validación operativa, pendiente**: ejecutar los flujos priorizados con Coordinadora, Gestores y Emprendedores autorizados en staging; confirmar alcance, permisos, comunicación, seguimiento y registro de incidencias antes de liberar.
+- **Fase 10 — Producción, pendiente**: desplegar desde `main` después de superar la validación operativa, con dominio, secretos, migraciones, monitoreo, backups y un plan de reversión verificado.
 
 ## 12. Trazabilidad y decisiones abiertas
 
@@ -201,8 +204,8 @@ Las fases son una secuencia técnica, no una redefinición del MVP. **Nota hist�
 - Cada módulo implementa las User Stories y criterios de aceptación de `docs/<programa>/historias-de-usuario.md`; ninguna implementación inventa requisitos (regla de `AGENTS.md`).
 - El historial del prototipo se conserva; la app real no reemplaza ni elimina datos de demostración ni documentación.
 
-## 13. Verificación global
+## 13. Verificación y puertas de liberación
 
-Antes de cerrar cada fase: lint, typecheck, tests de la pieza, camino de navegación E2E y despliegue en staging. La definición de "listo" es verificable en CI y en el entorno de staging, no subjetiva.
+Antes de cerrar una fase de implementación: lint, typecheck y pruebas de la pieza. La Fase 7 añade recorridos críticos de navegador a API. La Fase 8 exige evidencia técnica en staging; la Fase 9 exige validación operativa documentada en ese entorno; la Fase 10 requiere las puertas anteriores y evidencia del despliegue productivo. La definición de "listo" es verificable, no subjetiva.
 
-Al 2026-09-16, la evidencia de CI y la evidencia local histórica están documentadas; **staging NO verificado**. Por ello, «backend implementado» no significa fase funcional completa ni MVP terminado. Esta revisión comprueba documentación y enlaces sin volver a ejecutar suites de aplicación.
+Al 2026-09-16, la evidencia de CI y la evidencia local histórica están documentadas; **staging NO verificado**. Por ello, «backend integrado» no significa que UI, staging, validación operativa, producción ni MVP estén terminados. Esta revisión comprueba documentación y enlaces sin volver a ejecutar suites de aplicación.
