@@ -30,9 +30,7 @@ class Job(Base):
 
     __tablename__ = "job_queue"
     __table_args__ = (
-        CheckConstraint(
-            "status IN ('pending', 'claimed', 'done', 'failed')", name="ck_job_status"
-        ),
+        CheckConstraint("status IN ('pending', 'claimed', 'done', 'failed')", name="ck_job_status"),
         CheckConstraint("attempts >= 0", name="ck_job_attempts"),
         CheckConstraint("max_attempts >= 1", name="ck_job_max_attempts"),
         # El worker filtra por (status, run_at) al reclamar; el índice lo cubre.
