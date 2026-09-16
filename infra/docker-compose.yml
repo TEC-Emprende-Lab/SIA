@@ -36,6 +36,16 @@ services:
       timeout: 3s
       retries: 20
 
+  migrate:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      SIA_DATABASE_URL: postgresql+asyncpg://sia:local-development-only@postgres:5432/sia
+    command: ["uv", "run", "--no-sync", "alembic", "upgrade", "head"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
   api:
     build:
       context: ..
@@ -49,11 +59,12 @@ services:
       SIA_CLERK_AUDIENCE: test-audience
     ports: ["8000:8000"]
     healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/healthz')"]
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/readyz')"]
       interval: 5s
       timeout: 3s
       retries: 20
     depends_on:
+      migrate: { condition: service_completed_successfully }
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
 

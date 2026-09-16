@@ -12,6 +12,22 @@ permissions:
 jobs:
   api:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sia
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: sia_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sia -d sia_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      SIA_ENVIRONMENT: test
+      SIA_TEST_POSTGRES_URL: postgresql+asyncpg://sia:test-only@localhost:5432/sia_test
+      EXPEDIENTE_TEST_DATABASE_URL: postgresql+asyncpg://sia:test-only@localhost:5432/sia_test
+      SEGUIMIENTO_TEST_DATABASE_URL: postgresql+asyncpg://sia:test-only@localhost:5432/sia_test
     defaults:
       run:
         working-directory: apps/api
@@ -23,6 +39,14 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest
+      - name: Verify Alembic deployment from an empty database
+        env:
+          SIA_DATABASE_URL: postgresql+asyncpg://sia:test-only@localhost:5432/sia_test
+        run: |
+          uv run --no-sync alembic upgrade head
+          uv run --no-sync alembic current
+          uv run --no-sync alembic check
+          uv run --no-sync python -m app.modules.identity.service --email admin@example.org --operator ci
 
   web-and-contracts:
     runs-on: ubuntu-latest
@@ -39,5 +63,6 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - uses: astral-sh/setup-uv@v5
-      - run: uv run --directory apps/api python scripts/export_openapi.py
+      - run: uv sync --directory apps/api --frozen --all-groups
+      - run: uv run --no-sync --directory apps/api python scripts/export_openapi.py --check
       - run: pnpm contract:check
