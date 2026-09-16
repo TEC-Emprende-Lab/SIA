@@ -2,13 +2,40 @@
 
 ## Alcance y trazabilidad
 
-Integración del 2026-09-15: identidad/invitaciones, expediente y seguimiento persistente para
+Estado revisado el **2026-09-16**, sobre `35775c0`: identidad/invitaciones, expediente y seguimiento persistente para
 US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002.
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
 [`apps/api/app/modules/seguimiento/README.md`](../apps/api/app/modules/seguimiento/README.md).
 
 Esto valida el núcleo backend actual. No certifica que el MVP completo ni su UI estén terminados.
+El inventario canónico de componentes está en el [estado actual del README](../README.md#estado-actual).
+
+## Evidencia vigente — 2026-09-16
+
+Inspección del código y consulta de GitHub Actions con `gh run view`; no se repitieron suites por esta actualización documental.
+
+| Procedencia | Resultado y alcance |
+|---|---|
+| [Application quality, run 35107005046](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/35107005046), SHA `35775c0` | Jobs `api` y `web-and-contracts` en success. |
+| [Log del job API](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/35107005046/job/104830726036) | Python 3.12.3, PostgreSQL 16; **94 passed, 2 warnings in 17.70s**, sin skipped. Expediente 16, salud 4, identidad 37, paridad 11, seguimiento 26. |
+| Mismo job API | Ruff lint correcto, formato de 51 archivos y mypy de 39 archivos correctos. Upgrade CLI 001–003, `003 (head)`, `alembic check` sin diferencias y bootstrap de invitación correctos. |
+| Job web/contratos del mismo run | Instalación frozen, lint, typecheck, comprobación de OpenAPI y drift TypeScript correctos. No incluye build ni E2E de la web real. |
+| [Prototype quality, run 35107005272](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/35107005272), mismo SHA | Instalación independiente, lint, pruebas de dominio, build, imagen Docker y prueba HTTP correctos. No verifica un servidor Coolify remoto ni ejecuta el recorrido Playwright. |
+| Último local comunicado por el usuario | **87 passed, 7 skipped** sin variables PostgreSQL. Registro recibido para este corte, no reejecutado ni confirmado mediante log local en esta revisión. |
+| Staging / producción | **NO verificados**: los runs anteriores son controles en runners de CI, no evidencia de despliegue, Clerk/Google OAuth real ni servicios externos operativos. |
+
+El conteo de 94 está confirmado por el log, no inferido de 90 + 4. Los cuatro casos adicionales están en seguimiento (26 frente a los 22 históricos). Activar los grupos PostgreSQL no convierte las fixtures restantes de SQLite en PostgreSQL.
+
+Los commits `fe6cf80` (núcleo persistente y autorización por alcance) y `a5f1796` (instalación independiente del prototipo) están integrados por los merges `db58086` y `35775c0`. Las cifras, hashes y smokes locales del 2026-09-15 se conservan más abajo como evidencia histórica.
+
+## Revocación y alcance de asignaciones
+
+La corrección incluida en `fe6cf80` aplica en el servicio de expediente el mismo scope que en las rutas: una asignación directa exige administración del emprendimiento; una asignación de ciclo exige administración de ese ciclo exacto. Un Gestor asignado solo a un ciclo puede revocar Emprendedores de ese ciclo, sin adquirir acceso administrativo a ciclos hermanos ni al emprendimiento completo. Solo Coordinadora puede asignar o remover Gestores.
+
+Los DELETE de asignaciones conservan la fila con `revoked_at` y auditoría, no borran historia. Una asignación ajena al scope de la URL devuelve 404 tras autorizar el ámbito; un ámbito no autorizado devuelve 403. Repetir una revocación devuelve 409. Las consultas excluyen asignaciones revocadas; otras relaciones activas conservan sus permisos.
+
+Evidencia: [rutas](../apps/api/app/modules/expediente/routes.py), [servicio](../apps/api/app/modules/expediente/service.py), [política](../apps/api/app/modules/expediente/policy.py) y [test_expediente.py](../apps/api/tests/test_expediente.py), incluido `test_cycle_only_gestor_revokes_only_own_entrepreneurs`. Las pruebas de migración comprueban unicidad activa, reasignación con otra fila y conservación de revocación/auditoría. Solo los conflictos de unicidad de asignación se presentan como duplicados; otros errores de integridad no se ocultan bajo ese mensaje.
 
 ## Arranque local
 
@@ -91,6 +118,10 @@ La aceptación registra auditoría y no permite reasignar una identidad por coin
 Las pruebas de RS256 usan claves RSA locales y un proveedor JWKS sustituido; no prueban la
 configuración de una instancia Clerk Cloud ni el recorrido real de Google OAuth.
 
+### Alcance actual de Redis
+
+El rate limiter está conectado a `POST /invitations`, no globalmente a toda la API. Devuelve 429 al superar el contador; si Redis falla, el código actual permite continuar (fail-open). Readiness tampoco comprueba Redis. La cobertura de los demás endpoints sensibles y la operación distribuida real siguen pendientes de validación; ver [implementación](../apps/api/app/core/rate_limit.py) y [ruta de identidad](../apps/api/app/modules/identity/routes.py).
+
 ## Reproducir validaciones
 
 ### Python y PostgreSQL desechable
@@ -133,9 +164,13 @@ Completar con `pnpm lint` y `pnpm typecheck` (web y contratos).
 
 CI incluye PostgreSQL 16, las tres variables, suite y controles Python, migración real mediante
 CLI, comprobación de metadata y bootstrap administrativo. El job de contratos comprueba drift
-sin Git como referencia. La ejecución remota de GitHub Actions queda pendiente de subir los cambios.
+sin Git como referencia. La ejecución remota está confirmada en la evidencia vigente superior.
 
-## Evidencia de esta integración
+El [workflow del prototipo](../.github/workflows/prototype-quality.yml) usa, desde `visual/prototype`, `pnpm install --frozen-lockfile --ignore-workspace` (corrección `a5f1796`). El lockfile y las dependencias del prototipo son independientes del workspace de web/contratos.
+
+## Evidencia histórica local — integración del 2026-09-15
+
+Registro conservado de la integración previa a los cuatro casos adicionales de seguimiento. No representa el último conteo ni una ejecución nueva en este corte documental.
 
 Validado con el código montado sobre `sia-api-phase2`
 (`sha256:603fdab96ad165c9486e58c5853a9a8a0baa1a7f3ddefc7eaf2c7e460b1cb529`),
@@ -180,4 +215,4 @@ del host y avisó de engine no soportado; los controles finales se repitieron co
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
 
-No se hicieron commits ni se migró ninguna base persistente del usuario.
+En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. Esta revisión documental tampoco realiza commit, push ni migraciones.

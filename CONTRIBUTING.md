@@ -52,12 +52,17 @@ Antes de abrir un pull request, ejecutar las verificaciones aplicables. Para el 
 
 ```bash
 cd visual/prototype
-pnpm install
+pnpm install --frozen-lockfile --ignore-workspace
 pnpm lint
+pnpm test
 pnpm build
 ```
 
-La aplicación real deberá añadir pruebas unitarias, integración y end-to-end conforme al núcleo común y al programa afectado.
+El prototipo usa Node 24, pnpm 9.15.9 y lockfile propio fuera del workspace raíz. `--ignore-workspace` coincide con la corrección de CI `a5f1796`.
+
+Para API y contratos, seguir [Reproducir validaciones](docs/operacion-api.md#reproducir-validaciones): ya existen pruebas de API, dominio, autorización, integración y concurrencia PostgreSQL, Ruff, mypy y controles de drift OpenAPI/TypeScript. La raíz ejecuta lint/typecheck de web y contratos; no incluye el prototipo. Ejecutar solo controles aplicables al cambio; una actualización documental verifica enlaces y `git diff --check` sin repetir suites de aplicación innecesariamente.
+
+Estado revisado al 2026-09-16: ambos workflows están verdes en `35775c0`; evidencia en la [guía operativa](docs/operacion-api.md#evidencia-vigente--2026-09-16). La web real aún es base y los E2E del MVP conectado quedan pendientes. La validación de staging exigida para liberar sigue siendo un paso independiente: un merge o CI verde no demuestra que se haya realizado.
 
 ## Reglas de datos y seguridad
 

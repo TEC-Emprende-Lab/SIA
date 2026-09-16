@@ -1,16 +1,18 @@
 # Mockup Catalitec: seguimiento evolutivo
 
+**Corte documental — 2026-09-16:** este documento describe la demo local y conserva su historia de verificación. La API de identidad, expediente y seguimiento ya está implementada por separado; UI conectada, módulos restantes y staging siguen pendientes. Estado y evidencia en la [matriz canónica](../../README.md#estado-actual) y [operación API](../../docs/operacion-api.md). Las puntuaciones 1–5 y deltas de esta demo no son escalas aprobadas del backend, que usa fotografías y comparación descriptivas. Los recorridos, capturas temporales y smokes locales inferiores son registros históricos, no nuevas verificaciones de este corte.
+
 Implementación frontend de US-PRO-005 y US-PRO-006, con el plan de trabajo de US-PRO-001–004. El nombre visible Catalitec responde a la solicitud del mockup; no modifica la decisión pendiente sobre el nombre final del sistema. Se conserva la marca gráfica y la paleta de `visual/brand/`.
 
 ## Ejecutar y revisar
 
 ```bash
 cd visual/prototype
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile --ignore-workspace
 pnpm dev
 ```
 
-Vite informa el puerto disponible (normalmente 5173). También se puede abrir `bundle.html` directamente, sin servidor ni conexión a internet.
+Usar Node 24 y pnpm 9.15.9. El lockfile es independiente del workspace raíz; `--ignore-workspace` coincide con CI desde `a5f1796`. Vite informa el puerto disponible (normalmente 5173). También se puede abrir `bundle.html` directamente, sin servidor ni conexión a internet.
 
 ```bash
 pnpm lint
@@ -52,6 +54,8 @@ La configuración junto al perfil permite simular Coordinadora, Gestor y Emprend
 
 ## Trazabilidad y límites
 
+La tabla conserva identificadores históricos US-028–030/AC/BR anteriores a la reorganización documental; no son requisitos adicionales vigentes. La referencia actual de informes es US-PRO-004 / US-PM-003 y [IA e informes](../../docs/00-nucleo-comun/ia-e-informes.md). Su representación local no acredita cumplimiento backend de esas historias.
+
 | Historias / aceptación | Representación y verificación |
 |---|---|
 | US-PRO-005 | Seis áreas de Prototipado, notas, calificación entera 1–5, borrador, envío, aprobación e instantáneas comparables. |
@@ -62,11 +66,11 @@ La configuración junto al perfil permite simular Coordinadora, Gestor y Emprend
 | AC-039; BR-029 | Se muestra próxima preparación configurada; no se crean informes automáticamente. |
 | AC-034; BR-024 | Selector de roles de demostración sobre el mismo proyecto. Controles y comandos limitan acciones según rol; no equivalen a autorización real. |
 
-Los archivos de evidencia se representan mediante referencias y descripciones; no se suben ni persisten binarios. No hay generación IA, PDFs institucionales, archivos firmados ni notificaciones externas. Las vistas de reuniones/minutas, finanzas y equipo son consultas con detalle; el chat solo agrega mensajes locales. Los módulos operativos completos, la autorización backend, la persistencia y la emisión de documentos siguen pendientes para la aplicación real.
+Los archivos de evidencia se representan mediante referencias y descripciones; no se suben ni persisten binarios. No hay generación IA, PDFs institucionales, archivos firmados ni notificaciones externas. Las vistas de reuniones/minutas, finanzas y equipo son consultas con detalle; el chat solo agrega mensajes locales. La afirmación original de que toda autorización backend y persistencia estaban pendientes es histórica: ya existen para el núcleo indicado en la matriz canónica. Los módulos operativos restantes, la emisión de documentos y la conexión de la UI siguen pendientes.
 
 Las acciones del mockup registran actor, fecha y estado anterior/posterior en memoria. Las fechas de la demostración usan el 7 de septiembre de 2026 como referencia reproducible. Todos los datos son ficticios, incluidos los textos de evidencia y las cifras financieras.
 
-La rama `feature/mockup-seguimiento-evolutivo` conserva los cambios documentales previos del usuario. No había una referencia local o remota `develop` al iniciar; se partió del checkout existente y no se publicó ni fusionó ningún cambio.
+Registro histórico de creación del mockup: la rama `feature/mockup-seguimiento-evolutivo` conservaba los cambios documentales previos del usuario. No había una referencia local o remota `develop` al iniciar aquella sesión; se partió del checkout existente y no se publicó ni fusionó ningún cambio en ella. No describe las ramas o merges del corte actual.
 
 ## Cubo 360 interactivo — US-PRO-005
 
