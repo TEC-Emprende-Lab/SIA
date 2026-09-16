@@ -132,7 +132,7 @@ Beneficio: renombrar un campo, cambiar un estado o agregar una ruta se refleja e
 
 ## 7. Persistencia — PostgreSQL
 
-- Modelo según `docs/00-nucleo-comun/modelo-de-datos-compartido.md`.
+- Modelo conceptual en `docs/00-nucleo-comun/modelo-de-datos-compartido.md`; **modelo ER detallado** (con estado de implementación por tabla) en `docs/00-nucleo-comun/modelo-de-datos-detallado.md`.
 - Cada tabla de negocio incluye el scope (`entrepreneurship_id` y/o `cycle_id`, `user` donde aplique); los índices empiezan por la columna de scope.
 - Alembic con migraciones versionadas; cada módulo entrega su migración con su feature.
 - La cola persistente propuesta será una tabla de jobs con claim atómico (`FOR UPDATE SKIP LOCKED`), reintentos e idempotencia; aún no hay tabla ni worker consumidor.
