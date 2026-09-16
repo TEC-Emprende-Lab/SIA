@@ -1,5 +1,40 @@
 # Consolidacion de decisiones
 
+## Integración y validación del núcleo actual — 2026-09-15
+
+Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002; reglas comunes de identidad e invitación.
+
+- [x] Revisar documentación obligatoria y cambios actuales de integración, autenticación y pruebas.
+- [x] Corregir arranque/migraciones, readiness, imagen API y bootstrap administrativo; comprobar registro de modelos y routers.
+- [x] Ejecutar suite completa, Ruff y mypy con código montado sobre `sia-api-phase2`; repetir sobre PostgreSQL desechable con las variables de pruebas existentes.
+- [x] Regenerar OpenAPI y TypeScript mediante generadores y comprobar determinismo entre dos generaciones actuales.
+- [x] Ajustar CI si corresponde y documentar operación local/producción, evidencia y pendientes reales (sin declarar terminado el MVP ni la UI).
+
+Resultado final de esta integración (sustituye los conteos históricos inferiores):
+
+- Código actual montado en `sia-api-phase2`, `uv sync --frozen --group dev`: suite con las tres variables PostgreSQL **90 passed, 0 skipped** (8.73 s); sin ellas **83 passed, 7 skipped** (7.11 s). Dos advertencias de deprecación Starlette/AnyIO en ambas. Los casos no seleccionados por esas variables siguen usando SQLite.
+- `ruff check .`, `ruff format --check .` (51 archivos) y `mypy` (39 archivos) pasan. Normalización de formato requerida por CI sin cambios de negocio.
+- Imagen API reconstruida con Alembic; smoke sin montar código: readiness 503 en DB vacía/revisión 002 y 200 en 003. Upgrade repetible, 2 canvas, 12 áreas y 11 triggers; `alembic check` sin diferencias. DB inaccesible: readiness 503/liveness 200. CMD real HTTP: ambos 200 con DB migrada.
+- Bootstrap CLI probado usando el import real de `async_session`: emite invitación, rechaza repetición, no crea usuario automáticamente y conserva auditoría. JWT de prueba → identidad → expediente → seguimiento verificado por el router de `main`. Pruebas RS256 con claves locales comprueban aud/iss; HS256 rechazado fuera de development/test.
+- OpenAPI y TS regenerados dos veces, idénticos byte a byte sin HEAD; checks de drift usan el working tree. Node 24.21.0: `pnpm contract:check`, `pnpm lint` y `pnpm typecheck` pasan.
+- CI configurado con PostgreSQL 16, variables de pruebas, migraciones/bootstrap y drift sin HEAD. Compose validado sintácticamente; ejecución remota de CI y stack completo no ejecutados aquí.
+
+Evidencia, hashes, comandos, flujo local/producción y limitaciones en `docs/operacion-api.md`.
+Pendientes: UI conectada, servicios externos/Clerk real y staging, binarios R2, módulos restantes y decisiones funcionales `TBD`. El MVP completo sigue en curso. Sin commits.
+
+## Seguimiento persistente — plan de implementación 2026-09-15
+
+Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002.
+
+1. Revisar íntegramente núcleo común, Prototipado y Puesta en marcha; contrastar dominio puro y persistencia existente.
+2. Implementar modelos y migración 003: definiciones fijas v1, alcance por ciclo, ambiciones, objetivos, actividades, referencias, fotografías y decisiones históricas.
+3. Implementar esquemas y router independiente con autorización backend, transacciones auditadas, control de revisión e integridad entre ámbitos.
+4. Verificar aislamiento, roles, cambios aprobados, fotografías inmutables, concurrencia y cronograma mediante pruebas; ejecutar pytest, ruff y mypy en Docker.
+
+Las escalas, entregables oficiales, condiciones de autocompletado y binarios permanecen TBD. La integración de router/contratos quedó validada en la sección superior.
+
+Resultado verificado: modelos, migración 003 con seed v1, esquemas y router independiente de seguimiento implementados. Autorización exacta por ciclo, referencias compuestas, decisiones con instantánea, reapertura tras cambios materiales, fotografías aprobadas inmutables y cronograma derivado. Docker `sia-api-phase2`: 22 pruebas de seguimiento pasan en PostgreSQL 16 desechable (incluye migraciones upgrade/downgrade, triggers y carrera de escrituras); suite completa 41 pasan y 2 casos exclusivos de PostgreSQL se omiten en SQLite, ya probados aparte. Ruff de archivos del módulo y mypy de toda `app` pasan. Integración y TBD documentados en `apps/api/app/modules/seguimiento/README.md`.
+
 ## Fase 0 - Fundaciones
 
 - [x] Crear el monorepo y los contratos compartidos.
@@ -24,7 +59,23 @@ Resultado: el monorepo quedó montado con `apps/web` (Next 16), `apps/api` (Fast
 
 Referencias: `docs/00-nucleo-comun/actores-roles-y-permisos.md`, `docs/00-nucleo-comun/modelo-de-datos-compartido.md` (User, Invitation, AuditLog) y `docs/00-nucleo-comun/vision-y-alcance.md` (Clerk/JWT, Redis, auditoría). `Revisor financiero` permanece `TBD`.
 
-Resultado: API valida JWT de Clerk (JWKS o `SIA_CLERK_SECRET_KEY` para dev/test), crea usuarios solo con invitación vigente (bootstrap: primer usuario es Coordinadora), aplica política central (`Coordinadora` invita a todos, `Gestor` solo a `Emprendedor`) y rate limiting en Redis (429). Invitaciones y usuarios persisten en Postgres con auditoría (`audit_logs`) y migración `001`. Endpoints `/users/me`, `/users`, `/invitations` expuestos y tipados en `packages/contracts`. 19 pruebas (12 paridad + 7 identidad) y compose verificado: `/healthz`/`/readyz` y flujo Coordinadora→Gestor→Emprendedor probado en contenedor.
+Resultado histórico de Fase 1: JWT, política central, Redis (429), persistencia/auditoría y endpoints `/users/me`, `/users`, `/invitations`; se registraron 19 pruebas y un recorrido local en contenedor. La revisión actual sustituye el bootstrap automático: el CLI emite una invitación de Coordinadora, el primer acceso exige invitación y correo verificado. HS256 solo development/test; aud/iss obligatorios. Los conteos y evidencia vigentes están en la sección superior.
+
+## Fase 2 - Núcleo común (en curso)
+
+User Stories: US-PRO-001, US-PRO-002, US-PRO-006, US-PM-001 y US-PM-002.
+
+1. Implementar el expediente, inscripciones, ciclos y relaciones Gestor/Emprendedor en PostgreSQL, con migración y auditoría.
+2. Extender la política de autorización para validar rol y relación con emprendimiento/ciclo en backend.
+3. Exponer los endpoints y contratos de expediente necesarios para administrar esos recursos.
+4. Cubrir creación, asignaciones y acceso autorizado/no autorizado con pruebas de dominio, integración y API.
+5. Integración backend de canvas, ambiciones, objetivos, actividades, referencias de evidencia, validaciones y cronograma completada en esta revisión. UI y binarios pendientes.
+
+Decisiones que no se implementarán sin confirmación: bootstrap sin invitación (contradice la regla de primer acceso documentada), campos y transiciones definitivos de inscripción/programa y escalas numéricas de evolución. El seguimiento implementa fotografías descriptivas por área según US-PRO-005, sin adoptar las escalas del prototipo.
+
+Resultado de la primera rebanada: migración `002` y API de expediente para crear y consultar emprendimientos, crear inscripciones y ciclos, y asignar Gestores o Emprendedores por emprendimiento/ciclo. La autorización comprueba el rol y la relación persistida en backend; las asignaciones y altas quedan auditadas. Los contratos OpenAPI se regeneraron. Verificado con 21 pruebas, `ruff`, `mypy` y `contracts` lint/typecheck.
+
+La rebanada de canvas versionado, áreas y ambiciones quedó implementada e integrada; usa el ciclo/emprendimiento persistidos, autorización por alcance y auditoría. Los entregables obligatorios, criterios de salida y campos adicionales de programa siguen `TBD`; UI conectada y demás módulos siguen pendientes.
 
 - [x] Actualizar requisitos, historias, reglas y permisos.
 - [x] Actualizar flujos, modelo de datos e integraciones.
