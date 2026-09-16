@@ -254,4 +254,4 @@ El informe periodico (arranca mensual) que reutiliza los datos del periodo. La c
 
 Y sobre todo, **me falto meterme a fondo en la carpeta `01-pre-incubacion`**. La pase por encima a proposito porque esta fuera del primer alcance y casi todo esta `TBD`, pero cuando ese programa entre en juego hay que volver ahi a sacar sus canvas, entregables y reglas.
 
-Este archivo queda pendiente a otra revisión.
+Este archivo queda como **notas históricas de análisis**. Su cierre —con las 7 decisiones resueltas y el modelo ER completo— está en [modelo-de-datos-detallado.md](modelo-de-datos-detallado.md).

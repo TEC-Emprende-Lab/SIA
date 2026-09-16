@@ -76,7 +76,7 @@ La [guía de Coolify](deploy/coolify/README.md) contiene los valores exactos, ra
 
 | Documento | Propósito |
 |---|---|
-| [`docs/00-nucleo-comun/`](docs/00-nucleo-comun/) | Reglas, expediente, roles, seguimiento, canales, alertas, IA e informe comunes. |
+| [`docs/00-nucleo-comun/`](docs/00-nucleo-comun/) | Reglas, expediente, roles, seguimiento, canales, alertas, IA e informe comunes. Incluye el [modelo de datos ER detallado](docs/00-nucleo-comun/modelo-de-datos-detallado.md). |
 | [`docs/01-pre-incubacion/`](docs/01-pre-incubacion/) | Programa futuro de estructuración y validación inicial. |
 | [`docs/02-prototipado/`](docs/02-prototipado/) | Programa inicial de construcción y validación de prototipos. |
 | [`docs/03-puesta-en-marcha/`](docs/03-puesta-en-marcha/) | Programa inicial de preparación operativa y comercial. |
