@@ -1,5 +1,16 @@
 from app.db.base import Base
 from app.models.audit import AuditLog
+from app.models.comunicacion import (
+    Agreement,
+    Alert,
+    Channel,
+    Meeting,
+    Mention,
+    Message,
+    Minutes,
+    Notification,
+    ReadReceipt,
+)
 from app.models.expediente import (
     Entrepreneurship,
     EntrepreneurshipAssignment,
@@ -22,6 +33,15 @@ from app.models.seguimiento import (
 from app.models.user import User
 
 __all__ = [
+    "Agreement",
+    "Alert",
+    "Channel",
+    "Meeting",
+    "Mention",
+    "Message",
+    "Minutes",
+    "Notification",
+    "ReadReceipt",
     "Activity",
     "Ambition",
     "CanvasArea",
