@@ -5,6 +5,12 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/tsconfig ./packages/tsconfig
 COPY packages/contracts ./packages/contracts
 COPY apps/web ./apps/web
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
+ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_SIGN_UP_URL
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @sia/web build
 

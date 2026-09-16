@@ -35,6 +35,7 @@ def verify_clerk_token(token: str) -> dict[str, Any]:
             algorithms=["HS256"],
             audience=settings.clerk_audience or None,
             issuer=settings.clerk_issuer or None,
+            leeway=120,
             options={"require": ["exp", "iat", "sub", "iss", "aud"]},
         )
         return payload
@@ -50,6 +51,7 @@ def verify_clerk_token(token: str) -> dict[str, Any]:
         algorithms=["RS256"],
         audience=settings.clerk_audience or None,
         issuer=settings.clerk_issuer or None,
+        leeway=120,
         options={"require": ["exp", "iat", "sub", "iss", "aud"]},
     )
     return payload_hs
