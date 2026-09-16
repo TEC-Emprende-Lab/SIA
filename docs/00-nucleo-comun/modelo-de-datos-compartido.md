@@ -2,6 +2,8 @@
 
 Este modelo conceptual define entidades comunes y no prescribe un motor adicional a PostgreSQL.
 
+> El **modelo entidad-relación detallado** (tablas, columnas, tipos, claves, constraints y estado de implementación 🟢/🟡/🔴 por tabla) está en [modelo-de-datos-detallado.md](modelo-de-datos-detallado.md). Este documento conserva la vista conceptual de alto nivel.
+
 ## Identidad y expediente
 
 - `User`: identidad SIA, rol y `clerk_user_id`.

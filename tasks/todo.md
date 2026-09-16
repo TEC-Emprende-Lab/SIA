@@ -1,5 +1,21 @@
 # Consolidacion de decisiones
 
+## Reorganización de fases de entrega — 2026-09-16
+
+Decisión de planificación: separar la experiencia conectada, el despliegue técnico
+en staging, la validación operativa y la producción. No modifica requisitos,
+User Stories ni reglas de negocio.
+
+- [x] Corregir la Fase 4 como backend de comunicación integrado.
+- [x] Definir Fase 7 como UI conectada a la API real.
+- [x] Separar Fase 8 (staging), Fase 9 (validación operativa) y Fase 10
+  (producción) con puertas de liberación explícitas.
+- [x] Alinear la matriz del README con la comunicación integrada y los pendientes
+  reales.
+
+Ver [hoja de ruta](plan-escalabilidad.md#11-hoja-de-ruta-en-fases) y
+[verificación](plan-escalabilidad.md#13-verificación-y-puertas-de-liberación).
+
 ## Fase 4 — comunicación backend, 2026-09-16
 
 Referencias: US-PRO-004 / US-PM-003 (fuentes trazables del informe futuro),

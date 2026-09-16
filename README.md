@@ -6,7 +6,7 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 
 ## Estado actual
 
-**Corte: 2026-09-16, commit inspeccionado `35775c0`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
+**Corte: 2026-09-16, `develop` en `7e10678`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
 
 | Componente | Estado real en el repositorio | Límite / pendiente |
 |---|---|---|
@@ -17,8 +17,9 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 | Web real (`apps/web`) | Base Next.js, página «en construcción» y `/api/health`. | UI funcional, login y conexión de los módulos a la API pendientes. |
 | Prototipo (`visual/prototype`) | Demo React/Vite, navegación y reglas locales, Cubo 360/Kanban, finanzas e informes ficticios; HTML autónomo y Docker/Nginx. | Datos en memoria; sus puntuaciones y estados visuales no son reglas confirmadas de la API. |
 | Archivos privados | La API registra referencias HTTP(S), incluso para tipos archivo/fotografía/video. | Sin carga, descarga, almacenamiento de binarios ni URLs firmadas R2. MinIO en Compose no implementa esa integración. |
-| Comunicación, alertas, informes y finanzas | Requisitos y representaciones de prototipo; worker Python base que permanece activo. | Sin módulos backend de reuniones/minutas, canales/Socket.IO, notificaciones, informes/PDF o finanzas; sin cola persistente ni tareas del worker. |
-| Calidad y despliegue | CI de aplicación y prototipo verde en `35775c0`; API: **94 passed**, sin omisiones, con los grupos PostgreSQL habilitados. | CI no equivale a staging: OAuth real, servicios externos y despliegue operativo del MVP **NO verificados**. |
+| Comunicación y alertas | API integrada para reuniones, minutas, acuerdos, canales, mensajes, menciones, recibos de lectura, alertas y notificaciones internas; las minutas aprobadas son inmutables. | Socket.IO/Redis, Resend, adjuntos privados, grabaciones y proveedor IA/worker reales siguen pendientes o `TBD`. |
+| Informes y finanzas | Requisitos y representaciones de prototipo; worker Python base que permanece activo. | Sin módulos backend de informes/PDF ni finanzas; sin cola persistente ni tareas del worker. |
+| Calidad y despliegue | CI de aplicación y prototipo verde para los cambios integrados en `develop`; comunicación verificó **109 passed** con PostgreSQL. | CI no equivale a staging: OAuth real, servicios externos y despliegue operativo del MVP **NO verificados**. |
 
 La [guía operativa de la API](docs/operacion-api.md) conserva evidencia local/CI, enlaces a runs, arranque y restricciones. El [plan de escalabilidad](tasks/plan-escalabilidad.md) describe arquitectura objetivo y siguientes fases; [tasks/todo.md](tasks/todo.md) conserva la historia. Trazabilidad backend: US-PRO-001/002/005/006 y US-PM-001/002; detalle y límites de aceptación en el [módulo de seguimiento](apps/api/app/modules/seguimiento/README.md).
 
@@ -76,7 +77,7 @@ La [guía de Coolify](deploy/coolify/README.md) contiene los valores exactos, ra
 
 | Documento | Propósito |
 |---|---|
-| [`docs/00-nucleo-comun/`](docs/00-nucleo-comun/) | Reglas, expediente, roles, seguimiento, canales, alertas, IA e informe comunes. |
+| [`docs/00-nucleo-comun/`](docs/00-nucleo-comun/) | Reglas, expediente, roles, seguimiento, canales, alertas, IA e informe comunes. Incluye el [modelo de datos ER detallado](docs/00-nucleo-comun/modelo-de-datos-detallado.md). |
 | [`docs/01-pre-incubacion/`](docs/01-pre-incubacion/) | Programa futuro de estructuración y validación inicial. |
 | [`docs/02-prototipado/`](docs/02-prototipado/) | Programa inicial de construcción y validación de prototipos. |
 | [`docs/03-puesta-en-marcha/`](docs/03-puesta-en-marcha/) | Programa inicial de preparación operativa y comercial. |
