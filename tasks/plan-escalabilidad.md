@@ -1,19 +1,23 @@
 # Plan: SIA escalable, limpio y extensible
 
-Estado: borrador listo para validación.
+Estado: plan de arquitectura y evolución, actualizado el **2026-09-16** sobre `35775c0`. La [matriz canónica del README](../README.md#estado-actual) registra lo implementado; la [guía operativa](../docs/operacion-api.md) conserva evidencia local/CI y restricciones. Este plan no certifica escalamiento horizontal ni staging.
 
 ## 1. Contexto
 
-- La documentación funcional y de arquitectura está completa en `docs/`.
-- Existe un prototipo visual (`visual/prototype/`) que valida la UX y **ya codifica las reglas de negocio** en `applyCommand` (patrón comando), con tests de dominio.
-- El sistema real (API, base de datos, autenticación, worker) **aún no está implementado**. Es el momento ideal para fijar la arquitectura limpia antes de escribir la primera línea de producción.
+- La documentación funcional y de arquitectura está organizada en `docs/`; conserva decisiones de programa `TBD` y Pre-incubación fuera del primer alcance.
+- Existe un prototipo visual (`visual/prototype/`) con `applyCommand` y pruebas de dominio. Es referencia de UX y paridad, no fuente de aprobación de escalas, estados o reglas aún no confirmadas.
+- Ya existe backend persistente de identidad, expediente y seguimiento, con autorización, auditoría, migraciones 001–003 y contratos. `apps/web` es una base sin UI funcional conectada; `apps/worker` permanece activo, pero no procesa tareas ni tiene cola persistente.
+
+Antecedente histórico: el borrador original de este plan se redactó antes de implementar la aplicación real y decía «aún no está implementado». Esa premisa quedó superada por `d9b8cf2` y `fe6cf80`. Se conserva la arquitectura propuesta a continuación, con sus diferencias respecto al código actual explícitas.
 
 Objetivo del plan: entregar una base que pueda crecer horizontalmente, donde agregar un módulo nuevo sea un procedimiento repetible y el código sea legible y testeable por capas.
 
 ## 2. Principios de arquitectura
 
-1. **Vertical slices por feature.** Cada módulo de negocio (diagnóstico, objetivos, finanzas, informes) es autocontenido: dominio, persistencia, API, política de permisos y tests. No hay dependencias cruzadas entre features.
-2. **Dominio puro y central.** Las reglas de negocio viven en una capa `domain` sin framework y sin SQL. Se reutilizan en API y en tests; el prototipo ya las tiene en `applyCommand` y se portan 1:1.
+Estos principios expresan la dirección de diseño, no una descripción literal de todas las capas actuales.
+
+1. **Vertical slices por feature.** Agrupar API, servicio y política por módulo con dependencias explícitas. Actualmente seguimiento reutiliza identidad y expediente; modelos, esquemas y tests están en directorios compartidos de la API.
+2. **Dominio puro y central.** Conservar reglas puras comprobables. El port de paridad del prototipo ya existe en `app/domain/prototype.py`; el servicio persistente implementa solo reglas respaldadas por los documentos vigentes, sin trasladar automáticamente escalas o estados de demo.
 3. **Ports & adapters.** La capa de aplicación depende de interfaces (repository, queue, mail, storage, ia). Cada integración (PostgreSQL, R2, Resend, OpenAI) es un adapter intercambiable; un mock permite tests sin infraestructura.
 4. **Un solo contrato frontend↔backend.** FastAPI publica OpenAPI; desde él se generan los tipos TypeScript. No se duplican contratos a mano.
 5. **Autorización siempre en backend.** Política central por rol + relación con el emprendimiento/ciclo. La UI solo usa esa autorización; nunca decide.
@@ -24,6 +28,8 @@ Objetivo del plan: entregar una base que pueda crecer horizontalmente, donde agr
 10. **No adelantar optimizaciones.** Caché, réplicas de lectura y particionado entran solo con evidencia de cuello; el diseño lo permite sin acoplarse.
 
 ## 3. Estructura del repositorio (monorepo)
+
+Estructura **objetivo** del plan original. En el árbol actual no existe `packages/tsconfig`; los contratos entregan OpenAPI y tipos TS, sin generación separada de JSON Schema ni cliente HTTP. Los Dockerfiles actuales están en cada app y la configuración Nginx de la demo está en `deploy/coolify/nginx.conf`. Compose incorpora además el servicio `migrate`. El prototipo queda fuera del workspace pnpm y conserva su lockfile independiente.
 
 ```text
 / (raíz)
@@ -44,9 +50,11 @@ Objetivo del plan: entregar una base que pueda crecer horizontalmente, donde agr
 └── tasks/
 ```
 
-Se conserva `visual/prototype/` como referencia; la app real reutiliza sus reglas (dominio) y su apariencia (design system).
+Se conserva `visual/prototype/` como referencia; la reutilización visual en la web real sigue pendiente. Su instalación local/CI usa `pnpm install --frozen-lockfile --ignore-workspace` desde ese directorio (`a5f1796`).
 
 ## 4. Backend — FastAPI (diseño por capas)
+
+El árbol siguiente conserva la **propuesta objetivo**, no rutas que deban existir hoy. Actualmente hay `modules/identity`, `modules/expediente` y `modules/seguimiento`, cada uno con rutas, servicio y política; modelos en `app/models`, esquemas en `app/schemas`, sesión en `app/db`, pruebas en `tests` y migraciones en `alembic/`. Los servicios usan SQLAlchemy directamente; no están implementadas las abstracciones repository/ports ni la cola del diagrama. Adoptarlas requerirá necesidad concreta, no una reestructuración automática por cumplir este dibujo.
 
 ```text
 apps/api/
@@ -80,7 +88,7 @@ apps/api/
   migrations/              # Alembic, versionadas
 ```
 
-Reglas de esta capa:
+Reglas propuestas para evolucionar esta capa:
 
 - `routes.py` solo valida y llama al service; **no** contiene lógica de negocio.
 - `service.py` contiene las transiciones (portadas de `applyCommand`) y emite eventos/auditoría.
@@ -88,6 +96,8 @@ Reglas de esta capa:
 - `policy.py` recibe `(actor, cycle_id, accion)` y consulta roles/relaciones en Postgres; el `routes` la ejecuta antes de tocar datos.
 
 ## 5. Frontend — Next.js (diseño por features)
+
+Diseño **pendiente**: la web actual usa `apps/web/app/` (sin `src/`), página de construcción, layout y health check. No hay shell autenticado, features conectadas, cliente HTTP generado ni Socket.IO.
 
 ```text
 apps/web/src/
@@ -114,8 +124,8 @@ Reglas:
 
 ## 6. Contrato único (packages/contracts)
 
-1. FastAPI emite `openapi.json` (schema de los `modules/*/schemas.py`).
-2. CI regenera y valida: tipos TS via `openapi-typescript`, y JSON Schema de requests.
+1. FastAPI emite `openapi.json` desde `app.main` y los esquemas actuales de `app/schemas/` (la propuesta original los situaba en `modules/*/schemas.py`).
+2. CI comprueba OpenAPI y regenera tipos TS via `openapi-typescript`; no existe una salida independiente de JSON Schema de requests (era parte de la propuesta original).
 3. Drift check: un PR que cambie la API sin actualizar el contrato generado falla.
 
 Beneficio: renombrar un campo, cambiar un estado o agregar una ruta se refleja en frontend de forma tipada sin mantenimiento manual.
@@ -125,9 +135,13 @@ Beneficio: renombrar un campo, cambiar un estado o agregar una ruta se refleja e
 - Modelo según `docs/00-nucleo-comun/modelo-de-datos-compartido.md`.
 - Cada tabla de negocio incluye el scope (`entrepreneurship_id` y/o `cycle_id`, `user` donde aplique); los índices empiezan por la columna de scope.
 - Alembic con migraciones versionadas; cada módulo entrega su migración con su feature.
-- La cola persistente es una tabla `jobs` con claim atómico (`FOR UPDATE SKIP LOCKED`), reintentos y `idempotency_key`.
+- La cola persistente propuesta será una tabla de jobs con claim atómico (`FOR UPDATE SKIP LOCKED`), reintentos e idempotencia; aún no hay tabla ni worker consumidor.
+
+Persistencia actual: 001 identidad/auditoría, 002 expediente/asignaciones, 003 seguimiento con canvas v1. La revocación de asignaciones es lógica, auditada y autorizada por scope exacto; la corrección integrada permite al Gestor de ciclo remover Emprendedores de ese ciclo sin administrar hermanos. Detalle y prueba en [operación](../docs/operacion-api.md#revocación-y-alcance-de-asignaciones).
 
 ## 8. Escalamiento horizontal (cómo se logra)
+
+La tabla conserva el **diseño objetivo**, no resultados de carga ni capacidades desplegadas. JWT y rate limiting Redis están implementados; cola/consumidores, Socket.IO, R2, tracing y métricas quedan pendientes. Los listados de expediente usan `limit/offset` y los de seguimiento no tienen paginación; keyset no está implementado. Bloqueos PostgreSQL y pruebas de concurrencia del núcleo no equivalen a una validación de escalamiento multiinstancia.
 
 | Recurso | Decisión | Permite |
 |---|---|---|
@@ -143,7 +157,7 @@ Caché de lectura y réplicas quedan definidos como extensiones posibles, no dep
 
 ## 9. Procedimiento repetible: "cómo agregar un módulo"
 
-Checklist (documentado en `docs/00-nucleo-comun/` como guía de contribución técnica):
+Checklist objetivo de este plan; aplicar el flujo real de [CONTRIBUTING](../CONTRIBUTING.md) y reutilizar la estructura existente sin introducir capas innecesarias:
 
 1. Crear `apps/api/app/modules/<feature>/` (domain → models → schemas → repo → service → policy → routes → tests) siguiendo un módulo existente como plantilla.
 2. Crear la migración Alembic.
@@ -153,9 +167,11 @@ Checklist (documentado en `docs/00-nucleo-comun/` como guía de contribución t�
 6. Tests: unit (domain), integration (service+repo), policy, y contratos.
 7. Referenciar la User Story y el criterio de aceptación de `docs/<programa>/historias-de-usuario.md`.
 
-Un módulo nuevo **no modifica** módulos existentes salvo la composición raíz.
+Minimizar cambios en otros módulos y documentar las dependencias comunes necesarias, sin duplicar identidad, expediente ni autorización.
 
 ## 10. Herramientas y calidad
+
+La tabla es la meta de calidad. CI actual comprueba API (Ruff, mypy, pytest, Alembic/bootstrap) y web/contratos (lint, typecheck, drift). El prototipo tiene su propio workflow de lint, dominio, build e imagen/HTTP. No hay job de worker ni E2E/build de la web real en `application-quality.yml`; Playwright de la demo no valida la aplicación conectada. Ver runs y conteos en [evidencia vigente](../docs/operacion-api.md#evidencia-vigente--2026-09-16).
 
 | Capa | Stack | Verificaciones |
 |---|---|---|
@@ -167,23 +183,26 @@ Flujo Git/CI se mantiene: ramas cortas desde `develop`, PR a `develop` (staging)
 
 ## 11. Hoja de ruta en fases
 
-Cada fase entrega algo usable y verificado. Las fases 0–5 constituyen el MVP por defecto (núcleo común + Prototipado + Puesta en marcha).
+Las fases son una secuencia técnica, no una redefinición del MVP. **Nota histórica:** el plan original llamó «MVP por defecto» a las fases 0–5; esa etiqueta era incompleta frente al alcance vigente, que incluye finanzas según programa y una interfaz usable. El cierre se rige por [visión y alcance](../docs/00-nucleo-comun/vision-y-alcance.md) y los documentos de programa, incluidos sus `TBD`.
 
-- **Fase 0 — Fundaciones**: monorepo, tooling (uv/pnpm), docker-compose dev (Postgres, Redis, R2-sim), CI base, port del dominio del prototipo a Python (tests 1:1).
-- **Fase 1 — Identidad y autorización**: Clerk OAuth+JWT, invitaciones, usuarios/roles en Postgres, motor de política central, auditoría base, rate limiting en Redis.
-- **Fase 2 — Núcleo común**: expediente, canvas/áreas por programa, ambiciones, objetivos→actividades→evidencias, validaciones, cronograma. Persistencia + servicio (reglas portadas de `applyCommand`).
-- **Fase 3 — Diagnóstico 360° y evolución**: cubo 360, historial de diagnósticos aprobados, comparación/deltas. Corresponde al pendiente documentado (migraciones, API, interfaz, pruebas).
-- **Fase 4 — Comunicación**: reuniones/minutas/acuerdos, chat por proyecto (Socket.IO + Redis), menciones, no leídos, alertas y notificaciones (correo vía Resend).
-- **Fase 5 — Informes técnicos e IA**: borrador asistido por worker+OpenAI, fuentes trazables, versionado inmutable, aprobación y PDF en R2.
-- **Fase 6 — Finanzas y compras por programa**: presupuesto, partidas, trámites financieros, movimientos, reportes, `Revisor financiero` (rol TBD hasta decisión).
-- **Fase 7 — Experiencia y despliegue**: frontend completo (pantallas del prototipo), archivos adjuntos R2, staging y producción en Coolify, observabilidad y endurecimiento (trazas, límites, backups).
+- **Fase 0 — Fundaciones, implementada como base**: monorepo, tooling, Compose y port de dominio. Worker y web son esqueletos; evidencia del stack completo no confirmada en este corte.
+- **Fase 1 — Identidad y autorización, backend implementado**: JWT, invitaciones, usuarios/roles, política, auditoría y rate limiting. OAuth real/Clerk Cloud y staging pendientes.
+- **Fase 2 — Núcleo común, backend integrado / entrega en curso**: expediente, canvas, ambiciones, objetivos, actividades, referencias HTTP(S), validaciones y cronograma. UI y binarios pendientes; no automatizar decisiones `TBD`.
+- **Fase 3 — Diagnóstico y evolución, backend descriptivo integrado**: fotografías de seis áreas, aprobación inmutable y comparación entre aprobadas. UI del cubo pendiente; escalas y deltas numéricos del prototipo no confirmados.
+- **Fase 4 — Comunicación, pendiente**: reuniones/minutas/acuerdos, canales conforme al núcleo común (taxonomía y permisos particulares `TBD`), Socket.IO/Redis, menciones, no leídos, alertas y Resend. La referencia histórica a «un único chat» no sustituye la definición vigente de canales diferenciados.
+- **Fase 5 — Informes técnicos e IA, pendiente**: worker/cola, borradores con fuentes, versiones aprobadas inmutables y PDF privado; plantilla/campos del informe `TBD`. El prototipo no constituye este backend.
+- **Fase 6 — Finanzas por programa, pendiente**: implementar solo definiciones confirmadas; partidas, flujo exacto, integración administrativa, rol Revisor financiero y habilitación en Puesta en marcha siguen `TBD`.
+- **Fase 7 — Experiencia y despliegue, pendiente para el MVP real**: UI conectada, R2, staging/producción y validación operativa. La preparación Docker/Coolify del prototipo está disponible y su imagen pasa CI; no acredita despliegue del MVP.
 
 ## 12. Trazabilidad y decisiones abiertas
 
 - Rieles `TBD` ya conocidos: rol `Revisor financiero`, programa/cambios formales de alcance en informes, flujo de compras que habilita el programa.
+- Restricciones efectivas y demás `TBD`: [pendientes operativos](../docs/operacion-api.md#pendientes) y [decisiones de seguimiento](../apps/api/app/modules/seguimiento/README.md#decisiones-pendientes-tbd). Las escalas son pendientes; lo implementado es comparación descriptiva. Los tipos archivo/fotografía/video son enlaces sin binarios.
 - Cada módulo implementa las User Stories y criterios de aceptación de `docs/<programa>/historias-de-usuario.md`; ninguna implementación inventa requisitos (regla de `AGENTS.md`).
 - El historial del prototipo se conserva; la app real no reemplaza ni elimina datos de demostración ni documentación.
 
 ## 13. Verificación global
 
 Antes de cerrar cada fase: lint, typecheck, tests de la pieza, camino de navegación E2E y despliegue en staging. La definición de "listo" es verificable en CI y en el entorno de staging, no subjetiva.
+
+Al 2026-09-16, la evidencia de CI y la evidencia local histórica están documentadas; **staging NO verificado**. Por ello, «backend implementado» no significa fase funcional completa ni MVP terminado. Esta revisión comprueba documentación y enlaces sin volver a ejecutar suites de aplicación.

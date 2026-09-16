@@ -6,7 +6,7 @@ Router: `app.modules.seguimiento.routes.router`, prefijo `/cycles/{cycle_id}/seg
 Aplicar migración `003` después de `002`; contiene el seed fijo de ambos canvas v1.
 Los modelos se registran explícitamente mediante `app.models`, también desde Alembic.
 El router está integrado en `main.py` y los contratos OpenAPI/TypeScript están regenerados.
-El arranque y la evidencia de integración se documentan en `docs/operacion-api.md`.
+Estado revisado: **2026-09-16**, commit `35775c0`. El arranque y la evidencia local/CI están en la [guía operativa](../../../../../docs/operacion-api.md); el inventario global está en la [matriz canónica](../../../../../README.md#estado-actual).
 
 ## Trazabilidad y aceptación
 
@@ -16,6 +16,8 @@ El arranque y la evidencia de integración se documentan en `docs/operacion-api.
 | US-PRO-002 / US-PM-002 | Envío, aprobación, corrección y rechazo por Gestor asignado o Coordinadora. Decisión con actor, fecha, observación, revisión e instantánea de objetivo/actividades/evidencias. Cambio material reabre validación. |
 | US-PRO-005 | Fotografías descriptivas con las seis áreas oficiales, aprobación inmutable, nueva fotografía con `supersedes_id` y comparación entre aprobadas del mismo ciclo/canvas. |
 | US-PRO-006 | Ambición independiente del avance, persistente por emprendimiento. Objetivo con cero o una ambición; FK compuesta impide cruzar emprendimientos. |
+
+La tabla describe aceptación backend del subconjunto implementado; la UI real y el catálogo oficial de entregables siguen pendientes. Las fixtures comprueban canvas de ambos programas, pero la API administrativa bloquea el alta de Puesta en marcha con 409 mientras no pueda verificar sus condiciones de entrada. No es un flujo completo de admisión de ese programa.
 
 ## API
 
@@ -40,6 +42,7 @@ Un objetivo sin actividades no puede aprobarse como tema amplio completado.
 - Autorización `cycle -> enrollment -> entrepreneurship` para cada lectura/escritura.
   Coordinadora global; asignación directa al emprendimiento o al ciclo exacto con rol coincidente.
   Una asignación a un ciclo no concede acceso a sus hermanos.
+  Las relaciones revocadas dejan de autorizar; la revocación por ámbito y su auditoría se gestionan en [expediente](../expediente/service.py), con la corrección descrita en [operación](../../../../../docs/operacion-api.md#revocación-y-alcance-de-asignaciones).
 - Las ambiciones pertenecen al emprendimiento, conforme a los documentos. Se consultan y
   editan desde un ciclo autorizado del mismo emprendimiento; no son registros privados de un ciclo.
 - Transacción única por comando: entidad, reapertura, decisión y auditoría. Cualquier fallo revierte todo.
@@ -70,3 +73,5 @@ Un objetivo sin actividades no puede aprobarse como tema amplio completado.
 con upgrade/downgrade. SQLite habilita FK. `SEGUIMIENTO_TEST_DATABASE_URL` permite ejecutar la
 misma batería en PostgreSQL desechable, incluyendo carreras de escritura y triggers SQL.
 **La base de pruebas debe ser vacía y desechable**: las fixtures crean y eliminan sus tablas.
+
+El log de CI del 2026-09-16 confirma **26 casos de seguimiento** dentro de la suite de 94 aprobados con los grupos PostgreSQL habilitados. Los 22 casos registrados anteriormente son históricos; ver [evidencia vigente](../../../../../docs/operacion-api.md#evidencia-vigente--2026-09-16). Esta actualización documental no reejecuta la batería.
