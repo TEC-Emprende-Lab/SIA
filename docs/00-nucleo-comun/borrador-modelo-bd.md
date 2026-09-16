@@ -1,5 +1,7 @@
 # Borrador de modelo de datos — mis notas de analisis
 
+> **Nota de estado — 2026-09-16:** se conserva íntegro como borrador histórico de análisis, no como inventario del esquema implementado ni decisión funcional aprobada. Identidad, expediente y seguimiento ya tienen modelos y migraciones 001–003; algunas dudas inferiores quedaron resueltas técnicamente (asignaciones separadas, seguimiento por ciclo, fotografías descriptivas, cronograma derivado). Consultar la [matriz de estado](../../README.md#estado-actual), la [operación API](../operacion-api.md) y el [módulo de seguimiento](../../apps/api/app/modules/seguimiento/README.md). Las decisiones de programa `TBD` siguen en sus documentos funcionales.
+
 Me sente a leer toda la carpeta `docs` (el nucleo comun y los tres programas) para ir sacando que tablas
 y columnas va a necesitar SIA. Esto no es el modelo final ni un diagrama todavia, sino lo que fui anotando
 para despues cerrarlo y de ahi armar el ER.

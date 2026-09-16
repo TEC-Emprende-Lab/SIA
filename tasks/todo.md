@@ -1,6 +1,24 @@
 # Consolidacion de decisiones
 
-## Integración y validación del núcleo actual — 2026-09-15
+## Actualización documental del estado real — 2026-09-16
+
+Plan de trabajo (documentación; no cambia requisitos ni reglas de negocio):
+
+- [x] Leer AGENTS, núcleo común, los tres programas, README, CONTRIBUTING, plan y operación; contrastar decisiones y `TBD`.
+- [x] Inspeccionar implementación, migraciones, pruebas, workflows y commits recientes; consultar evidencia CI sin repetir suites por cambios documentales.
+- [x] Consolidar en README una matriz canónica que distinga backend, prototipo y UI pendiente; enlazar evidencia y pendientes desde operación, plan y módulos.
+- [x] Incorporar revocación de asignaciones por scope, instalación independiente del prototipo y conteos con procedencia; marcar resultados anteriores como históricos y staging como no verificado.
+- [x] Verificar enlaces internos y `git diff --check`, revisar el diff y registrar resultados. No realizar commit ni push.
+
+Estado vigente: [matriz canónica](../README.md#estado-actual). Evidencia confirmada y procedencia del último local comunicado: [operación API](../docs/operacion-api.md#evidencia-vigente--2026-09-16). Backend de identidad, expediente y seguimiento integrado; UI real y módulos restantes en curso. Staging **NO verificado**.
+
+Resultado documental: README y plan alineados con el código; operación enlaza runs y logs CI del SHA inspeccionado, separa el último local comunicado de la evidencia histórica y describe la corrección de revocación. CONTRIBUTING, README visuales e IMPLEMENTATION del prototipo reproducen `--ignore-workspace`. El borrador de modelo se conserva íntegro con nota histórica y la guía Coolify diferencia CI de despliegue remoto. Verificación con script temporal Python 3 fuera del repo: 38 documentos Markdown versionados de proyecto y 54 enlaces Markdown internos, comprobando existencia y anclas de encabezado, sin errores; `git diff --check` correcto y diff revisado. No se reejecutaron suites, ni se hizo commit/push.
+
+## Historial de trabajo
+
+Las secciones siguientes conservan resultados y decisiones de cada momento, incluidos conteos antiguos. Una casilla documental completada no acredita implementación. Las reglas de programa vigentes prevalecen sobre decisiones históricas de chats, finanzas, escalas o arquitectura; el estado actual se consulta en la matriz superior.
+
+## Integración y validación del núcleo — histórico 2026-09-15
 
 Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002; reglas comunes de identidad e invitación.
 
@@ -10,17 +28,17 @@ Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-0
 - [x] Regenerar OpenAPI y TypeScript mediante generadores y comprobar determinismo entre dos generaciones actuales.
 - [x] Ajustar CI si corresponde y documentar operación local/producción, evidencia y pendientes reales (sin declarar terminado el MVP ni la UI).
 
-Resultado final de esta integración (sustituye los conteos históricos inferiores):
+Resultado histórico de esta integración (sustituía los conteos inferiores; para el corte del 2026-09-16 consultar la evidencia vigente enlazada arriba):
 
 - Código actual montado en `sia-api-phase2`, `uv sync --frozen --group dev`: suite con las tres variables PostgreSQL **90 passed, 0 skipped** (8.73 s); sin ellas **83 passed, 7 skipped** (7.11 s). Dos advertencias de deprecación Starlette/AnyIO en ambas. Los casos no seleccionados por esas variables siguen usando SQLite.
 - `ruff check .`, `ruff format --check .` (51 archivos) y `mypy` (39 archivos) pasan. Normalización de formato requerida por CI sin cambios de negocio.
 - Imagen API reconstruida con Alembic; smoke sin montar código: readiness 503 en DB vacía/revisión 002 y 200 en 003. Upgrade repetible, 2 canvas, 12 áreas y 11 triggers; `alembic check` sin diferencias. DB inaccesible: readiness 503/liveness 200. CMD real HTTP: ambos 200 con DB migrada.
 - Bootstrap CLI probado usando el import real de `async_session`: emite invitación, rechaza repetición, no crea usuario automáticamente y conserva auditoría. JWT de prueba → identidad → expediente → seguimiento verificado por el router de `main`. Pruebas RS256 con claves locales comprueban aud/iss; HS256 rechazado fuera de development/test.
 - OpenAPI y TS regenerados dos veces, idénticos byte a byte sin HEAD; checks de drift usan el working tree. Node 24.21.0: `pnpm contract:check`, `pnpm lint` y `pnpm typecheck` pasan.
-- CI configurado con PostgreSQL 16, variables de pruebas, migraciones/bootstrap y drift sin HEAD. Compose validado sintácticamente; ejecución remota de CI y stack completo no ejecutados aquí.
+- CI configurado con PostgreSQL 16, variables de pruebas, migraciones/bootstrap y drift sin HEAD. Compose validado sintácticamente; ejecución remota de CI y stack completo no ejecutados en aquella revisión. CI remoto confirmado posteriormente, el 2026-09-16.
 
 Evidencia, hashes, comandos, flujo local/producción y limitaciones en `docs/operacion-api.md`.
-Pendientes: UI conectada, servicios externos/Clerk real y staging, binarios R2, módulos restantes y decisiones funcionales `TBD`. El MVP completo sigue en curso. Sin commits.
+Pendientes entonces y aún abiertos: UI conectada, servicios externos/Clerk real y staging, binarios R2, módulos restantes y decisiones funcionales `TBD`. El MVP completo sigue en curso. Aquella revisión local no hizo commits; la implementación está ahora integrada en `fe6cf80`, seguida de `a5f1796` para CI del prototipo y los merges `db58086`/`35775c0`.
 
 ## Seguimiento persistente — plan de implementación 2026-09-15
 
@@ -31,11 +49,11 @@ Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-0
 3. Implementar esquemas y router independiente con autorización backend, transacciones auditadas, control de revisión e integridad entre ámbitos.
 4. Verificar aislamiento, roles, cambios aprobados, fotografías inmutables, concurrencia y cronograma mediante pruebas; ejecutar pytest, ruff y mypy en Docker.
 
-Las escalas, entregables oficiales, condiciones de autocompletado y binarios permanecen TBD. La integración de router/contratos quedó validada en la sección superior.
+Las escalas, entregables oficiales y condiciones de autocompletado permanecen TBD. Los binarios están pendientes de implementación y de límites MIME/tamaño confirmados. La integración de router/contratos quedó validada en la sección superior.
 
 Resultado verificado: modelos, migración 003 con seed v1, esquemas y router independiente de seguimiento implementados. Autorización exacta por ciclo, referencias compuestas, decisiones con instantánea, reapertura tras cambios materiales, fotografías aprobadas inmutables y cronograma derivado. Docker `sia-api-phase2`: 22 pruebas de seguimiento pasan en PostgreSQL 16 desechable (incluye migraciones upgrade/downgrade, triggers y carrera de escrituras); suite completa 41 pasan y 2 casos exclusivos de PostgreSQL se omiten en SQLite, ya probados aparte. Ruff de archivos del módulo y mypy de toda `app` pasan. Integración y TBD documentados en `apps/api/app/modules/seguimiento/README.md`.
 
-## Fase 0 - Fundaciones
+## Fase 0 - Fundaciones (registro histórico)
 
 - [x] Crear el monorepo y los contratos compartidos.
 - [x] Crear las aplicaciones base web, API y worker con health checks.
@@ -48,7 +66,7 @@ User Stories de referencia: US-PRO-001, US-PRO-002, US-PRO-004, US-PRO-005 y US-
 
 Resultado: el monorepo quedó montado con `apps/web` (Next 16), `apps/api` (FastAPI), `apps/worker` y `packages/contracts` con OpenAPI y drift check. La web, la API y las dependencias se levantan con `infra/docker-compose.yml` (Postgres 16, Redis 7, MinIO) y exponen `/healthz` y `/api/health`. El dominio puro se portó a `apps/api/app/domain/prototype.py` con 12 pruebas (`pytest`) en paridad con las 11 del prototipo; no se toca el Dockerfile del prototipo ni su despliegue.
 
-## Fase 1 - Identidad y autorización
+## Fase 1 - Identidad y autorización (registro histórico)
 
 - [x] Configurar base de datos, migraciones y sesión asíncrona.
 - [x] Implementar verificación JWT de Clerk y dependencia de usuario actual.
@@ -61,7 +79,7 @@ Referencias: `docs/00-nucleo-comun/actores-roles-y-permisos.md`, `docs/00-nucleo
 
 Resultado histórico de Fase 1: JWT, política central, Redis (429), persistencia/auditoría y endpoints `/users/me`, `/users`, `/invitations`; se registraron 19 pruebas y un recorrido local en contenedor. La revisión actual sustituye el bootstrap automático: el CLI emite una invitación de Coordinadora, el primer acceso exige invitación y correo verificado. HS256 solo development/test; aud/iss obligatorios. Los conteos y evidencia vigentes están en la sección superior.
 
-## Fase 2 - Núcleo común (en curso)
+## Fase 2 - Núcleo común (registro de implementación; entrega funcional en curso)
 
 User Stories: US-PRO-001, US-PRO-002, US-PRO-006, US-PM-001 y US-PM-002.
 
@@ -187,6 +205,8 @@ Resultado: la marca se organiza en `visual/brand/` y el mockup en `visual/protot
 - [x] Documentar requisitos, historias, reglas, permisos y flujos.
 - [x] Documentar modelo de datos, arquitectura, UX, alcance y criterios de aceptación.
 - [ ] Implementar migraciones, API, interfaz y pruebas del módulo.
+
+Actualización 2026-09-16: migración 003, API y pruebas backend ya implementadas para fotografías descriptivas; la casilla compuesta continúa abierta por UI y alcance pendiente. Véase [seguimiento](../apps/api/app/modules/seguimiento/README.md). Las escalas numéricas de la demo no se trasladan al backend.
 
 Resultado histórico reemplazado: el seguimiento vigente es `diagnóstico por área -> objetivo -> actividad -> evidencia -> resultado -> nuevo diagnóstico`. Las ambiciones permanecen visibles y se vinculan opcionalmente desde el objetivo; los diagnósticos aprobados son inmutables.
 

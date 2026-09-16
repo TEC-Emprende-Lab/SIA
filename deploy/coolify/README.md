@@ -2,6 +2,8 @@
 
 Este despliegue publica el prototipo de `visual/prototype`: React/Vite compilado y servido por Nginx. Los datos son ficticios, viven en memoria y se restablecen al recargar. No activa FastAPI, PostgreSQL, Clerk, R2, correo ni la aplicación operativa futura. No necesita variables de entorno, secretos ni volúmenes.
 
+**Estado revisado — 2026-09-16:** imagen y prueba HTTP del prototipo confirmadas en CI para `35775c0`; dominio y despliegue remoto en Coolify **NO verificados** en este corte. La API ya existe como núcleo backend independiente: su arranque, migraciones y evidencia están en [operación API](../../docs/operacion-api.md). Consultar el [estado global](../../README.md#estado-actual) para distinguir demo, backend y UI pendiente.
+
 ## Configuración en Coolify
 
 Crear una aplicación desde el repositorio `TEC-Emprende-Lab/SIA`, con GitHub App o Deploy Key si es privado. Usar estos valores:
