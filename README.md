@@ -6,7 +6,9 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 
 ## Estado actual
 
-El alcance funcional y técnico del MVP está documentado. El repositorio contiene un prototipo navegable para validar la experiencia visual antes de iniciar la implementación con servicios reales.
+El alcance funcional y técnico del MVP está documentado. La API integra identidad por invitación, expediente y seguimiento persistente, con migraciones PostgreSQL, autorización backend y contratos generados. La interfaz funcional del MVP sigue pendiente; el prototipo navegable usa datos ficticios.
+
+La [guía operativa de la API](docs/operacion-api.md) explica arranque local, migraciones, bootstrap administrativo, validaciones y pendientes.
 
 ## Arquitectura prevista
 
@@ -79,7 +81,7 @@ No subir secretos, archivos `.env`, claves privadas, tokens ni datos de producci
 
 ## Diagnóstico 360°
 
-El MVP inicial se concentra en Prototipado y Puesta en marcha, con canvas, entregables, evidencias, validaciones y evolución trazable por programa. La implementación con API y persistencia sigue pendiente.
+El MVP inicial se concentra en Prototipado y Puesta en marcha. La API ya integra canvas v1, ambiciones, objetivos, actividades, referencias de evidencia, validaciones, fotografías descriptivas y cronograma. La UI conectada, los binarios privados y las reglas de programa marcadas `TBD` siguen pendientes. El [módulo de seguimiento](apps/api/app/modules/seguimiento/README.md) detalla el alcance implementado.
 
 ## Informes técnicos
 

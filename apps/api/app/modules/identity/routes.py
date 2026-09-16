@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.rate_limit import check_rate_limit
@@ -40,7 +40,10 @@ async def post_invitation(
 
 @router.get("/invitations", response_model=list[InvitationOut])
 async def get_invitations(
-    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ) -> list[Invitation]:
     ensure_can_list_invitations(user)
-    return await list_invitations(db)
+    return await list_invitations(db, user, limit, offset)
