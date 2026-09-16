@@ -11,6 +11,45 @@ La implementación y aceptación de seguimiento están detalladas en
 Esto valida el núcleo backend actual. No certifica que el MVP completo ni su UI estén terminados.
 El inventario canónico de componentes está en el [estado actual del README](../README.md#estado-actual).
 
+## Fase 4 — comunicación backend, 2026-09-16
+
+Implementación local en `feature/comunicacion-backend`: reuniones, minutas manuales
+y flujo de borrador asistido, acuerdos, canales, mensajes, menciones, lecturas,
+alertas y notificaciones internas. Trazabilidad: **US-PRO-004 / US-PM-003**, como
+fuentes del futuro informe, y reglas de comunicación/alertas del núcleo común.
+No implementa UI ni informes. Contratos, permisos, errores y limitaciones en el
+[módulo de comunicación](../apps/api/app/modules/comunicacion/README.md).
+
+Aplicar `alembic upgrade head`: la cabeza pasa a **004**. Esta migración crea
+nueve tablas de comunicación y sus restricciones, sin alterar las migraciones
+001–003 ni sus tablas. Las FK heredan emprendimiento/ciclo, un FK compuesto
+protege lecturas del canal y los triggers protegen ámbito, fuentes e historial.
+`identity/service.py`, `security/` y `expediente/policy.py` se reutilizan sin cambios.
+
+Pruebas locales con Python 3.12.3 y PostgreSQL 16 desechable, con las cuatro
+variables PostgreSQL activas: **109 passed, 0 skipped**, incluidas las 94 pruebas
+previas y 15 de comunicación. Dos advertencias preexistentes de Starlette/AnyIO.
+Comunicación en SQLite con FK y migraciones reales: **14 passed, 1 skipped**
+(la carrera de aprobación/edición se verifica en PostgreSQL).
+Ruff lint/formato (61 archivos), mypy (46 archivos), `alembic upgrade head` y
+`alembic check` correctos; sin diferencias esquema/modelos. OpenAPI y TypeScript
+regenerados por sus herramientas; los 33 paths y 38 esquemas anteriores conservan
+exactamente su contrato. `export_openapi.py --check`, `check.mjs`,
+`pnpm lint` y `pnpm typecheck` correctos. Esta evidencia es local, no CI remoto
+ni staging; no se migraron bases persistentes del usuario.
+
+Agregar `COMUNICACION_TEST_DATABASE_URL=postgresql+asyncpg://...` a las tres
+variables indicadas en la sección de reproducción. Su fixture ejecuta upgrade
+y downgrade 001–004; requiere una base vacía desechable. CI ya incluye esta
+variable. Mantener ejecución secuencial: las fixtures comparten la base y
+eliminan únicamente sus tablas al terminar.
+
+La API expone `/cycles/{cycle_id}/meetings`, sus subrecursos `/minutes` y
+`/agreements`, `/channels`, `/channels/{channel_id}/messages`, `/read-receipt`,
+`/unread`, `/alerts` y `/notifications`. Los listados son paginados; mutaciones
+con revisión esperada y observación conservan auditoría. La autorización se
+revalida en cada petición, incluidas lecturas personales y menciones.
+
 ## Evidencia vigente — 2026-09-16
 
 Inspección del código y consulta de GitHub Actions con `gh run view`; no se repitieron suites por esta actualización documental.
@@ -58,7 +97,7 @@ configurar `SIA_DATABASE_URL` con el host/puerto accesible desde el host, ejecut
 
 **El lifespan no crea tablas ni ejecuta migraciones.** `metadata.create_all` no instala semillas,
 triggers ni el historial Alembic. Solo se usa donde las fixtures de pruebas lo requieren.
-La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra los modelos de los tres módulos.
+La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra también comunicación.
 
 ## Migraciones y despliegue staging/producción
 
@@ -66,13 +105,14 @@ La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra los
 2. Ejecutar **un único paso de release**, con esa misma imagen, red y `SIA_DATABASE_URL`, usando
    `uv run --no-sync alembic upgrade head`. No ejecutar una migración por réplica/worker.
 3. Si el comando falla, detener el despliegue y revisar los logs; no continuar con `stamp head`.
-4. Verificar `uv run --no-sync alembic current` (actualmente `003`) y
+4. Verificar `uv run --no-sync alembic current` (actualmente `004`) y
    `uv run --no-sync alembic check` (sin operaciones pendientes).
 5. Arrancar las réplicas con el CMD de la imagen. En Coolify, usar `/readyz` como comprobación
    para habilitar tráfico; conservar `/healthz` como liveness.
 
 `001` instala identidad/auditoría, `002` expediente/asignaciones y `003` seguimiento con
 dos canvas v1, doce áreas y once triggers PostgreSQL de integridad/historial.
+`004` incorpora comunicación y sus once triggers PostgreSQL sobre las tablas nuevas.
 Los sucesivos `upgrade head` son idempotentes. `alembic check` compara esquema/modelos,
 pero no comprueba por sí mismo el contenido de las semillas ni la presencia de los triggers.
 
