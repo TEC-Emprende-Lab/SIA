@@ -18,7 +18,9 @@ from app.models.expediente import (
     ProgramCycleAssignment,
     ProgramEnrollment,
 )
+from app.models.informes import TechnicalReport
 from app.models.invitation import Invitation
+from app.models.queue import Job
 from app.models.seguimiento import (
     Activity,
     Ambition,
@@ -54,6 +56,8 @@ __all__ = [
     "AuditLog",
     "Base",
     "Invitation",
+    "Job",
+    "TechnicalReport",
     "User",
     "Entrepreneurship",
     "EntrepreneurshipAssignment",

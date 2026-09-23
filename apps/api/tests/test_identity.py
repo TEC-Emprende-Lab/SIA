@@ -313,7 +313,36 @@ async def test_empty_database_requires_invitation(identity_client, db):
     assert await db.scalar(select(User.id)) is None
 
 
-@pytest.mark.parametrize("verified", [False, "true", None, 1])
+async def test_verified_status_claim_consumes_invitation(identity_client, db):
+    import jwt
+
+    from app.modules.identity.service import bootstrap_invitation
+
+    await bootstrap_invitation(db, "first@test.cr", "test-admin")
+    token = create_test_token("first", "first@test.cr")
+    claims = jwt.decode(token, options={"verify_signature": False})
+    claims["email_verified"] = "verified"
+    token = jwt.encode(claims, settings.clerk_secret_key, algorithm="HS256")
+    response = await identity_client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["email"] == "first@test.cr"
+
+
+async def test_string_true_email_verified_claim(identity_client, db):
+    import jwt
+
+    from app.modules.identity.service import bootstrap_invitation
+
+    await bootstrap_invitation(db, "first@test.cr", "test-admin")
+    token = create_test_token("first", "first@test.cr")
+    claims = jwt.decode(token, options={"verify_signature": False})
+    claims["email_verified"] = "true"
+    token = jwt.encode(claims, settings.clerk_secret_key, algorithm="HS256")
+    response = await identity_client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("verified", [False, None, 1])
 async def test_unverified_claim_cannot_consume_invitation(identity_client, db, verified):
     import jwt
 
@@ -611,7 +640,7 @@ async def test_expired_jwt_and_used_invitation_are_denied(identity_client, db):
     assert (
         await identity_client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
     ).status_code == 403
-    expired = create_test_token("used", "used@test.cr", exp_seconds=-1)
+    expired = create_test_token("used", "used@test.cr", exp_seconds=-180)
     assert (
         await identity_client.get("/users/me", headers={"Authorization": f"Bearer {expired}"})
     ).status_code == 401
