@@ -17,6 +17,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^7.9.4
         version: 7.9.4(next@16.3.5(@types/node@24.13.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@sia/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       next:
         specifier: ^16.1.6
         version: 16.3.5(@types/node@24.13.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
