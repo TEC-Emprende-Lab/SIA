@@ -1,25 +1,11 @@
-import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
+import { ClerkProvider, Show, SignInButton, SignUpButton } from '@clerk/nextjs'
 import type { Metadata } from 'next'
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import './globals.css'
 
 export const metadata: Metadata = {
   title: 'SIA',
   description: 'Sistema de Incubación y Acompañamiento',
-}
-
-const headerStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '1rem',
-  padding: '0.75rem 1.25rem',
-  borderBottom: '1px solid #ddd',
-}
-
-const actionsStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -27,18 +13,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html lang="es-CR">
       <body>
         <ClerkProvider>
-          <header style={headerStyle}>
-            <strong>SIA</strong>
-            <nav style={actionsStyle} aria-label="Sesión">
-              <Show when="signed-out">
+          <Show when="signed-out">
+            <header className="site-header">
+              <strong className="brand">SIA / TEC EMPRENDE</strong>
+              <nav className="session-nav" aria-label="Sesión">
                 <SignInButton>Iniciar sesión</SignInButton>
                 <SignUpButton>Registrarse</SignUpButton>
-              </Show>
-              <Show when="signed-in">
-                <UserButton />
-              </Show>
-            </nav>
-          </header>
+              </nav>
+            </header>
+          </Show>
           {children}
         </ClerkProvider>
       </body>

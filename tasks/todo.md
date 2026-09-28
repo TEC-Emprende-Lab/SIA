@@ -1,5 +1,78 @@
 # Consolidacion de decisiones
 
+## Exploración previa a Fase 7 — UI conectada, 2026-09-28
+
+Objetivo: evitar duplicar trabajo antes de implementar la UI conectada.
+
+1. Inspeccionar ramas locales/remotas, refs y commits no integrados que incluyan trabajo de `apps/web` o Fase 7.
+2. Revisar el árbol y la documentación vigente para identificar UI conectada parcial, contratos y recorridos ya existentes.
+3. Consolidar hallazgos y definir el primer corte de implementación sin alterar requisitos ni decisiones `TBD`.
+
+Resultado: no se encontraron ramas, commits ni objetos no integrados con UI conectada. La
+única integración existente es Clerk → `GET /api/sia/me` → `GET /users/me`; el
+prototipo visual conserva datos ficticios y no se reutilizará como fuente de reglas.
+
+## Fase 7 — UI conectada, 2026-09-28
+
+Alcance confirmado: identidad, expediente, seguimiento y comunicación. Informes técnicos
+y Finanzas quedan fuera de esta fase; también R2/adjuntos, PDF, IA, correo, grabaciones y
+Socket.IO. Referencias: US-PRO-001/002/004/005/006 y US-PM-001/002/003; reglas de
+expediente, seguimiento, reuniones, minutas, canales y alertas del núcleo común.
+
+1. Restaurar `develop` y crear `feature/ui-conectada` desde esa rama, según CONTRIBUTING.
+2. Crear shell autenticado, cliente de API server-only con JWT `sia` y uso de tipos
+   generados; conservar FastAPI como autoridad de autorización.
+3. Conectar emprendimientos, inscripciones y ciclos con paginación, estados de carga/error
+   y navegación contextual por ciclo.
+4. Conectar canvas, ambiciones, objetivos, actividades, evidencias URL, validaciones,
+   cronograma y diagnósticos descriptivos; no portar reglas ficticias del prototipo.
+5. Conectar reuniones, minutas, acuerdos, canales, mensajes, alertas y notificaciones sin
+   simular integraciones externas pendientes.
+6. Añadir pruebas de interfaz y recorridos de navegador a Clerk/FastAPI locales para acceso,
+   invitación, scope y acciones autorizadas/no autorizadas.
+7. Ejecutar lint, typecheck, pruebas web/E2E, checks de contratos y verificaciones API
+   aplicables; documentar evidencia sin declarar staging verificado.
+
+Progreso: `develop` fue restaurada desde `main` y la rama local
+`feature/ui-conectada` contiene el shell, BFF autenticado, expediente, seguimiento y
+comunicación conectados. Lint, typecheck, build y drift de contratos pasan. Los E2E
+autenticados quedan bloqueados hasta configurar `apps/web/.env.local` con Clerk, la
+plantilla JWT `sia`, `SIA_API_URL` y un usuario invitado de prueba; ese archivo no existe
+en este entorno. No se declara Fase 7 ni staging verificados.
+
+## Evolución visual conectada desde el mockup — 2026-09-28
+
+Objetivo: trasladar la arquitectura visual y de interacción de `visual/prototype` a la
+web conectada, preservando FastAPI como autoridad y sin convertir datos demo o decisiones
+`TBD` en reglas de negocio. Referencias: US-PRO-001/002/004/005/006 y US-PM-001/002/003.
+
+1. Reemplazar el shell de cuatro pestañas por navegación persistente del proyecto,
+   contexto de emprendimiento/ciclo, barra superior y adaptación móvil.
+2. Separar las vistas reales de Resumen, Diagnóstico 360°, Ambiciones, Objetivos y
+   actividades, Evidencias, Evolución, Reuniones, Chat y Alertas; reutilizar únicamente
+   rutas BFF autorizadas y mostrar estados de carga, vacío y error.
+3. Exponer Informes a través del allowlist BFF y construir su historial y acciones con
+   los contratos existentes; PDF, R2 e IA se presentan como pendientes, nunca simulados.
+4. Conservar diagnóstico descriptivo por área, actividades con finalización manual,
+   evidencias URL inmutables y transiciones/validaciones originadas en la API. No portar
+   puntajes 1–5, radar, deltas numéricos, estados Kanban ni automatizaciones del mockup.
+5. Mantener Finanzas como no disponible, y Equipo/búsqueda global como pendientes de
+   endpoints autorizados y decisiones funcionales; no exponer datos demo.
+6. Verificar autorización visual y backend, responsive, accesibilidad, lint, tipos,
+   build, contratos y recorrido autenticado local antes de documentar el corte.
+
+Estado: en ejecución. La evaluación del mockup identifica que su shell, jerarquía,
+navegación y patrones de interacción pueden implementarse en frontend; los módulos se
+conectan por cortes según la disponibilidad de API indicada arriba.
+
+Resultado del corte visual: shell de proyecto, navegación responsive, contexto de ciclo,
+vistas conectadas de seguimiento, comunicación, alertas e informes implementados. El BFF
+autoriza ahora las rutas de informes existentes. `pnpm --filter @sia/web lint`,
+`typecheck`, `build`, `pnpm --filter @sia/contracts check`, `git diff --check` y el
+detector visual pasan. El recorrido autenticado continúa pendiente: la sesión aislada de
+automatización no posee la sesión Clerk invitada; no se declara validado hasta probarla
+contra FastAPI local.
+
 ## Reorganización de fases de entrega — 2026-09-16
 
 Decisión de planificación: separar la experiencia conectada, el despliegue técnico
