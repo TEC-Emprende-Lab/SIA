@@ -27,6 +27,7 @@ from app.schemas.seguimiento import (
     ObjectiveUpdate,
     Revision,
     ScheduleItem,
+    TrackingSummary,
     ValidationCreate,
     ValidationOut,
 )
@@ -35,6 +36,11 @@ from app.security.deps import get_current_user
 router = APIRouter(prefix="/cycles/{cycle_id}/seguimiento", tags=["seguimiento"])
 DB = Annotated[AsyncSession, Depends(get_db)]
 Actor = Annotated[User, Depends(get_current_user)]
+
+
+@router.get("/summary", response_model=TrackingSummary)
+async def get_summary(cycle_id: str, db: DB, user: Actor) -> TrackingSummary:
+    return await service.summary(db, user, cycle_id)
 
 
 @router.get("/canvas", response_model=CanvasOut)

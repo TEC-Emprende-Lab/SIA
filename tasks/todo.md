@@ -1,5 +1,27 @@
 # Consolidacion de decisiones
 
+## Dashboard del ciclo por fases — 2026-09-29
+
+Trazabilidad: US-PRO-001/002/006, US-PM-001/002 y regla común de avance confirmada
+por el usuario al autorizar ejecutar el plan por fases.
+
+- [x] Fase 1: `GET /cycles/{cycle_id}/seguimiento/summary`, autorizado en backend,
+  agregado SQL sin N+1 ni porcentajes persistidos; pruebas de igual peso, ciclo vacío,
+  objetivo sin actividades, reapertura, revalidación, separación de ciclos y revocación.
+- [x] Fase 2 (base funcional): cabecera y barras de avance, filtros locales,
+  formularios de objetivo/actividad/evidencia en diálogos y operaciones API existentes.
+- [x] Fase 3: panel lateral del seguimiento con avance del ciclo, conteos y progreso
+  por objetivo. Se refresca después de escrituras y no usa datos simulados.
+- [x] Fase 4 (primer bloque): pestaña Resumen del ciclo con avance, actividades
+  pendientes ordenadas por fecha y objetivos pendientes de validación reales.
+- [ ] Comparación visual autenticada con el mockup y validación de teclado/móvil.
+- [ ] Continuar el dashboard general por módulos: reuniones, acuerdos y alertas reales.
+
+No se implementan Kanban, puntajes de diagnóstico, cargas privadas o finanzas `TBD`.
+No se afirma paridad visual idéntica: esta entrega es la base conectada de las fases.
+API: 117 pruebas pasan; 9 se omiten por requisitos de entorno, incluidos PostgreSQL.
+Ruff y mypy pasan; contratos OpenAPI, lint/typecheck/build Web verificados.
+
 ## Integración de `feature/shell-autenticado` — 2026-09-29
 
 Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002;

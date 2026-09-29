@@ -20,6 +20,16 @@ export type Validation = components['schemas']['ValidationOut']
 export type ScheduleItem = components['schemas']['ScheduleItem']
 export type DiagnosticComparison = components['schemas']['DiagnosticComparison']
 export type ObjectiveStatus = Objective['status']
+export type TrackingSummary = components['schemas']['TrackingSummary']
+
+export function parseTrackingSummary(value: unknown): TrackingSummary | null {
+  if (!isRecord(value) || !requiredText(value.cycle_id) || !Array.isArray(value.objectives)) return null
+  const percent = (item: unknown): item is number => typeof item === 'number' && Number.isFinite(item) && item >= 0 && item <= 100
+  const count = (item: unknown): item is number => typeof item === 'number' && Number.isInteger(item) && item >= 0
+  if (!percent(value.progress_percent) || !count(value.objectives_total) || !count(value.objectives_approved) || !count(value.activities_total) || !count(value.activities_completed)) return null
+  if (!value.objectives.every((item: unknown) => isRecord(item) && requiredText(item.objective_id) && typeof item.status === 'string' && STATUSES.has(item.status) && count(item.activities_total) && count(item.activities_completed) && percent(item.progress_percent))) return null
+  return value as TrackingSummary
+}
 
 export const TRACKED_PROGRAMS = ['Prototipado', 'Puesta en marcha'] as const
 

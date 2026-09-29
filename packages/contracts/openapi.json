@@ -1185,6 +1185,64 @@
         }
       }
     },
+    "/cycles/{cycle_id}/seguimiento/summary": {
+      "get": {
+        "tags": [
+          "seguimiento"
+        ],
+        "summary": "Get Summary",
+        "operationId": "get_summary_cycles__cycle_id__seguimiento_summary_get",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cycles/{cycle_id}/seguimiento/canvas": {
       "get": {
         "tags": [
@@ -6976,6 +7034,46 @@
         ],
         "title": "ObjectiveOut"
       },
+      "ObjectiveProgress": {
+        "properties": {
+          "objective_id": {
+            "type": "string",
+            "title": "Objective Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "pending_validation",
+              "approved",
+              "correction_requested",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "activities_total": {
+            "type": "integer",
+            "title": "Activities Total"
+          },
+          "activities_completed": {
+            "type": "integer",
+            "title": "Activities Completed"
+          },
+          "progress_percent": {
+            "type": "number",
+            "title": "Progress Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objective_id",
+          "status",
+          "activities_total",
+          "activities_completed",
+          "progress_percent"
+        ],
+        "title": "ObjectiveProgress"
+      },
       "ObjectiveUpdate": {
         "properties": {
           "expected_revision": {
@@ -7546,6 +7644,52 @@
           "deliverable"
         ],
         "title": "ScheduleItem"
+      },
+      "TrackingSummary": {
+        "properties": {
+          "cycle_id": {
+            "type": "string",
+            "title": "Cycle Id"
+          },
+          "progress_percent": {
+            "type": "number",
+            "title": "Progress Percent"
+          },
+          "objectives_total": {
+            "type": "integer",
+            "title": "Objectives Total"
+          },
+          "objectives_approved": {
+            "type": "integer",
+            "title": "Objectives Approved"
+          },
+          "activities_total": {
+            "type": "integer",
+            "title": "Activities Total"
+          },
+          "activities_completed": {
+            "type": "integer",
+            "title": "Activities Completed"
+          },
+          "objectives": {
+            "items": {
+              "$ref": "#/components/schemas/ObjectiveProgress"
+            },
+            "type": "array",
+            "title": "Objectives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cycle_id",
+          "progress_percent",
+          "objectives_total",
+          "objectives_approved",
+          "activities_total",
+          "activities_completed",
+          "objectives"
+        ],
+        "title": "TrackingSummary"
       },
       "UnreadOut": {
         "properties": {

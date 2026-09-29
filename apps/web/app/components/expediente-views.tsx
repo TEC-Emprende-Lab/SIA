@@ -903,7 +903,8 @@ function CycleWorkspace({
       <Facts rows={[{ term: 'Programa', value: program }, { term: 'Creado', value: formatDateTime(cycle.created_at) }]} />
       <ProjectWorkspaceTabs
         tabs={[
-          { value: 'seguimiento', label: 'Seguimiento', content: <SeguimientoPanel cycleId={cycle.id} program={program} /> },
+          { value: 'resumen', label: 'Resumen', content: <SeguimientoPanel cycleId={cycle.id} program={program} view="summary" /> },
+          { value: 'seguimiento', label: 'Objetivos y actividades', content: <SeguimientoPanel cycleId={cycle.id} program={program} /> },
           { value: 'reuniones', label: 'Reuniones', content: <MeetingsPanel cycleId={cycle.id} program={program} /> },
           { value: 'canales', label: 'Canales', content: <ChannelsPanel entrepreneurshipId={entrepreneurshipId} cycleId={cycle.id} /> },
           { value: 'equipo', label: 'Equipo', content: <AssignmentPanel scope={{ kind: 'cycle', id: cycle.id }} /> },

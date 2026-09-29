@@ -263,6 +263,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cycles/{cycle_id}/seguimiento/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Summary */
+        get: operations["get_summary_cycles__cycle_id__seguimiento_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cycles/{cycle_id}/seguimiento/canvas": {
         parameters: {
             query?: never;
@@ -1680,6 +1697,22 @@ export interface components {
              */
             status: "draft" | "pending_validation" | "approved" | "correction_requested" | "rejected";
         };
+        /** ObjectiveProgress */
+        ObjectiveProgress: {
+            /** Objective Id */
+            objective_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "pending_validation" | "approved" | "correction_requested" | "rejected";
+            /** Activities Total */
+            activities_total: number;
+            /** Activities Completed */
+            activities_completed: number;
+            /** Progress Percent */
+            progress_percent: number;
+        };
         /** ObjectiveUpdate */
         ObjectiveUpdate: {
             /** Expected Revision */
@@ -1919,6 +1952,23 @@ export interface components {
             area_id: string;
             /** Deliverable */
             deliverable: string | null;
+        };
+        /** TrackingSummary */
+        TrackingSummary: {
+            /** Cycle Id */
+            cycle_id: string;
+            /** Progress Percent */
+            progress_percent: number;
+            /** Objectives Total */
+            objectives_total: number;
+            /** Objectives Approved */
+            objectives_approved: number;
+            /** Activities Total */
+            activities_total: number;
+            /** Activities Completed */
+            activities_completed: number;
+            /** Objectives */
+            objectives: components["schemas"]["ObjectiveProgress"][];
         };
         /** UnreadOut */
         UnreadOut: {
@@ -2628,6 +2678,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_summary_cycles__cycle_id__seguimiento_summary_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackingSummary"];
                 };
             };
             /** @description Validation Error */

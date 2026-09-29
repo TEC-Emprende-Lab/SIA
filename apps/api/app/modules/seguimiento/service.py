@@ -11,7 +11,7 @@ from typing import Any, Literal, cast
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import inspect, select
+from sqlalchemy import case, func, inspect, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,8 +45,10 @@ from app.schemas.seguimiento import (
     EvidenceCreate,
     Input,
     ObjectiveCreate,
+    ObjectiveProgress,
     ObjectiveUpdate,
     ScheduleItem,
+    TrackingSummary,
     ValidationCreate,
 )
 
@@ -62,6 +64,52 @@ MODELS: dict[Resource, type[Entity]] = {
     "diagnostics": Diagnostic,
     "validations": Validation,
 }
+
+
+async def summary(db: AsyncSession, actor: User, cycle_id: str) -> TrackingSummary:
+    """Derived progress, equal objective weights; only currently approved objectives count.
+
+    One aggregate query after authorization avoids N+1 reads and mixed snapshots.
+    Completion and evidence changes retain the existing revalidation rules.
+    """
+    await authorize_cycle(db, actor, cycle_id)
+    rows = await db.execute(
+        select(
+            Objective.id,
+            Objective.status,
+            func.count(Activity.id),
+            func.sum(case((Activity.completed_at.is_not(None), 1), else_=0)),
+        )
+        .outerjoin(
+            Activity,
+            (Activity.objective_id == Objective.id) & (Activity.cycle_id == Objective.cycle_id),
+        )
+        .where(Objective.cycle_id == cycle_id)
+        .group_by(Objective.id, Objective.status, Objective.created_at)
+        .order_by(Objective.created_at, Objective.id)
+    )
+    objectives = [
+        ObjectiveProgress(
+            objective_id=objective_id,
+            status=status,
+            activities_total=total,
+            activities_completed=completed or 0,
+            progress_percent=100 * (completed or 0) / total if total else 0,
+        )
+        for objective_id, status, total, completed in rows
+    ]
+    approved = [item for item in objectives if item.status == "approved"]
+    return TrackingSummary(
+        cycle_id=cycle_id,
+        progress_percent=sum(item.progress_percent for item in approved) / len(approved)
+        if approved
+        else 0,
+        objectives_total=len(objectives),
+        objectives_approved=len(approved),
+        activities_total=sum(item.activities_total for item in objectives),
+        activities_completed=sum(item.activities_completed for item in objectives),
+        objectives=objectives,
+    )
 
 
 def snapshot(entity: Base) -> dict[str, Any]:

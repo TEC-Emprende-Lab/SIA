@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { Target, Search, CheckCircle2, CalendarDays, Paperclip } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 
 import { useMe } from './authenticated-shell'
 import shell from './expediente.module.css'
@@ -27,6 +29,7 @@ import {
   parseSchedule,
   parseValidation,
   parseValidationList,
+  parseTrackingSummary,
   requestSeguimiento,
   seguimientoUrl,
   STATUS_LABEL,
@@ -41,9 +44,11 @@ import {
   type Objective,
   type ScheduleItem,
   type Validation,
+  type TrackingSummary,
 } from '../lib/seguimiento'
 
 type Bundle = {
+  summary: TrackingSummary
   canvas: Canvas
   ambitions: Ambition[]
   objectives: Objective[]
@@ -106,14 +111,14 @@ function field(data: FormData, name: string): string {
   return typeof value === 'string' ? value : ''
 }
 
-export function SeguimientoPanel({ cycleId, program }: { cycleId: string; program: string }) {
+export function SeguimientoPanel({ cycleId, program, view = 'work' }: { cycleId: string; program: string; view?: 'work' | 'summary' }) {
   if (!tracked(program)) {
     return <p className={shell.meta}>Este programa no tiene seguimiento confirmado.</p>
   }
-  return <SeguimientoCycle cycleId={cycleId} />
+  return <SeguimientoCycle cycleId={cycleId} view={view} />
 }
 
-function SeguimientoCycle({ cycleId }: { cycleId: string }) {
+function SeguimientoCycle({ cycleId, view }: { cycleId: string; view: 'work' | 'summary' }) {
   const me = useMe()
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
@@ -125,7 +130,7 @@ function SeguimientoCycle({ cycleId }: { cycleId: string }) {
     async function load() {
       setState({ status: 'loading' })
       const base = seguimientoUrl(cycleId, '')
-      const [canvas, ambitions, objectives, activities, evidence, diagnostics, schedule, validations] =
+      const [canvas, ambitions, objectives, activities, evidence, diagnostics, schedule, validations, summary] =
         await Promise.all([
           requestSeguimiento(`${base}canvas`, parseCanvas),
           requestSeguimiento(`${base}ambitions`, parseAmbitionList),
@@ -135,11 +140,12 @@ function SeguimientoCycle({ cycleId }: { cycleId: string }) {
           requestSeguimiento(`${base}diagnostics`, parseDiagnosticList),
           requestSeguimiento(`${base}schedule`, parseSchedule),
           requestSeguimiento(`${base}validations`, parseValidationList),
+          requestSeguimiento(`${base}summary`, parseTrackingSummary),
         ])
       if (cancelled) {
         return
       }
-      const results = [canvas, ambitions, objectives, activities, evidence, diagnostics, schedule, validations]
+      const results = [canvas, ambitions, objectives, activities, evidence, diagnostics, schedule, validations, summary]
       const denied = results.find((item) => !item.ok && item.status === 403)
       const failed = results.find((item) => !item.ok)
       if (denied && !denied.ok) {
@@ -158,13 +164,14 @@ function SeguimientoCycle({ cycleId }: { cycleId: string }) {
         !evidence.ok ||
         !diagnostics.ok ||
         !schedule.ok ||
-        !validations.ok
+        !validations.ok || !summary.ok
       ) {
         return
       }
       setState({
         status: 'ready',
         data: {
+          summary: summary.data,
           canvas: canvas.data,
           ambitions: ambitions.data,
           objectives: objectives.data,
@@ -228,9 +235,50 @@ function SeguimientoCycle({ cycleId }: { cycleId: string }) {
   const areas = [...bundle.canvas.areas].sort((left, right) => left.position - right.position)
   const shared = { cycleId, pendingId, actionError, run, role: me.role, userId: me.id }
 
+  if (view === 'summary') {
+    const upcoming = bundle.activities.filter((item) => !item.completed_at).sort((left, right) => left.ends_on.localeCompare(right.ends_on)).slice(0, 5)
+    const awaiting = bundle.objectives.filter((item) => item.status === 'pending_validation')
+    return <div className={styles.dashboardLayout}>
+      <div className={styles.stack}>
+        <section className={shell.section}>
+          <p className={styles.eyebrow}>Un plan compartido</p>
+          <h2>Resumen del ciclo</h2>
+          <p className={shell.meta}>Avance y trabajo pendiente a partir del expediente, sin datos de demostración.</p>
+          <div className={styles.planSummary}><strong>{Math.round(bundle.summary.progress_percent)}%</strong><div><p>avance de los objetivos aprobados</p><progress aria-label="Avance del ciclo" max={100} value={bundle.summary.progress_percent} /></div></div>
+        </section>
+        <section className={shell.section}>
+          <h2>Próximas actividades</h2>
+          <p className={shell.meta}>Actividades pendientes ordenadas por fecha de fin, incluidos los pendientes anteriores.</p>
+          {upcoming.length === 0 ? <p className={shell.meta}>No hay actividades pendientes registradas.</p> : upcoming.map((activity) => <article key={activity.id} className={styles.nested}>
+            <h3>{activity.title}</h3>
+            <p className={shell.meta}>{bundle.objectives.find((item) => item.id === activity.objective_id)?.title} · {formatDay(activity.ends_on)}</p>
+          </article>)}
+        </section>
+        <section className={shell.section}>
+          <h2>Objetivos por validar</h2>
+          {awaiting.length === 0 ? <p className={shell.meta}>No hay objetivos pendientes de validación.</p> : awaiting.map((objective) => <article key={objective.id} className={styles.nested}><h3>{objective.title}</h3><p className={shell.meta}>{areaName(areas, objective.area_id)} · Pendiente de validación</p></article>)}
+          <p className={shell.meta}>Consulta y registra avances desde la pestaña Objetivos y actividades.</p>
+        </section>
+      </div>
+      <aside className={styles.sidePanel} aria-label="Resumen del ciclo"><ProgressSummary summary={bundle.summary} /></aside>
+    </div>
+  }
+
   return (
-    <div className={styles.stack}>
-      <section className={shell.section} aria-labelledby="canvas-titulo">
+    <div className={styles.dashboardLayout}>
+      <div className={styles.stack}>
+      <ObjectiveSection
+        {...shared}
+        summary={bundle.summary}
+        areas={areas}
+        ambitions={bundle.ambitions}
+        objectives={bundle.objectives}
+        activities={bundle.activities}
+        evidence={bundle.evidence}
+        validations={bundle.validations}
+      />
+      <details className={shell.section}>
+        <summary>Canvas y áreas del programa</summary>
         <h2 id="canvas-titulo">Canvas</h2>
         <p className={shell.meta}>
           {bundle.canvas.program}, versión {bundle.canvas.version}. Las áreas se registran con observación, sin puntaje.
@@ -242,21 +290,57 @@ function SeguimientoCycle({ cycleId }: { cycleId: string }) {
             </li>
           ))}
         </ol>
-      </section>
+      </details>
       <AmbitionSection {...shared} ambitions={bundle.ambitions} />
-      <ObjectiveSection
-        {...shared}
-        areas={areas}
-        ambitions={bundle.ambitions}
-        objectives={bundle.objectives}
-        activities={bundle.activities}
-        evidence={bundle.evidence}
-        validations={bundle.validations}
-      />
       <ScheduleSection areas={areas} schedule={bundle.schedule} />
       <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} validations={bundle.validations} />
+      </div>
+      <aside className={styles.sidePanel} aria-label="Resumen de avance del ciclo">
+        <ProgressSummary summary={bundle.summary} />
+        <section className={shell.section}>
+          <h2>El plan compartido</h2>
+          {bundle.objectives.length === 0 ? <p className={shell.meta}>Crea un objetivo para comenzar el plan.</p> : bundle.objectives.map((objective) => {
+            const progress = bundle.summary.objectives.find((item) => item.objective_id === objective.id)
+            return <div className={styles.sideObjective} key={objective.id}>
+              <a href={`#objective-${objective.id}`}>{objective.title}</a>
+              <progress aria-label={`Avance de ${objective.title}`} max={100} value={progress?.progress_percent ?? 0} />
+              <span className={shell.meta}>{Math.round(progress?.progress_percent ?? 0)}% · {STATUS_LABEL[objective.status]}</span>
+            </div>
+          })}
+        </section>
+      </aside>
     </div>
   )
+}
+
+function ProgressSummary({ summary }: { summary: TrackingSummary }) {
+  return <section className={styles.progressSummary} aria-label="Avance del ciclo">
+    <p className={styles.eyebrow}>Avance del ciclo</p>
+    <strong>{Math.round(summary.progress_percent)}%</strong>
+    <progress aria-label="Porcentaje de avance del ciclo" max={100} value={summary.progress_percent} />
+    <p>{summary.objectives_approved} de {summary.objectives_total} objetivos aprobados</p>
+    <p>{summary.activities_completed} de {summary.activities_total} actividades completadas</p>
+    <small>Promedio de objetivos aprobados, con el mismo peso. Cambiar actividades o evidencias requiere revalidar su objetivo y puede reducir el porcentaje.</small>
+  </section>
+}
+
+function FormDialog({ title, children, pending, error, actionId }: { title: string; children: ReactNode; pending: boolean; error: ActionError; actionId: string }) {
+  const [open, setOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  useEffect(() => {
+    if (pending) setSaving(true)
+    else if (saving) {
+      if (error?.id !== actionId) setOpen(false)
+      setSaving(false)
+    }
+  }, [pending, saving, error, actionId])
+  return <Dialog open={open} onOpenChange={(next) => { if (!pending) setOpen(next) }}>
+    <DialogTrigger className={shell.buttonSecondary}>{title}</DialogTrigger>
+    <DialogContent className="max-w-xl max-h-[85dvh] overflow-y-auto" onEscapeKeyDown={(event) => { if (pending) event.preventDefault() }} onInteractOutside={(event) => { if (pending) event.preventDefault() }}>
+      <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>Los cambios se guardan en el expediente y conservan su historial.</DialogDescription></DialogHeader>
+      {children}
+    </DialogContent>
+  </Dialog>
 }
 
 type Actions = {
@@ -390,6 +474,7 @@ function TextForm({
 }
 
 function ObjectiveSection({
+  summary,
   cycleId,
   areas,
   ambitions,
@@ -403,6 +488,7 @@ function ObjectiveSection({
   userId,
   run,
 }: Actions & {
+  summary: TrackingSummary
   areas: Area[]
   ambitions: Ambition[]
   objectives: Objective[]
@@ -410,12 +496,25 @@ function ObjectiveSection({
   evidence: Evidence[]
   validations: Validation[]
 }) {
+  const [query, setQuery] = useState('')
+  const [objectiveFilter, setObjectiveFilter] = useState('all')
+  const [activityFilter, setActivityFilter] = useState('all')
+  const filtered = objectives.filter((item) => (objectiveFilter === 'all' || item.id === objectiveFilter) && (item.title.toLocaleLowerCase('es-CR').includes(query.toLocaleLowerCase('es-CR')) || activities.some((activity) => activity.objective_id === item.id && activity.title.toLocaleLowerCase('es-CR').includes(query.toLocaleLowerCase('es-CR')))))
   return (
     <section className={shell.section} aria-labelledby="objetivos-titulo">
-      <h2 id="objetivos-titulo">Objetivos y actividades</h2>
+      <header className={styles.workHeading}>
+        <div><p className={styles.eyebrow}>De la intención a la acción</p><h2 id="objetivos-titulo">Objetivos y actividades</h2><p className={shell.meta}>Un plan compartido para avanzar, aprender y dejar evidencia.</p></div>
+        <Target aria-hidden="true" />
+      </header>
+      <div className={styles.planSummary}><strong>{Math.round(summary.progress_percent)}%</strong><div><p>avance del ciclo</p><progress aria-label="Avance del ciclo" value={summary.progress_percent} max={100} /></div><span>{summary.objectives_approved} objetivos aprobados · mismo peso</span></div>
+      <div className={styles.filters}>
+        <label className={styles.field}>Objetivo<select value={objectiveFilter} onChange={(event) => setObjectiveFilter(event.target.value)}><option value="all">Todos los objetivos</option>{objectives.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+        <label className={styles.field}>Actividades<select value={activityFilter} onChange={(event) => setActivityFilter(event.target.value)}><option value="all">Todas</option><option value="pending">Pendientes</option><option value="completed">Completadas</option></select></label>
+        <label className={styles.field}><span><Search aria-hidden="true" size={13} /> Buscar</span><input type="search" placeholder="Objetivo o actividad…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+      </div>
       {objectives.length === 0 ? <p className={shell.meta}>No hay objetivos en este ciclo.</p> : null}
       {areas.map((area) => {
-        const items = objectives.filter((item) => item.area_id === area.id)
+        const items = filtered.filter((item) => item.area_id === area.id)
         if (items.length === 0) {
           return null
         }
@@ -427,9 +526,10 @@ function ObjectiveSection({
                 key={objective.id}
                 cycleId={cycleId}
                 objective={objective}
+                progress={summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0}
                 areas={areas}
                 ambitions={ambitions}
-                activities={activities.filter((item) => item.objective_id === objective.id)}
+                activities={activities.filter((item) => item.objective_id === objective.id && (activityFilter === 'all' || (activityFilter === 'completed' ? Boolean(item.completed_at) : !item.completed_at)))}
                 evidence={evidence}
                 validation={latest(validations, 'objective_id', objective.id)}
                 pendingId={pendingId}
@@ -442,6 +542,8 @@ function ObjectiveSection({
           </div>
         )
       })}
+      {objectives.length > 0 && filtered.length === 0 ? <p className={shell.meta}>No hay coincidencias. Cambia los filtros o la búsqueda.</p> : null}
+      <FormDialog title="Nuevo objetivo" pending={pendingId === 'objective-new'} error={actionError} actionId="objective-new">
       <ObjectiveForm
         id="objective-new"
         title="Nuevo objetivo"
@@ -459,11 +561,13 @@ function ObjectiveSection({
           )
         }
       />
+      </FormDialog>
     </section>
   )
 }
 
 function ObjectiveCard({
+  progress,
   cycleId,
   objective,
   areas,
@@ -477,6 +581,7 @@ function ObjectiveCard({
   userId,
   run,
 }: Actions & {
+  progress: number
   objective: Objective
   areas: Area[]
   ambitions: Ambition[]
@@ -486,13 +591,14 @@ function ObjectiveCard({
 }) {
   const ambition = ambitions.find((item) => item.id === objective.ambition_id)
   return (
-    <article className={styles.block}>
+    <article className={styles.block} id={`objective-${objective.id}`}>
       <div className={styles.row}>
         <h3>{objective.title}</h3>
         <span className={styles.badge} data-status={objective.status}>
           {STATUS_LABEL[objective.status]}
         </span>
       </div>
+      <div className={styles.objectiveProgress}><progress aria-label={`Avance de ${objective.title}`} value={progress} max={100} /><strong>{Math.round(progress)}%</strong></div>
       {objective.description ? <p className={shell.meta}>{objective.description}</p> : null}
       <p className={shell.meta}>
         {objective.deliverable ? `Entregable de trabajo: ${objective.deliverable}. ` : ''}
@@ -542,6 +648,7 @@ function ObjectiveCard({
           }
         />
       ) : null}
+      <FormDialog title="Editar objetivo" pending={pendingId === `objective-${objective.id}`} error={actionError} actionId={`objective-${objective.id}`}>
       <ObjectiveForm
         id={`objective-${objective.id}`}
         title="Editar objetivo"
@@ -560,6 +667,7 @@ function ObjectiveCard({
           )
         }
       />
+      </FormDialog>
       {activities.map((activity) => (
         <ActivityCard
           key={activity.id}
@@ -571,6 +679,7 @@ function ObjectiveCard({
           run={run}
         />
       ))}
+      <FormDialog title="Nueva actividad" pending={pendingId === `activity-new-${objective.id}`} error={actionError} actionId={`activity-new-${objective.id}`}>
       <ActivityForm
         id={`activity-new-${objective.id}`}
         title="Nueva actividad"
@@ -587,6 +696,7 @@ function ObjectiveCard({
           )
         }
       />
+      </FormDialog>
     </article>
   )
 }
@@ -714,11 +824,13 @@ function ActivityCard({
     <article className={styles.nested}>
       <div className={styles.row}>
         <h4>{activity.title}</h4>
-        <span className={shell.meta}>{activity.completed_at ? 'Realizada' : 'Pendiente'}</span>
+        <span className={styles.badge}>{activity.completed_at ? <><CheckCircle2 aria-hidden="true" size={13} /> Completada</> : 'Pendiente'}</span>
       </div>
       <p className={shell.meta}>
+        <CalendarDays aria-hidden="true" size={13} />{' '}
         {formatDay(activity.starts_on)} – {formatDay(activity.ends_on)}
       </p>
+      <p className={shell.meta}><Paperclip aria-hidden="true" size={13} /> {evidence.length} evidencias</p>
       {activity.description ? <p className={shell.meta}>{activity.description}</p> : null}
       <div className={shell.actions}>
         <button
@@ -738,6 +850,7 @@ function ActivityCard({
         </button>
       </div>
       <ErrorLine id={`done-${activity.id}`} error={actionError} />
+      <FormDialog title="Editar actividad" pending={pendingId === `activity-${activity.id}`} error={actionError} actionId={`activity-${activity.id}`}>
       <ActivityForm
         id={`activity-${activity.id}`}
         title="Editar actividad"
@@ -760,6 +873,7 @@ function ActivityCard({
           )
         }
       />
+      </FormDialog>
       {evidence.length === 0 ? <p className={shell.meta}>Sin evidencias.</p> : null}
       <ul className={shell.list}>
         {evidence.map((item) => (
@@ -769,6 +883,7 @@ function ActivityCard({
           </li>
         ))}
       </ul>
+      <FormDialog title="Agregar evidencia" pending={pendingId === `evidence-${activity.id}`} error={actionError} actionId={`evidence-${activity.id}`}>
       <EvidenceForm
         id={`evidence-${activity.id}`}
         pending={pendingId === `evidence-${activity.id}`}
@@ -782,6 +897,7 @@ function ActivityCard({
           )
         }
       />
+      </FormDialog>
     </article>
   )
 }

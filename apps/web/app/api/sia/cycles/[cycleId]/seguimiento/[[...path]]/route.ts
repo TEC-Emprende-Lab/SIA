@@ -19,7 +19,7 @@ function allows(method: string, path: readonly string[]): boolean {
   if (extra !== undefined || !resource) {
     return false
   }
-  if (path.length === 1 && (resource === 'canvas' || resource === 'schedule' || resource === 'validations')) {
+  if (path.length === 1 && (resource === 'canvas' || resource === 'schedule' || resource === 'validations' || resource === 'summary')) {
     return method === 'GET'
   }
   if (path.length === 1 && COLLECTIONS.has(resource)) {

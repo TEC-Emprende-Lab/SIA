@@ -198,6 +198,24 @@ class ScheduleItem(ActivityOut):
     deliverable: str | None
 
 
+class ObjectiveProgress(Output):
+    objective_id: str
+    status: Status
+    activities_total: int
+    activities_completed: int
+    progress_percent: float
+
+
+class TrackingSummary(Output):
+    cycle_id: str
+    progress_percent: float
+    objectives_total: int
+    objectives_approved: int
+    activities_total: int
+    activities_completed: int
+    objectives: list[ObjectiveProgress]
+
+
 class ComparisonArea(Output):
     area_id: str
     before: str
