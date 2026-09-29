@@ -1,6 +1,7 @@
-import { ClerkProvider, Show, SignInButton, SignUpButton } from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { SessionHeader } from './components/session-header'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -13,15 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html lang="es-CR">
       <body>
         <ClerkProvider>
-          <Show when="signed-out">
-            <header className="site-header">
-              <strong className="brand">SIA / TEC EMPRENDE</strong>
-              <nav className="session-nav" aria-label="Sesión">
-                <SignInButton>Iniciar sesión</SignInButton>
-                <SignUpButton>Registrarse</SignUpButton>
-              </nav>
-            </header>
-          </Show>
+          <SessionHeader />
           {children}
         </ClerkProvider>
       </body>
