@@ -103,6 +103,16 @@ servidor, datos demo, roles ni reglas nuevas. Lint, typecheck, build, contratos 
 de espacios pasan. El recorrido local de navegador permanece bloqueado por ausencia de
 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; no se configuró ni creó una cuenta Clerk nueva.
 
+Mejora UX de Expediente — 2026-09-29: referencias `expediente-del-emprendimiento`,
+roles comunes y US-PRO-001/005/006. Se reordenó la experiencia en una jerarquía de
+emprendimiento → inscripción → ciclo: encabezados contextuales, acciones de creación
+en diálogos accesibles, búsqueda local explícitamente limitada a resultados cargados,
+tabla ordenable, resúmenes, ayuda contextual y estados vacíos accionables. El ciclo ya
+no presenta un estado ficticio de “Activo”. No se modificaron contratos, datos,
+autorización, historial, estados del programa ni reglas `TBD`. Lint, typecheck, build,
+contratos y revisión de espacios pasan; el recorrido navegador autenticado permanece
+pendiente de claves y una sesión Clerk de prueba.
+
 Resultado del corte visual: shell de proyecto, navegación responsive, contexto de ciclo,
 vistas conectadas de seguimiento, comunicación, alertas e informes implementados. El BFF
 autoriza ahora las rutas de informes existentes. `pnpm --filter @sia/web lint`,

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { BriefcaseBusiness, CalendarPlus, FolderPlus, Search, X } from 'lucide-react'
 
 import { StatusPanel, useMe } from './authenticated-shell'
 import styles from './expediente.module.css'
@@ -154,6 +155,73 @@ function Facts({ rows }: { rows: { term: string; value: string }[] }) {
   )
 }
 
+function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description: string
+  action?: ReactNode
+}) {
+  return (
+    <div className={styles.emptyState}>
+      <span className={styles.emptyIcon} aria-hidden="true"><BriefcaseBusiness /></span>
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+        {action ? <div className={styles.emptyAction}>{action}</div> : null}
+      </div>
+    </div>
+  )
+}
+
+function SectionHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description: string
+  action?: ReactNode
+}) {
+  return (
+    <div className={styles.sectionHeader}>
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+      {action ? <div className={styles.sectionAction}>{action}</div> : null}
+    </div>
+  )
+}
+
+function DetailHero({
+  eyebrow,
+  title,
+  description,
+  monogram,
+  action,
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  monogram: string
+  action?: ReactNode
+}) {
+  return (
+    <header className={styles.detailHero}>
+      <span className={styles.detailMonogram} aria-hidden="true">{monogram.slice(0, 2).toUpperCase()}</span>
+      <div className={styles.detailHeroCopy}>
+        <p className={styles.eyebrow}>{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+      {action ? <div className={styles.detailHeroAction}>{action}</div> : null}
+    </header>
+  )
+}
+
 function NameForm({
   title,
   fieldLabel,
@@ -223,7 +291,10 @@ export function ExpedienteListView() {
   const [formError, setFormError] = useState<string | null>(null)
   const [createdNotice, setCreatedNotice] = useState<string | null>(null)
   const [formKey, setFormKey] = useState(0)
+  const [query, setQuery] = useState('')
   usePageTitle('Expediente')
+
+  const visibleItems = items.filter((item) => item.name.toLocaleLowerCase('es-CR').includes(query.trim().toLocaleLowerCase('es-CR')))
 
   useEffect(() => {
     let cancelled = false
@@ -326,40 +397,62 @@ export function ExpedienteListView() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <h1>Expediente</h1>
-        <p className={styles.intro}>Emprendimientos que puedes consultar.</p>
+      <header className={styles.pageHero}>
+        <div>
+          <p className={styles.eyebrow}>Expediente</p>
+          <h1>Emprendimientos</h1>
+          <p className={styles.intro}>Consulta el historial y los ciclos a los que tienes acceso.</p>
+        </div>
+        {canRegisterExpediente(me.role) ? (
+          <Dialog>
+            <DialogTrigger className={styles.button}><FolderPlus aria-hidden="true" /> Nuevo emprendimiento</DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nuevo emprendimiento</DialogTitle>
+                <DialogDescription>El expediente conservará su historial entre programas y ciclos.</DialogDescription>
+              </DialogHeader>
+              <NameForm
+                key={formKey}
+                title="Datos del emprendimiento"
+                fieldLabel="Nombre"
+                submitLabel="Crear emprendimiento"
+                pending={pending}
+                error={formError}
+                onSubmit={(name) => void createEntrepreneurship(name)}
+              />
+            </DialogContent>
+          </Dialog>
+        ) : null}
       </header>
-      {canRegisterExpediente(me.role) ? (
-        <Dialog>
-          <DialogTrigger className={styles.button}>Nuevo emprendimiento</DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nuevo emprendimiento</DialogTitle>
-              <DialogDescription>Registra el expediente que conservará el historial del emprendimiento.</DialogDescription>
-            </DialogHeader>
-            <NameForm
-              key={formKey}
-              title="Datos del emprendimiento"
-              fieldLabel="Nombre"
-              submitLabel="Crear emprendimiento"
-              pending={pending}
-              error={formError}
-              onSubmit={(name) => void createEntrepreneurship(name)}
-            />
-          </DialogContent>
-        </Dialog>
-      ) : null}
       {createdNotice ? (
-        <p className={styles.meta} role="status">
+        <p className={styles.notice} role="status">
           {createdNotice}
         </p>
       ) : null}
       {items.length === 0 ? (
-        <p className={styles.meta}>No hay emprendimientos en tu alcance.</p>
-      ) : (
-        <EntrepreneurshipTable items={items} />
-      )}
+        <EmptyState
+          title="No hay emprendimientos en tu alcance"
+          description={canRegisterExpediente(me.role) ? 'Crea el primer emprendimiento para iniciar su expediente.' : 'Cuando te asignen a un emprendimiento, aparecerá aquí.'}
+        />
+      ) : <>
+        <section className={styles.listWorkspace} aria-labelledby="lista-emprendimientos">
+          <div className={styles.listToolbar}>
+            <div>
+              <h2 id="lista-emprendimientos">Emprendimientos disponibles</h2>
+              <p>{query ? `${visibleItems.length} coincidencia${visibleItems.length === 1 ? '' : 's'} en los ${items.length} emprendimientos cargados.` : `${items.length} emprendimiento${items.length === 1 ? '' : 's'} cargado${items.length === 1 ? '' : 's'}.`}</p>
+            </div>
+            <label className={styles.searchField}>
+              <span className="sr-only">Buscar emprendimiento en los resultados cargados</span>
+              <Search aria-hidden="true" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre" type="search" />
+              {query ? <button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery('')}><X aria-hidden="true" /></button> : null}
+            </label>
+          </div>
+          {visibleItems.length === 0 ? (
+            <EmptyState title="No encontramos coincidencias" description="Prueba con otro nombre o limpia la búsqueda para consultar los emprendimientos cargados." />
+          ) : <EntrepreneurshipTable items={visibleItems} />}
+        </section>
+      </>}
       {hasMore ? (
         <div className={styles.actions}>
           <button type="button" className={styles.buttonSecondary} disabled={loadingMore} onClick={() => void loadMore()}>
@@ -432,34 +525,62 @@ export function ExpedienteDetailView({ entrepreneurshipId }: { entrepreneurshipI
       ) : null}
       {entrepreneurship.state.status === 'ready' ? (
         <>
-          <header className={styles.header}>
-            <h1>{entrepreneurship.state.data.name}</h1>
-          </header>
-          <Facts
-            rows={[
-              { term: 'Creado', value: formatDateTime(entrepreneurship.state.data.created_at) },
-              { term: 'Actualizado', value: formatDateTime(entrepreneurship.state.data.updated_at) },
-            ]}
+          <DetailHero
+            eyebrow="Expediente del emprendimiento"
+            title={entrepreneurship.state.data.name}
+            description="Historial de programas, ciclos y colaboración autorizada."
+            monogram={entrepreneurship.state.data.name}
+            action={canRegisterExpediente(me.role) ? (
+              <Dialog>
+                <DialogTrigger className={styles.button}><CalendarPlus aria-hidden="true" /> Inscribir en Prototipado</DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Inscribir en Prototipado</DialogTitle>
+                    <DialogDescription>La inscripción se conserva como parte del historial del emprendimiento.</DialogDescription>
+                  </DialogHeader>
+                  <EnrollmentForm pending={pending} error={formError} onSubmit={(value) => void createEnrollment(value)} />
+                </DialogContent>
+              </Dialog>
+            ) : undefined}
           />
-          <section className={styles.section} aria-labelledby="inscripciones-titulo">
-            <h2 id="inscripciones-titulo">Inscripciones</h2>
-            <EnrollmentSection
-              state={enrollments.state}
-              entrepreneurshipId={entrepreneurship.state.data.id}
-              onRetry={enrollments.reload}
-            />
-            <LoadMore
-              hasMore={enrollments.hasMore}
-              loading={enrollments.loadingMore}
-              error={enrollments.moreError}
-              onLoad={() => void enrollments.loadMore()}
-            />
-            {canRegisterExpediente(me.role) ? (
-              <EnrollmentForm pending={pending} error={formError} onSubmit={(value) => void createEnrollment(value)} />
-            ) : null}
-          </section>
-          <ChannelsPanel entrepreneurshipId={entrepreneurship.state.data.id} />
-          <AssignmentPanel scope={{ kind: 'entrepreneurship', id: entrepreneurship.state.data.id }} />
+          <div className={styles.detailLayout}>
+            <div className={styles.primaryColumn}>
+              <section className={styles.section} aria-labelledby="inscripciones-titulo">
+                <SectionHeader
+                  title="Inscripciones"
+                  description="Programas registrados para este emprendimiento."
+                />
+                <EnrollmentSection
+                  state={enrollments.state}
+                  entrepreneurshipId={entrepreneurship.state.data.id}
+                  onRetry={enrollments.reload}
+                />
+                <LoadMore
+                  hasMore={enrollments.hasMore}
+                  loading={enrollments.loadingMore}
+                  error={enrollments.moreError}
+                  onLoad={() => void enrollments.loadMore()}
+                />
+              </section>
+              <ChannelsPanel entrepreneurshipId={entrepreneurship.state.data.id} />
+            </div>
+            <aside className={styles.sideColumn} aria-label="Resumen del expediente">
+              <section className={styles.summaryCard}>
+                <h2>Resumen</h2>
+                <Facts
+                  rows={[
+                    { term: 'Creado', value: formatDateTime(entrepreneurship.state.data.created_at) },
+                    { term: 'Actualizado', value: formatDateTime(entrepreneurship.state.data.updated_at) },
+                  ]}
+                />
+              </section>
+              <section className={styles.guidanceCard}>
+                <h2>Cómo continuar</h2>
+                <p>Una inscripción agrupa los ciclos de trabajo del programa. Abre una inscripción para consultar o crear sus ciclos.</p>
+              </section>
+              <AssignmentPanel scope={{ kind: 'entrepreneurship', id: entrepreneurship.state.data.id }} />
+            </aside>
+          </div>
         </>
       ) : null}
     </div>
@@ -490,8 +611,10 @@ function EnrollmentSection({
     )
   }
   return (
-    <>
-      <RecordList empty={state.data.length === 0 ? 'Este emprendimiento no tiene inscripciones.' : null}>
+    state.data.length === 0 ? (
+      <EmptyState title="Aún no hay inscripciones" description="Las inscripciones registran el paso del emprendimiento por cada programa." />
+    ) : (
+      <RecordList empty={null}>
         {state.data.map((enrollment) => (
           <li key={enrollment.id}>
             <Link className={styles.card} href={`/expediente/${entrepreneurshipId}/inscripciones/${enrollment.id}`}>
@@ -501,7 +624,7 @@ function EnrollmentSection({
           </li>
         ))}
       </RecordList>
-    </>
+    )
   )
 }
 
@@ -521,8 +644,7 @@ function EnrollmentForm({
     onSubmit(typeof raw === 'string' ? raw : '')
   }
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <h2>Inscribir en Prototipado</h2>
+    <form className={styles.formCompact} onSubmit={handleSubmit}>
       <label className={styles.field}>
         Fecha de ingreso
         <input
@@ -657,12 +779,37 @@ export function EnrollmentDetailView({
       ) : null}
       {aligned && enrollment.state.status === 'ready' && entrepreneurship.state.status === 'ready' ? (
         <>
-          <header className={styles.header}>
-            <h1>{enrollment.state.data.program}</h1>
-          </header>
+          <DetailHero
+            eyebrow="Inscripción"
+            title={enrollment.state.data.program}
+            description={`Programa registrado para ${entrepreneurshipName}.`}
+            monogram={enrollment.state.data.program}
+          />
           <Facts rows={[{ term: 'Fecha de ingreso', value: formatDateTime(enrollment.state.data.enrolled_at) }]} />
           <section className={styles.section} aria-labelledby="ciclos-titulo">
-            <h2 id="ciclos-titulo">Ciclos</h2>
+            <SectionHeader
+              title="Ciclos"
+              description="Proyectos o intervenciones registrados dentro de esta inscripción."
+              action={canRegisterExpediente(me.role) && enrollment.state.data.program === PROTOTIPADO_PROGRAM ? (
+                <Dialog>
+                  <DialogTrigger className={styles.button}><FolderPlus aria-hidden="true" /> Nuevo ciclo</DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Nuevo ciclo de Prototipado</DialogTitle>
+                      <DialogDescription>El ciclo organizará el trabajo, seguimiento y comunicación de esta inscripción.</DialogDescription>
+                    </DialogHeader>
+                    <NameForm
+                      title="Datos del ciclo"
+                      fieldLabel="Nombre del ciclo"
+                      submitLabel="Crear ciclo"
+                      pending={pending}
+                      error={formError}
+                      onSubmit={(name) => void createCycle(name)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              ) : undefined}
+            />
             <CycleSection
               state={cycles.state}
               entrepreneurshipId={entrepreneurship.state.data.id}
@@ -675,16 +822,6 @@ export function EnrollmentDetailView({
               error={cycles.moreError}
               onLoad={() => void cycles.loadMore()}
             />
-            {canRegisterExpediente(me.role) && enrollment.state.data.program === PROTOTIPADO_PROGRAM ? (
-              <NameForm
-                title="Nuevo ciclo de Prototipado"
-                fieldLabel="Nombre del ciclo"
-                submitLabel="Crear ciclo"
-                pending={pending}
-                error={formError}
-                onSubmit={(name) => void createCycle(name)}
-              />
-            ) : null}
           </section>
         </>
       ) : null}
@@ -718,8 +855,10 @@ function CycleSection({
     )
   }
   return (
-    <>
-      <RecordList empty={state.data.length === 0 ? 'Esta inscripción no tiene ciclos.' : null}>
+    state.data.length === 0 ? (
+      <EmptyState title="Aún no hay ciclos" description="Crea un ciclo cuando exista un proyecto o intervención concreta dentro de esta inscripción." />
+    ) : (
+      <RecordList empty={null}>
         {state.data.map((cycle) => (
           <li key={cycle.id}>
             <Link
@@ -732,7 +871,7 @@ function CycleSection({
           </li>
         ))}
       </RecordList>
-    </>
+    )
   )
 }
 
@@ -825,17 +964,12 @@ export function CycleDetailView({
       ) : null}
       {aligned && cycle.state.status === 'ready' && enrollment.state.status === 'ready' ? (
         <>
-          <header className={styles.projectHero}>
-            <span className={styles.projectMonogram} aria-hidden="true">
-              {cycle.state.data.name.slice(0, 2).toUpperCase()}
-            </span>
-            <div>
-              <p className={styles.eyebrow}>Espacio del proyecto</p>
-              <h1>{cycle.state.data.name}</h1>
-              <p className={styles.projectMeta}>{entrepreneurshipName} · {enrollment.state.data.program}</p>
-            </div>
-            <span className={styles.statusBadge}>Activo</span>
-          </header>
+          <DetailHero
+            eyebrow="Espacio del ciclo"
+            title={cycle.state.data.name}
+            description={`${entrepreneurshipName} · ${enrollment.state.data.program}`}
+            monogram={cycle.state.data.name}
+          />
           <Facts
             rows={[
               { term: 'Programa', value: enrollment.state.data.program },
