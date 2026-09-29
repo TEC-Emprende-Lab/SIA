@@ -1,5 +1,18 @@
 # Consolidacion de decisiones
 
+## Fase 7 — UI conectada en local, 2026-09-29
+
+Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002;
+identidad, expediente y comunicación según el núcleo. No modifica reglas de negocio.
+
+- [x] Conectar `apps/web` a la API de identidad, expediente, seguimiento y comunicación, con carga, error, paginación y permisos.
+- [x] Editar una actividad conservando objetivo y responsable. Un cambio real reabre un objetivo aprobado.
+- [x] Corregir una fotografía que no está aprobada, conservando la fotografía de origen.
+- [x] `pnpm --filter @sia/web lint` y `typecheck`.
+- [x] Recorrido local de navegador a API: expediente, reapertura por edición de actividad, evidencia, corrección y reenvío de fotografía, reunión, canal, bandeja y 403 de un rol sin asignación.
+
+Menciones, otro responsable y la asignación hecha por el gestor siguen `TBD`: no hay listado de personas del ciclo. Finanzas espera a la Fase 6. Staging **NO verificado**.
+
 ## Reorganización de fases de entrega — 2026-09-16
 
 Decisión de planificación: separar la experiencia conectada, el despliegue técnico

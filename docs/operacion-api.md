@@ -261,8 +261,7 @@ del host y avisó de engine no soportado; los controles finales se repitieron co
 - Validación real en staging con Clerk/Google OAuth, Redis y servicios externos configurados.
 - Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
   actual documentado del prototipo no equivale a desplegar esta API.
-- UI conectada del expediente y seguimiento, binarios privados R2, informes/PDF, reuniones/minutas, canales,
-  notificaciones y finanzas según los requisitos de cada programa.
+- Binarios privados R2, informes/PDF y finanzas. La UI de expediente, seguimiento, reuniones, canales y bandeja está conectada en local (Fase 7, 2026-09-29). Menciones y elegir a otra persona del ciclo siguen `TBD`: no hay listado de personas del ámbito.
 - Escalas de diagnóstico, catálogo oficial de entregables, evidencia mínima, transiciones y
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
