@@ -1,7 +1,7 @@
-import { EmptyState } from '../../components/authenticated-shell'
-import { sectionByHref } from '../../lib/navigation'
+'use client'
+
+import { ExpedienteListView } from '../../components/expediente-views'
 
 export default function ExpedientePage() {
-  const section = sectionByHref('/expediente')
-  return <EmptyState title={section.emptyTitle} description={section.emptyDescription} />
+  return <ExpedienteListView />
 }

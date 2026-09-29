@@ -5,10 +5,11 @@ import { isSiaRole, type SiaRole } from './identity'
  * Alcance por rol: docs/00-nucleo-comun/actores-roles-y-permisos.md.
  * Invitaciones y usuarios siguen apps/api/app/modules/identity/policy.py:
  * Coordinadora lista usuarios; Coordinadora y Gestor listan invitaciones.
+ * Bandeja: alertas y notificaciones del propio usuario, sin tiempo real.
  * Revisor financiero sigue TBD y no aparece aquí.
  * La UI solo oculta enlaces; cada operación se autoriza en la API.
  */
-export type ShellHref = '/expediente' | '/invitaciones' | '/usuarios'
+export type ShellHref = '/expediente' | '/bandeja' | '/invitaciones' | '/usuarios'
 
 export type ShellGroup = 'Trabajo' | 'Administración'
 
@@ -34,7 +35,15 @@ export const SHELL_SECTIONS: readonly ShellSection[] = [
     group: 'Trabajo',
     roles: ['Coordinadora', 'Gestor', 'Emprendedor'],
     emptyTitle: 'Expediente',
-    emptyDescription: 'Esta sección aún no muestra registros.',
+    emptyDescription: 'No hay emprendimientos en tu alcance.',
+  },
+  {
+    href: '/bandeja',
+    label: 'Bandeja',
+    group: 'Trabajo',
+    roles: ['Coordinadora', 'Gestor', 'Emprendedor'],
+    emptyTitle: 'Bandeja',
+    emptyDescription: 'No hay alertas ni notificaciones en tu bandeja.',
   },
   {
     href: '/invitaciones',
@@ -42,7 +51,7 @@ export const SHELL_SECTIONS: readonly ShellSection[] = [
     group: 'Administración',
     roles: ['Coordinadora', 'Gestor'],
     emptyTitle: 'Invitaciones',
-    emptyDescription: 'Esta sección aún no muestra registros.',
+    emptyDescription: 'No hay invitaciones.',
   },
   {
     href: '/usuarios',
@@ -50,7 +59,7 @@ export const SHELL_SECTIONS: readonly ShellSection[] = [
     group: 'Administración',
     roles: ['Coordinadora'],
     emptyTitle: 'Usuarios',
-    emptyDescription: 'Esta sección aún no muestra registros.',
+    emptyDescription: 'No hay usuarios.',
   },
 ]
 

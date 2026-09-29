@@ -1,7 +1,7 @@
-import { EmptyState } from '../../components/authenticated-shell'
-import { sectionByHref } from '../../lib/navigation'
+'use client'
+
+import { InvitacionesView } from '../../components/administracion-views'
 
 export default function InvitacionesPage() {
-  const section = sectionByHref('/invitaciones')
-  return <EmptyState title={section.emptyTitle} description={section.emptyDescription} />
+  return <InvitacionesView />
 }

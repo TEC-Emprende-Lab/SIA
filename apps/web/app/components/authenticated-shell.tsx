@@ -29,18 +29,21 @@ function SessionNotice({ children }: { children: ReactNode }) {
   return <main className={styles.notice}>{children}</main>
 }
 
-function StatusPanel({
+export function StatusPanel({
   status,
   title,
   description,
+  heading = 'h1',
 }: {
-  status: 'empty' | 'forbidden' | 'error'
+  status: 'empty' | 'forbidden' | 'error' | 'missing'
   title: string
   description: string
+  heading?: 'h1' | 'h2'
 }) {
+  const Title = heading
   return (
     <section className={styles.panel} data-status={status} role={status === 'error' ? 'alert' : 'status'}>
-      <h1>{title}</h1>
+      <Title>{title}</Title>
       <p>{description}</p>
     </section>
   )

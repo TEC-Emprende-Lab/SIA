@@ -88,7 +88,8 @@
   border-left-color: #a33;
 }
 
-.panel h1 {
+.panel h1,
+.panel h2 {
   margin: 0 0 0.5rem;
   font-size: 1.4rem;
 }
