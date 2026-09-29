@@ -113,6 +113,12 @@ autorización, historial, estados del programa ni reglas `TBD`. Lint, typecheck,
 contratos y revisión de espacios pasan; el recorrido navegador autenticado permanece
 pendiente de claves y una sesión Clerk de prueba.
 
+Navegación de ciclos — 2026-09-29: en la inscripción, múltiples ciclos autorizados
+se presentan como pestañas Radix y cambian su espacio de trabajo en la misma vista, sin
+convertir la selección en una redirección. La ruta individual se conserva para enlaces
+directos y para abrir automáticamente el único ciclo solo cuando la página completa no
+reporta más resultados. No se modifica autorización, alcance de ciclos ni contratos.
+
 Resultado del corte visual: shell de proyecto, navegación responsive, contexto de ciclo,
 vistas conectadas de seguimiento, comunicación, alertas e informes implementados. El BFF
 autoriza ahora las rutas de informes existentes. `pnpm --filter @sia/web lint`,

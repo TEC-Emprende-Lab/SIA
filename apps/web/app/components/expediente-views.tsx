@@ -11,7 +11,7 @@ import { AssignmentPanel } from './administracion-views'
 import { ChannelsPanel } from './canales-views'
 import { MeetingsPanel } from './comunicacion-views'
 import { EntrepreneurshipTable } from './entrepreneurship-table'
-import { ProjectWorkspaceTabs } from './project-workspace-tabs'
+import { CycleWorkspaceTabs, ProjectWorkspaceTabs } from './project-workspace-tabs'
 import { SeguimientoPanel } from './seguimiento-views'
 import {
   Dialog,
@@ -711,6 +711,17 @@ export function EnrollmentDetailView({
   const program = aligned && enrollment.state.status === 'ready' ? enrollment.state.data.program : null
   usePageTitle(program)
 
+  const onlyCycle = cycles.state.status === 'ready' && !cycles.hasMore && cycles.state.data.length === 1
+    ? cycles.state.data[0]
+    : null
+
+  useEffect(() => {
+    if (!aligned || !onlyCycle || enrollment.state.status !== 'ready' || entrepreneurship.state.status !== 'ready') {
+      return
+    }
+    router.replace(`/expediente/${entrepreneurship.state.data.id}/inscripciones/${enrollment.state.data.id}/ciclos/${onlyCycle.id}`)
+  }, [aligned, enrollment.state, entrepreneurship.state, onlyCycle, router])
+
   async function createCycle(rawName: string) {
     if (!aligned || enrollment.state.status !== 'ready' || entrepreneurship.state.status !== 'ready' || pending) {
       return
@@ -810,18 +821,21 @@ export function EnrollmentDetailView({
                 </Dialog>
               ) : undefined}
             />
-            <CycleSection
-              state={cycles.state}
-              entrepreneurshipId={entrepreneurship.state.data.id}
-              enrollmentId={enrollment.state.data.id}
-              onRetry={cycles.reload}
-            />
-            <LoadMore
-              hasMore={cycles.hasMore}
-              loading={cycles.loadingMore}
-              error={cycles.moreError}
-              onLoad={() => void cycles.loadMore()}
-            />
+            {onlyCycle ? <LoadingLine>Abriendo el único ciclo disponible…</LoadingLine> : <>
+              <CycleSection
+                state={cycles.state}
+                entrepreneurshipId={entrepreneurship.state.data.id}
+                entrepreneurshipName={entrepreneurship.state.data.name}
+                program={enrollment.state.data.program}
+                onRetry={cycles.reload}
+              />
+              <LoadMore
+                hasMore={cycles.hasMore}
+                loading={cycles.loadingMore}
+                error={cycles.moreError}
+                onLoad={() => void cycles.loadMore()}
+              />
+            </>}
           </section>
         </>
       ) : null}
@@ -832,12 +846,14 @@ export function EnrollmentDetailView({
 function CycleSection({
   state,
   entrepreneurshipId,
-  enrollmentId,
+  entrepreneurshipName,
+  program,
   onRetry,
 }: {
   state: ViewState<Cycle[]>
   entrepreneurshipId: string
-  enrollmentId: string
+  entrepreneurshipName: string
+  program: string
   onRetry: () => void
 }) {
   if (state.status === 'loading') {
@@ -858,20 +874,42 @@ function CycleSection({
     state.data.length === 0 ? (
       <EmptyState title="Aún no hay ciclos" description="Crea un ciclo cuando exista un proyecto o intervención concreta dentro de esta inscripción." />
     ) : (
-      <RecordList empty={null}>
-        {state.data.map((cycle) => (
-          <li key={cycle.id}>
-            <Link
-              className={styles.card}
-              href={`/expediente/${entrepreneurshipId}/inscripciones/${enrollmentId}/ciclos/${cycle.id}`}
-            >
-              <span className={styles.cardTitle}>{cycle.name}</span>
-              <span className={styles.cardMeta}>Creado {formatDateTime(cycle.created_at)}</span>
-            </Link>
-          </li>
-        ))}
-      </RecordList>
+      <CycleWorkspaceTabs cycles={state.data}>
+        {(cycle) => <CycleWorkspace cycle={cycle} entrepreneurshipId={entrepreneurshipId} entrepreneurshipName={entrepreneurshipName} program={program} />}
+      </CycleWorkspaceTabs>
     )
+  )
+}
+
+function CycleWorkspace({
+  cycle,
+  entrepreneurshipId,
+  entrepreneurshipName,
+  program,
+}: {
+  cycle: Cycle
+  entrepreneurshipId: string
+  entrepreneurshipName: string
+  program: string
+}) {
+  return (
+    <div className={styles.cycleWorkspaceContent}>
+      <DetailHero
+        eyebrow="Espacio del ciclo"
+        title={cycle.name}
+        description={`${entrepreneurshipName} · ${program}`}
+        monogram={cycle.name}
+      />
+      <Facts rows={[{ term: 'Programa', value: program }, { term: 'Creado', value: formatDateTime(cycle.created_at) }]} />
+      <ProjectWorkspaceTabs
+        tabs={[
+          { value: 'seguimiento', label: 'Seguimiento', content: <SeguimientoPanel cycleId={cycle.id} program={program} /> },
+          { value: 'reuniones', label: 'Reuniones', content: <MeetingsPanel cycleId={cycle.id} program={program} /> },
+          { value: 'canales', label: 'Canales', content: <ChannelsPanel entrepreneurshipId={entrepreneurshipId} cycleId={cycle.id} /> },
+          { value: 'equipo', label: 'Equipo', content: <AssignmentPanel scope={{ kind: 'cycle', id: cycle.id }} /> },
+        ]}
+      />
+    </div>
   )
 }
 
@@ -962,45 +1000,13 @@ export function CycleDetailView({
           }}
         />
       ) : null}
-      {aligned && cycle.state.status === 'ready' && enrollment.state.status === 'ready' ? (
-        <>
-          <DetailHero
-            eyebrow="Espacio del ciclo"
-            title={cycle.state.data.name}
-            description={`${entrepreneurshipName} · ${enrollment.state.data.program}`}
-            monogram={cycle.state.data.name}
-          />
-          <Facts
-            rows={[
-              { term: 'Programa', value: enrollment.state.data.program },
-              { term: 'Creado', value: formatDateTime(cycle.state.data.created_at) },
-            ]}
-          />
-          <ProjectWorkspaceTabs
-            tabs={[
-              {
-                value: 'seguimiento',
-                label: 'Seguimiento',
-                content: <SeguimientoPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />,
-              },
-              {
-                value: 'reuniones',
-                label: 'Reuniones',
-                content: <MeetingsPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />,
-              },
-              {
-                value: 'canales',
-                label: 'Canales',
-                content: <ChannelsPanel entrepreneurshipId={enrollment.state.data.entrepreneurship_id} cycleId={cycle.state.data.id} />,
-              },
-              {
-                value: 'equipo',
-                label: 'Equipo',
-                content: <AssignmentPanel scope={{ kind: 'cycle', id: cycle.state.data.id }} />,
-              },
-            ]}
-          />
-        </>
+      {aligned && entrepreneurship.state.status === 'ready' && cycle.state.status === 'ready' && enrollment.state.status === 'ready' ? (
+        <CycleWorkspace
+          cycle={cycle.state.data}
+          entrepreneurshipId={entrepreneurship.state.data.id}
+          entrepreneurshipName={entrepreneurshipName}
+          program={enrollment.state.data.program}
+        />
       ) : null}
     </div>
   )
