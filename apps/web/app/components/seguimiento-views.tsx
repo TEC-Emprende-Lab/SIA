@@ -72,6 +72,13 @@ function today(): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+function dateInputValue(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined
+  }
+  return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : undefined
+}
+
 function formatDay(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   if (!match) {
@@ -568,6 +575,7 @@ function ObjectiveCard({
         id={`activity-new-${objective.id}`}
         title="Nueva actividad"
         submitLabel="Crear actividad"
+        hint="La actividad queda a tu nombre."
         pending={pendingId === `activity-new-${objective.id}`}
         error={actionError}
         onSubmit={(body) =>
@@ -730,6 +738,28 @@ function ActivityCard({
         </button>
       </div>
       <ErrorLine id={`done-${activity.id}`} error={actionError} />
+      <ActivityForm
+        id={`activity-${activity.id}`}
+        title="Editar actividad"
+        submitLabel="Guardar actividad"
+        hint="Se conserva el responsable, porque no hay un listado de personas del ciclo."
+        pending={pendingId === `activity-${activity.id}`}
+        error={actionError}
+        initial={activity}
+        onSubmit={(body) =>
+          run(`activity-${activity.id}`, async () =>
+            requestSeguimiento(seguimientoUrl(cycleId, `activities/${activity.id}`), parseActivity, {
+              method: 'PUT',
+              body: {
+                ...body,
+                objective_id: activity.objective_id,
+                responsible_id: activity.responsible_id,
+                expected_revision: activity.revision,
+              },
+            }).then(asVoid),
+          )
+        }
+      />
       {evidence.length === 0 ? <p className={shell.meta}>Sin evidencias.</p> : null}
       <ul className={shell.list}>
         {evidence.map((item) => (
@@ -760,15 +790,19 @@ function ActivityForm({
   id,
   title,
   submitLabel,
+  hint,
   pending,
   error,
+  initial,
   onSubmit,
 }: {
   id: string
   title: string
   submitLabel: string
+  hint: string
   pending: boolean
   error: ActionError
+  initial?: Pick<Activity, 'title' | 'description' | 'starts_on' | 'ends_on'>
   onSubmit: (body: { title: string; description: string; starts_on: string; ends_on: string }) => void
 }) {
   const [localError, setLocalError] = useState<string | null>(null)
@@ -807,21 +841,21 @@ function ActivityForm({
       <h4>{title}</h4>
       <label className={styles.field}>
         Título
-        <input name="title" required maxLength={200} disabled={pending} />
+        <input name="title" required maxLength={200} defaultValue={initial?.title} disabled={pending} />
       </label>
       <label className={styles.field}>
         Descripción
-        <textarea name="description" maxLength={20000} disabled={pending} />
+        <textarea name="description" maxLength={20000} defaultValue={initial?.description} disabled={pending} />
       </label>
       <label className={styles.field}>
         Inicio
-        <input name="starts_on" type="date" required disabled={pending} />
+        <input name="starts_on" type="date" required defaultValue={dateInputValue(initial?.starts_on)} disabled={pending} />
       </label>
       <label className={styles.field}>
         Fin
-        <input name="ends_on" type="date" required disabled={pending} />
+        <input name="ends_on" type="date" required defaultValue={dateInputValue(initial?.ends_on)} disabled={pending} />
       </label>
-      <p className={shell.meta}>La actividad queda a tu nombre.</p>
+      <p className={shell.meta}>{hint}</p>
       {localError ? (
         <p className={shell.formError} role="alert">
           {localError}
@@ -1024,6 +1058,24 @@ function DiagnosticSection({
                 Última decisión ({formatDateTime(decision.created_at)}): {decision.observation}
               </p>
             ) : null}
+            {diagnostic.status !== 'approved' ? (
+              <DiagnosticForm
+                id={`diagnostic-${diagnostic.id}`}
+                areas={areas}
+                approved={approved}
+                pending={pendingId === `diagnostic-${diagnostic.id}`}
+                error={actionError}
+                initial={diagnostic}
+                onSubmit={(body) =>
+                  run(`diagnostic-${diagnostic.id}`, async () =>
+                    requestSeguimiento(seguimientoUrl(cycleId, `diagnostics/${diagnostic.id}`), parseDiagnostic, {
+                      method: 'PUT',
+                      body: { ...body, expected_revision: diagnostic.revision },
+                    }).then(asVoid),
+                  )
+                }
+              />
+            ) : null}
             {canSubmit(diagnostic.status) ? (
               <button
                 type="button"
@@ -1128,6 +1180,7 @@ function DiagnosticForm({
   approved,
   pending,
   error,
+  initial,
   onSubmit,
 }: {
   id: string
@@ -1135,6 +1188,7 @@ function DiagnosticForm({
   approved: Diagnostic[]
   pending: boolean
   error: ActionError
+  initial?: Diagnostic
   onSubmit: (body: {
     assessed_on: string
     assessments: { area_id: string; observation: string }[]
@@ -1162,23 +1216,36 @@ function DiagnosticForm({
     onSubmit({
       assessed_on: assessed.date,
       assessments,
-      supersedes_id: field(data, 'supersedes_id') || null,
+      supersedes_id: initial ? initial.supersedes_id : field(data, 'supersedes_id') || null,
     })
   }
   return (
     <form className={shell.form} onSubmit={handleSubmit}>
-      <h3>Nueva fotografía</h3>
+      <h3>{initial ? 'Corregir fotografía' : 'Nueva fotografía'}</h3>
       <label className={styles.field}>
         Fecha
-        <input name="assessed_on" type="date" required defaultValue={today()} disabled={pending} />
+        <input
+          name="assessed_on"
+          type="date"
+          required
+          defaultValue={initial ? dateInputValue(initial.assessed_on) : today()}
+          disabled={pending}
+        />
       </label>
       {areas.map((area) => (
         <label key={area.id} className={styles.field}>
           {area.name}
-          <textarea name={`area-${area.id}`} required maxLength={20000} disabled={pending} />
+          <textarea
+            name={`area-${area.id}`}
+            required
+            maxLength={20000}
+            defaultValue={initial?.assessments.find((item) => item.area_id === area.id)?.observation}
+            disabled={pending}
+          />
         </label>
       ))}
-      {approved.length > 0 ? (
+      {initial ? <p className={shell.meta}>Se conserva la fotografía de origen.</p> : null}
+      {!initial && approved.length > 0 ? (
         <label className={styles.field}>
           Fotografía anterior aprobada
           <select name="supersedes_id" defaultValue="" disabled={pending}>
@@ -1200,7 +1267,7 @@ function DiagnosticForm({
       )}
       <div className={shell.actions}>
         <button className={shell.button} type="submit" disabled={pending}>
-          {pending ? 'Guardando…' : 'Crear fotografía'}
+          {pending ? 'Guardando…' : initial ? 'Guardar fotografía' : 'Crear fotografía'}
         </button>
       </div>
     </form>
