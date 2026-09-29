@@ -7,7 +7,7 @@ import ts from 'typescript'
 const temporary = await mkdtemp('/tmp/opencode/project-navigation-')
 const originalFetch = globalThis.fetch
 try {
-  for (const name of ['expediente', 'project-workspace', 'reports']) {
+  for (const name of ['expediente', 'project-workspace', 'reports', 'tracking-summary']) {
     const source = await readFile(new URL(`../app/lib/${name}.ts`, import.meta.url), 'utf8')
     const result = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext } })
     await writeFile(join(temporary, `${name}.mjs`), result.outputText.replaceAll("'./expediente'", "'./expediente.mjs'"))
@@ -87,6 +87,22 @@ try {
   assert.equal(parseReport({ ...report, status: 'inventado' }), null)
   assert.equal(parseReport({ ...report, composition: [] }), null)
   console.log('✓ Reports accept only backend states and well-formed source compositions')
+
+  const { trackingSummary } = await import(pathToFileURL(join(temporary, 'tracking-summary.mjs')))
+  const objectives = ['o1', 'o2', 'o3'].map((id) => ({ id, cycle_id: 'c1', status: id === 'o3' ? 'draft' : 'approved' }))
+  const activities = [
+    { id: 'a1', objective_id: 'o1', cycle_id: 'c1', completed_at: now },
+    ...Array.from({ length: 4 }, (_, index) => ({ id: `b${index}`, objective_id: 'o2', cycle_id: 'c1', completed_at: index === 0 ? now : null })),
+    { id: 'foreign', objective_id: 'o1', cycle_id: 'c2', completed_at: now },
+  ]
+  const summary = trackingSummary('c1', objectives, activities)
+  assert.equal(summary.progress_percent, 62.5)
+  assert.equal(summary.activities_total, 5)
+  assert.equal(summary.activities_completed, 2)
+  assert.equal(summary.objectives[2].progress_percent, 0)
+  assert.equal(trackingSummary('c1', [], []).progress_percent, 0)
+  assert.equal(trackingSummary('c2', objectives, activities).objectives_total, 0)
+  console.log('✓ Legacy API summary uses equal weights, excludes drafts and isolates cycles')
 } finally {
   globalThis.fetch = originalFetch
   await rm(temporary, { recursive: true, force: true })

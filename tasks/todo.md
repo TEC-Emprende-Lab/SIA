@@ -1,5 +1,20 @@
 # Consolidacion de decisiones
 
+## Corrección de 404 en seguimiento — 2026-09-29
+
+US-PRO-001/002, US-PM-001/002. Evidencia: OpenAPI de la API desplegada consultada
+en vivo no expone `/cycles/{cycle_id}/seguimiento/summary`; el frontend cargaba
+ese endpoint junto con todas las secciones, propagando `Not Found` a todas ellas.
+
+- Compatibilidad BFF: solo ante 404 de summary, consultar objetivos y actividades
+  autorizados en FastAPI y calcular en servidor la misma fórmula confirmada.
+- No cambiar permisos, persistencia ni reglas; conservar errores 401/403/404 de
+  los recursos reales. Sin seed ni fallback de datos inventados.
+- Pruebas: pesos equivalentes, ciclo vacío, objetivo sin actividades, borradores
+  excluidos del avance y separación de ciclos.
+- Pendiente: desplegar la API actual para que sirva summary directamente;
+  verificar pantallas en sesión autenticada de producción.
+
 ## Corrección: mockup como fuente visual, backend conectado — 2026-09-29
 
 Instrucción vigente: usar `visual/prototype` como fuente estricta del diseño y

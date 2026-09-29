@@ -158,7 +158,9 @@ function SeguimientoCycle({ cycleId, view, projectName, program, focusId, naviga
         return
       }
       if (failed && !failed.ok) {
-        setState({ status: 'error', message: failed.message })
+        const resources = ['canvas', 'ambitions', 'objectives', 'activities', 'evidence', 'diagnostics', 'schedule', 'validations', 'summary']
+        const resource = resources[results.indexOf(failed)]
+        setState({ status: 'error', message: `${failed.message} (API: seguimiento/${resource}, HTTP ${failed.status}).` })
         return
       }
       if (
