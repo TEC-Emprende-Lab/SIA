@@ -103,6 +103,128 @@
   padding: 1.25rem;
 }
 
+.guest {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
+  align-items: center;
+  gap: clamp(2rem, 7vw, 8rem);
+  min-height: calc(100vh - 5rem);
+  max-width: 74rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 9vw, 8rem) 2rem;
+}
+
+.guestHero {
+  max-width: 43rem;
+}
+
+.guestEyebrow,
+.guestCardEyebrow {
+  margin: 0 0 1rem;
+  color: #68724b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.guestHero h1 {
+  max-width: 13ch;
+  margin: 0;
+  color: #2e322a;
+  font-size: clamp(2.75rem, 6vw, 5.25rem);
+  font-weight: 650;
+  letter-spacing: -0.07em;
+  line-height: 0.98;
+}
+
+.guestLead {
+  max-width: 36rem;
+  margin: 1.75rem 0 0;
+  color: #606854;
+  font-size: 1.1rem;
+  line-height: 1.75;
+}
+
+.guestSteps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.guestSteps span {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #dce0ce;
+  border-radius: 999px;
+  color: #596142;
+  background: #f0f2e9;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.guestCard {
+  position: relative;
+  overflow: hidden;
+  padding: 2rem;
+  border: 1px solid #dce1d1;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(54 64 30 / 0.12);
+}
+
+.guestCard::after {
+  position: absolute;
+  right: -4rem;
+  bottom: -5rem;
+  width: 13rem;
+  height: 13rem;
+  border-radius: 50%;
+  background: #e7edd7;
+  content: '';
+}
+
+.guestMark {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  margin-bottom: 2rem;
+  border-radius: 1rem 0.35rem 1rem 0.35rem;
+  color: #fff;
+  background: #7c8041;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.guestCard h2 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: #303528;
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
+}
+
+.guestCard p:not(.guestCardEyebrow):not(.guestNote) {
+  position: relative;
+  z-index: 1;
+  margin: 1rem 0 0;
+  color: #677060;
+  line-height: 1.7;
+}
+
+.guestNote {
+  position: relative;
+  z-index: 1;
+  margin: 1.75rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e8dd;
+  color: #78806e;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
 @media (max-width: 720px) {
   .shell {
     flex-direction: column;
@@ -112,5 +234,16 @@
     width: auto;
     border-right: 0;
     border-bottom: 1px solid #ddd;
+  }
+
+  .guest {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    gap: 2.5rem;
+    padding: 3.5rem 1.5rem;
+  }
+
+  .guestHero h1 {
+    max-width: 11ch;
   }
 }

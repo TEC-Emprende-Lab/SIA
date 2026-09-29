@@ -70,10 +70,29 @@ function IdentityStatus({ state }: { state: Exclude<IdentityState, { status: 'lo
 
 export function SignedOutNotice() {
   return (
-    <main className={styles.notice}>
-      <h1>SIA</h1>
-      <p>La aplicación de producción está en construcción.</p>
-      <p>Inicia sesión con Google para continuar. El primer acceso a SIA requiere invitación.</p>
+    <main className={styles.guest}>
+      <section className={styles.guestHero}>
+        <p className={styles.guestEyebrow}>TEC Emprende Lab · CataliTech</p>
+        <h1>SIA acompaña el avance que sí deja evidencia.</h1>
+        <p className={styles.guestLead}>
+          Un espacio para organizar el trabajo de cada emprendimiento, sus acuerdos y los aprendizajes de cada ciclo.
+        </p>
+        <div className={styles.guestSteps} aria-label="Cómo empezar">
+          <span>1. Inicia sesión con Google</span>
+          <span>2. Accede a tu expediente autorizado</span>
+        </div>
+      </section>
+      <aside className={styles.guestCard}>
+        <div className={styles.guestMark} aria-hidden="true">S</div>
+        <p className={styles.guestCardEyebrow}>Sistema de Incubación y Acompañamiento</p>
+        <h2>Tu espacio de trabajo está listo.</h2>
+        <p>
+          Inicia sesión para consultar los emprendimientos y ciclos que tienes asignados.
+        </p>
+        <p className={styles.guestNote}>
+          El primer acceso requiere una invitación vigente con el mismo correo verificado.
+        </p>
+      </aside>
     </main>
   )
 }
