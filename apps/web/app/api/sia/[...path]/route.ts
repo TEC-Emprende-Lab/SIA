@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 
-import { isAllowedSiaPath, SiaApiError, siaFetch } from '../../../lib/sia-api'
+import { proxySia } from '../../../lib/sia-bff'
+
+function isAllowedSiaPath(path: string): boolean {
+  return /^(users\/me|entrepreneurships(?:\/|$)|cycles\/[0-9a-f-]+\/(?:seguimiento|meetings|reports)(?:\/|$)|channels(?:\/|$)|alerts$|notifications(?:\/|$))/.test(
+    path,
+  )
+}
 
 async function forward(request: Request, params: Promise<{ path: string[] }>) {
   const { path: parts } = await params
@@ -10,23 +16,11 @@ async function forward(request: Request, params: Promise<{ path: string[] }>) {
   }
 
   const url = new URL(request.url)
-  try {
-    const response = await siaFetch(`/${path}${url.search}`, {
-      method: request.method,
-      body: request.method === 'GET' ? undefined : await request.text(),
-      headers: request.headers.get('content-type')
-        ? { 'content-type': request.headers.get('content-type')! }
-        : undefined,
-    })
-    return new NextResponse(response.body, {
-      status: response.status,
-      headers: { 'content-type': response.headers.get('content-type') ?? 'application/json' },
-    })
-  } catch (error) {
-    const status = error instanceof SiaApiError ? error.status : 500
-    const detail = error instanceof SiaApiError ? error.message : 'Error interno de SIA'
-    return NextResponse.json({ detail }, { status })
-  }
+  return proxySia(`/${path}`, {
+    method: request.method,
+    search: url.search,
+    body: request.method === 'GET' ? undefined : await request.text(),
+  })
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ path: string[] }> }) {

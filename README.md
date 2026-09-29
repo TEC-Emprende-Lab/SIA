@@ -6,7 +6,7 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 
 ## Estado actual
 
-**Corte: 2026-09-28, `main` en `24d69df`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
+**Corte: 2026-09-29, `main` en `919dff5`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
 
 | Componente | Estado real en el repositorio | Límite / pendiente |
 |---|---|---|
@@ -14,7 +14,7 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 | Identidad y autorización | API de usuarios/invitaciones, JWT Clerk, bootstrap por invitación, auditoría y rate limiting Redis en creación de invitaciones. Web: Clerk en `apps/web` (`/sign-in`, `/sign-up`, BFF `GET /api/sia/me`). | Google OAuth real y operación remota por rol siguen pendientes de validar; Revisor financiero `TBD`. |
 | Expediente | Persistencia de emprendimientos, inscripciones/ciclos, asignaciones y revocación lógica auditada por alcance exacto; listados filtrados y paginados. | Alta de Puesta en marcha bloqueada con 409 por requisitos de entrada aún sin fuente verificable; Pre-incubación no habilitada. |
 | Seguimiento | Canvas v1 de ambos programas, ambiciones, objetivos, actividades, evidencias por URL, validaciones, cronograma y fotografías aprobadas inmutables con comparación descriptiva. | Entregables oficiales, escalas numéricas y automatizaciones `TBD`; soporte de canvas de Puesta en marcha no habilita su admisión. |
-| Web real (`apps/web`) | Next.js con Clerk (Google), BFF server-only con JWT `sia`, expediente, seguimiento, comunicación, alertas e informes conectados a FastAPI. | Recorrido autenticado remoto y alcance de Equipo/búsqueda global pendientes; Finanzas no tiene backend. |
+| Web real (`apps/web`) | Next.js con Clerk (Google), shell autenticado por rol, BFF server-only con JWT `sia`, expediente, seguimiento, comunicación, alertas, invitaciones y usuarios conectados a FastAPI. | Recorrido autenticado remoto, menciones, asignación por Gestor y alcance de Equipo/búsqueda global pendientes; Finanzas no tiene backend. |
 | Prototipo (`visual/prototype`) | Demo React/Vite, navegación y reglas locales, Cubo 360/Kanban, finanzas e informes ficticios; HTML autónomo y Docker/Nginx. | Datos en memoria; sus puntuaciones y estados visuales no son reglas confirmadas de la API. |
 | Archivos privados | La API registra referencias HTTP(S), incluso para tipos archivo/fotografía/video. | Sin carga, descarga, almacenamiento de binarios ni URLs firmadas R2. MinIO en Compose no implementa esa integración. |
 | Comunicación y alertas | API integrada para reuniones, minutas, acuerdos, canales, mensajes, menciones, recibos de lectura, alertas y notificaciones internas; las minutas aprobadas son inmutables. | Socket.IO/Redis, Resend, adjuntos privados, grabaciones y proveedor IA/worker reales siguen pendientes o `TBD`. |

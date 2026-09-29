@@ -17,7 +17,7 @@ Estado revisado: **2026-09-16**, commit `35775c0`. El arranque y la evidencia lo
 | US-PRO-005 | Fotografías descriptivas con las seis áreas oficiales, aprobación inmutable, nueva fotografía con `supersedes_id` y comparación entre aprobadas del mismo ciclo/canvas. |
 | US-PRO-006 | Ambición independiente del avance, persistente por emprendimiento. Objetivo con cero o una ambición; FK compuesta impide cruzar emprendimientos. |
 
-La tabla describe aceptación backend del subconjunto implementado; la UI real y el catálogo oficial de entregables siguen pendientes. Las fixtures comprueban canvas de ambos programas, pero la API administrativa bloquea el alta de Puesta en marcha con 409 mientras no pueda verificar sus condiciones de entrada. No es un flujo completo de admisión de ese programa.
+La tabla describe aceptación backend del subconjunto implementado. La UI de ese subconjunto está en `apps/web` (Fase 7). El catálogo oficial de entregables sigue pendiente. Las fixtures comprueban canvas de ambos programas, pero la API administrativa bloquea el alta de Puesta en marcha con 409 mientras no pueda verificar sus condiciones de entrada. No es un flujo completo de admisión de ese programa.
 
 ## API
 

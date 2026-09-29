@@ -1,5 +1,23 @@
 # Consolidacion de decisiones
 
+## Integración de `feature/shell-autenticado` — 2026-09-29
+
+Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002;
+identidad, expediente, seguimiento y comunicación según el núcleo común. No modifica
+reglas de negocio: FastAPI conserva toda autorización.
+
+- [x] Integrar el shell autenticado por rol, expediente, seguimiento, comunicación,
+  bandeja, invitaciones y usuarios.
+- [x] Consolidar el BFF en `sia-bff.ts`; el proxy genérico conserva su allowlist y usa la
+  misma emisión y validación de JWT `sia`.
+- [x] Resolver los conflictos documentales manteniendo los límites `TBD` y sin declarar
+  staging verificado.
+- [x] Ejecutar lint, typecheck y build de la web tras la integración.
+
+La exploración previa del 2026-09-28 queda sustituida por esta integración: la rama remota
+`feature/shell-autenticado` contenía el corte de UI conectada que no estaba disponible en
+las referencias locales entonces inspeccionadas.
+
 ## Exploración previa a Fase 7 — UI conectada, 2026-09-28
 
 Objetivo: evitar duplicar trabajo antes de implementar la UI conectada.

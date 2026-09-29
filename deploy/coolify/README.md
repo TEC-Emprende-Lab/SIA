@@ -6,6 +6,9 @@ debe publicar como la aplicación operativa.
 
 ## Recursos requeridos
 
+El despliegue remoto y el dominio siguen sin verificarse en este corte. La evidencia de
+arranque y migraciones de la API está en [operación API](../../docs/operacion-api.md).
+
 1. Crear PostgreSQL 16 y Redis 7 en el mismo proyecto/entorno de Coolify.
 2. Crear la aplicación API desde el repositorio `TEC-Emprende-Lab/SIA`.
 3. Crear la aplicación Web desde el mismo repositorio.

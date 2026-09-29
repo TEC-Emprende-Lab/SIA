@@ -1,0 +1,116 @@
+.skip {
+  position: absolute;
+  left: -999px;
+  top: 0.75rem;
+  padding: 0.4rem 0.7rem;
+  background: #fff;
+  border: 1px solid #222;
+}
+
+.skip:focus {
+  left: 0.75rem;
+  z-index: 1;
+}
+
+.shell {
+  display: flex;
+  align-items: stretch;
+  min-height: calc(100vh - 3.5rem);
+  position: relative;
+}
+
+.nav {
+  width: 16rem;
+  flex: none;
+  box-sizing: border-box;
+  padding: 1.25rem;
+  border-right: 1px solid #ddd;
+}
+
+.identity {
+  margin: 0 0 1rem;
+}
+
+.identity p {
+  margin: 0.15rem 0;
+}
+
+.scope {
+  color: #444;
+}
+
+.groupLabel {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.link {
+  display: block;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.25rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.link:hover,
+.link:focus-visible {
+  background: #f6f6f6;
+}
+
+.link[aria-current='page'] {
+  background: #eee;
+  font-weight: 600;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.25rem;
+}
+
+.panel {
+  margin: 0;
+  padding-left: 0.8rem;
+  border-left: 3px solid #ccc;
+}
+
+.panel[data-status='forbidden'],
+.panel[data-status='error'] {
+  border-left-color: #a33;
+}
+
+.panel h1,
+.panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+}
+
+.panel p {
+  margin: 0;
+  max-width: 40rem;
+}
+
+.notice {
+  padding: 1.25rem;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .nav {
+    width: auto;
+    border-right: 0;
+    border-bottom: 1px solid #ddd;
+  }
+}
