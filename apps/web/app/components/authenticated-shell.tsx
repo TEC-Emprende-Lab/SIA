@@ -188,12 +188,20 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
           Saltar al contenido
         </a>
         <aside className={styles.nav}>
+          <Link href="/" className={styles.wordmark} aria-label="Inicio de SIA">
+            <span className={styles.brandMark}>S</span>
+            <span>
+              <strong>SIA</strong>
+              <small>TEC EMPRENDE LAB</small>
+            </span>
+          </Link>
           <div className={styles.identity}>
-            <p>
+            <span className={styles.identityAvatar} aria-hidden="true">{state.me.email.slice(0, 1).toUpperCase()}</span>
+            <div>
               <strong>{state.me.email}</strong>
-            </p>
-            <p>Rol {role}</p>
-            {isSiaRole(role) ? <p className={styles.scope}>{ROLE_SCOPE[role]}</p> : null}
+              <span>{role}</span>
+              {isSiaRole(role) ? <small className={styles.scope}>{ROLE_SCOPE[role]}</small> : null}
+            </div>
           </div>
           <nav aria-label="Navegación SIA">
             <div className={styles.links}>
