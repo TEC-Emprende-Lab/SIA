@@ -9,7 +9,17 @@ import styles from './expediente.module.css'
 import { AssignmentPanel } from './administracion-views'
 import { ChannelsPanel } from './canales-views'
 import { MeetingsPanel } from './comunicacion-views'
+import { EntrepreneurshipTable } from './entrepreneurship-table'
+import { ProjectWorkspaceTabs } from './project-workspace-tabs'
 import { SeguimientoPanel } from './seguimiento-views'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog'
 import {
   canRegisterExpediente,
   enrolledAtIso,
@@ -321,31 +331,35 @@ export function ExpedienteListView() {
         <p className={styles.intro}>Emprendimientos que puedes consultar.</p>
       </header>
       {canRegisterExpediente(me.role) ? (
-        <NameForm
-          key={formKey}
-          title="Nuevo emprendimiento"
-          fieldLabel="Nombre"
-          submitLabel="Crear emprendimiento"
-          pending={pending}
-          error={formError}
-          onSubmit={(name) => void createEntrepreneurship(name)}
-        />
+        <Dialog>
+          <DialogTrigger className={styles.button}>Nuevo emprendimiento</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nuevo emprendimiento</DialogTitle>
+              <DialogDescription>Registra el expediente que conservará el historial del emprendimiento.</DialogDescription>
+            </DialogHeader>
+            <NameForm
+              key={formKey}
+              title="Datos del emprendimiento"
+              fieldLabel="Nombre"
+              submitLabel="Crear emprendimiento"
+              pending={pending}
+              error={formError}
+              onSubmit={(name) => void createEntrepreneurship(name)}
+            />
+          </DialogContent>
+        </Dialog>
       ) : null}
       {createdNotice ? (
         <p className={styles.meta} role="status">
           {createdNotice}
         </p>
       ) : null}
-      <RecordList empty={items.length === 0 ? 'No hay emprendimientos en tu alcance.' : null}>
-        {items.map((item) => (
-          <li key={item.id}>
-            <Link className={styles.card} href={`/expediente/${item.id}`}>
-              <span className={styles.cardTitle}>{item.name}</span>
-              <span className={styles.cardMeta}>Creado {formatDateTime(item.created_at)}</span>
-            </Link>
-          </li>
-        ))}
-      </RecordList>
+      {items.length === 0 ? (
+        <p className={styles.meta}>No hay emprendimientos en tu alcance.</p>
+      ) : (
+        <EntrepreneurshipTable items={items} />
+      )}
       {hasMore ? (
         <div className={styles.actions}>
           <button type="button" className={styles.buttonSecondary} disabled={loadingMore} onClick={() => void loadMore()}>
@@ -822,22 +836,36 @@ export function CycleDetailView({
             </div>
             <span className={styles.statusBadge}>Activo</span>
           </header>
-          <nav className={styles.projectTabs} aria-label="Secciones del proyecto">
-            <a href="#seguimiento">Seguimiento</a>
-            <a href="#reuniones">Reuniones</a>
-            <a href="#canales">Canales</a>
-            <a href="#equipo">Equipo</a>
-          </nav>
           <Facts
             rows={[
               { term: 'Programa', value: enrollment.state.data.program },
               { term: 'Creado', value: formatDateTime(cycle.state.data.created_at) },
             ]}
           />
-          <div id="seguimiento"><SeguimientoPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} /></div>
-          <div id="reuniones"><MeetingsPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} /></div>
-          <div id="canales"><ChannelsPanel entrepreneurshipId={enrollment.state.data.entrepreneurship_id} cycleId={cycle.state.data.id} /></div>
-          <div id="equipo"><AssignmentPanel scope={{ kind: 'cycle', id: cycle.state.data.id }} /></div>
+          <ProjectWorkspaceTabs
+            tabs={[
+              {
+                value: 'seguimiento',
+                label: 'Seguimiento',
+                content: <SeguimientoPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />,
+              },
+              {
+                value: 'reuniones',
+                label: 'Reuniones',
+                content: <MeetingsPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />,
+              },
+              {
+                value: 'canales',
+                label: 'Canales',
+                content: <ChannelsPanel entrepreneurshipId={enrollment.state.data.entrepreneurship_id} cycleId={cycle.state.data.id} />,
+              },
+              {
+                value: 'equipo',
+                label: 'Equipo',
+                content: <AssignmentPanel scope={{ kind: 'cycle', id: cycle.state.data.id }} />,
+              },
+            ]}
+          />
         </>
       ) : null}
     </div>

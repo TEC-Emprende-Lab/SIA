@@ -92,6 +92,17 @@ diagnósticos permanecen descriptivos, actividades solo usan su finalización re
 finanzas, puntajes, radar, búsqueda global y adjuntos privados siguen fuera por `TBD`
 o ausencia de backend.
 
+Actualización de sistema de diseño — 2026-09-29: se habilitó Tailwind CSS v4 y la
+configuración local de shadcn (`components.json`, fuentes bajo `app/components/ui`) sin
+retirar los CSS Modules existentes. Referencia de interacción: expediente (alcance y
+consulta histórica) y US-PRO-001/US-PM-001. La lista de emprendimientos ahora usa
+TanStack Table para ordenamiento local de la página recibida de FastAPI y el alta usa un
+diálogo accesible; las secciones del ciclo usan tabs de Radix con teclado. La paginación,
+los permisos y las escrituras siguen siendo los de la API: no se agregaron filtros de
+servidor, datos demo, roles ni reglas nuevas. Lint, typecheck, build, contratos y diff
+de espacios pasan. El recorrido local de navegador permanece bloqueado por ausencia de
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; no se configuró ni creó una cuenta Clerk nueva.
+
 Resultado del corte visual: shell de proyecto, navegación responsive, contexto de ciclo,
 vistas conectadas de seguimiento, comunicación, alertas e informes implementados. El BFF
 autoriza ahora las rutas de informes existentes. `pnpm --filter @sia/web lint`,
