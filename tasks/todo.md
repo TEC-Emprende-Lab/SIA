@@ -83,6 +83,15 @@ Estado: en ejecución. La evaluación del mockup identifica que su shell, jerarq
 navegación y patrones de interacción pueden implementarse en frontend; los módulos se
 conectan por cortes según la disponibilidad de API indicada arriba.
 
+Actualización de interfaz — 2026-09-29: se trasladó a la Web conectada el shell visual
+de proyecto (sidebar, barra superior, migas de pan, encabezado y tabs de ciclo) y se
+unificaron las superficies de expediente, seguimiento y comunicación con tarjetas,
+formularios, badges y estados responsivos del lenguaje del mockup. Referencias:
+US-PRO-001/002/004/005/006 y US-PM-001/002/003. No se cambió API ni autorización;
+diagnósticos permanecen descriptivos, actividades solo usan su finalización real y
+finanzas, puntajes, radar, búsqueda global y adjuntos privados siguen fuera por `TBD`
+o ausencia de backend.
+
 Resultado del corte visual: shell de proyecto, navegación responsive, contexto de ciclo,
 vistas conectadas de seguimiento, comunicación, alertas e informes implementados. El BFF
 autoriza ahora las rutas de informes existentes. `pnpm --filter @sia/web lint`,

@@ -811,22 +811,33 @@ export function CycleDetailView({
       ) : null}
       {aligned && cycle.state.status === 'ready' && enrollment.state.status === 'ready' ? (
         <>
-          <header className={styles.header}>
-            <h1>{cycle.state.data.name}</h1>
+          <header className={styles.projectHero}>
+            <span className={styles.projectMonogram} aria-hidden="true">
+              {cycle.state.data.name.slice(0, 2).toUpperCase()}
+            </span>
+            <div>
+              <p className={styles.eyebrow}>Espacio del proyecto</p>
+              <h1>{cycle.state.data.name}</h1>
+              <p className={styles.projectMeta}>{entrepreneurshipName} · {enrollment.state.data.program}</p>
+            </div>
+            <span className={styles.statusBadge}>Activo</span>
           </header>
+          <nav className={styles.projectTabs} aria-label="Secciones del proyecto">
+            <a href="#seguimiento">Seguimiento</a>
+            <a href="#reuniones">Reuniones</a>
+            <a href="#canales">Canales</a>
+            <a href="#equipo">Equipo</a>
+          </nav>
           <Facts
             rows={[
               { term: 'Programa', value: enrollment.state.data.program },
               { term: 'Creado', value: formatDateTime(cycle.state.data.created_at) },
             ]}
           />
-          <SeguimientoPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />
-          <MeetingsPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />
-          <ChannelsPanel
-            entrepreneurshipId={enrollment.state.data.entrepreneurship_id}
-            cycleId={cycle.state.data.id}
-          />
-          <AssignmentPanel scope={{ kind: 'cycle', id: cycle.state.data.id }} />
+          <div id="seguimiento"><SeguimientoPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} /></div>
+          <div id="reuniones"><MeetingsPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} /></div>
+          <div id="canales"><ChannelsPanel entrepreneurshipId={enrollment.state.data.entrepreneurship_id} cycleId={cycle.state.data.id} /></div>
+          <div id="equipo"><AssignmentPanel scope={{ kind: 'cycle', id: cycle.state.data.id }} /></div>
         </>
       ) : null}
     </div>

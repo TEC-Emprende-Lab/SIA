@@ -15,7 +15,7 @@
 .shell {
   display: flex;
   align-items: stretch;
-  min-height: calc(100vh - 4.4rem);
+  min-height: 100vh;
   position: relative;
   background: #f8f9f5;
 }
@@ -27,6 +27,10 @@
   padding: 1.65rem 1rem;
   border-right: 1px solid #e4e7dc;
   background: #fff;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .wordmark {
@@ -140,13 +144,23 @@
 }
 
 .link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   padding: 0.68rem 0.7rem;
   border-radius: 0.5rem;
   color: #66705a;
   font-size: 0.8rem;
   font-weight: 550;
   text-decoration: none;
+}
+
+.link span {
+  display: inline-grid;
+  width: 1.05rem;
+  place-items: center;
+  color: #929a7d;
+  font-size: 0.95rem;
 }
 
 .link:hover,
@@ -166,6 +180,37 @@
   min-width: 0;
   padding: clamp(1.5rem, 3vw, 3rem);
 }
+
+.contentArea {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  min-height: 4.2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 2.5rem;
+  border-bottom: 1px solid #e5e7df;
+  background: #fff;
+}
+
+.breadcrumb,
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.breadcrumb,
+.breadcrumb a { color: #8b9181; font-size: 0.76rem; }
+.breadcrumb b { color: #626b54; font-weight: 650; }
+.notificationLink { display: inline-flex; align-items: center; gap: 0.35rem; color: #69725a; font-size: 0.75rem; font-weight: 650; }
+.rolePill { padding: 0.28rem 0.5rem; border: 1px solid #e0e5d5; border-radius: 0.3rem; color: #7c856d; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
 
 .panel {
   margin: 0;
@@ -322,6 +367,9 @@
 
   .nav {
     width: auto;
+    position: static;
+    height: auto;
+    min-height: auto;
     border-right: 0;
     border-bottom: 1px solid #ddd;
     padding: 1rem;
@@ -338,6 +386,9 @@
   .groupLabel {
     margin-top: 1rem;
   }
+
+  .topbar { min-height: 3.75rem; padding: 0 1.25rem; }
+  .notificationLink span, .rolePill { display: none; }
 
   .guest {
     grid-template-columns: 1fr;

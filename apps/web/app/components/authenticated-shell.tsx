@@ -17,6 +17,14 @@ import styles from './shell.module.css'
 
 const ReadyIdentityContext = createContext<Me | null>(null)
 
+const NAVIGATION_ICONS: Record<string, string> = {
+  Inicio: '⌂',
+  Expediente: '▣',
+  Bandeja: '◉',
+  Invitaciones: '✉',
+  Usuarios: '♙',
+}
+
 export function useMe(): Me {
   const me = useContext(ReadyIdentityContext)
   if (!me) {
@@ -206,6 +214,7 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
           <nav aria-label="Navegación SIA">
             <div className={styles.links}>
               <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} className={styles.link}>
+                <span aria-hidden="true">{NAVIGATION_ICONS.Inicio}</span>
                 Inicio
               </Link>
             </div>
@@ -222,6 +231,7 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
                         className={styles.link}
                         aria-current={current ? 'page' : undefined}
                       >
+                        <span aria-hidden="true">{NAVIGATION_ICONS[item.label] ?? '·'}</span>
                         {item.label}
                       </Link>
                     )
@@ -231,17 +241,31 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </aside>
-        <main id="contenido-sia" className={styles.main}>
-          {allowed ? (
-            children
-          ) : (
-            <StatusPanel
-              status="forbidden"
-              title="Acceso no disponible"
-              description="Tu rol no incluye esta sección."
-            />
-          )}
-        </main>
+        <div className={styles.contentArea}>
+          <header className={styles.topbar}>
+            <div className={styles.breadcrumb}>
+              <Link href="/expediente">Expedientes</Link>
+              {section ? <><span aria-hidden="true">/</span><b>{section.label}</b></> : <b>Inicio</b>}
+            </div>
+            <div className={styles.topActions}>
+              <Link href="/bandeja" className={styles.notificationLink} aria-label="Abrir bandeja">
+                ◉<span>Bandeja</span>
+              </Link>
+              <span className={styles.rolePill}>{role}</span>
+            </div>
+          </header>
+          <main id="contenido-sia" className={styles.main}>
+            {allowed ? (
+              children
+            ) : (
+              <StatusPanel
+                status="forbidden"
+                title="Acceso no disponible"
+                description="Tu rol no incluye esta sección."
+              />
+            )}
+          </main>
+        </div>
       </div>
     </ReadyIdentityContext.Provider>
   )
