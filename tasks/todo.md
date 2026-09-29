@@ -1,5 +1,50 @@
 # Consolidacion de decisiones
 
+## Corrección: mockup como fuente visual, backend conectado — 2026-09-29
+
+Instrucción vigente: usar `visual/prototype` como fuente estricta del diseño y
+navegación, **con backend**, según aclaración del usuario. No usar datos seed en
+la aplicación conectada ni sustituir autorización por simulación de roles.
+
+Trazabilidad: US-PRO-001/002/004/005/006, US-PM-001/002/003; núcleo común
+expediente, comunicación, roles e informes. No cambian reglas ni contratos API.
+
+- [x] Entrada `/`: espacio del proyecto con Clerk + identidad real de FastAPI.
+- [x] Sidebar persistente: GENERAL, ACOMPAÑAMIENTO, ESPACIO DEL PROYECTO y todas
+  las secciones en el orden del mockup; topbar, breadcrumbs, búsqueda local con
+  datos autorizados, notificaciones y perfil Clerk; encabezado contextual real.
+- [x] Selector de proyectos: agrega la jerarquía de persistencia internamente,
+  pagina las listas autorizadas y no expone el recorrido inscripción/ciclo.
+- [x] Redirigir enlaces antiguos de ciclos al proyecto correspondiente y los
+  enlaces generales de Expediente a la nueva entrada; conservar código e historial.
+- [x] Resumen: hero con anillo de avance backend, Lo que sigue, El plan compartido
+  y decisiones recientes, en las posiciones del mockup.
+- [x] Objetivos y actividades: acciones en cabecera, resumen, tira de objetivos,
+  filtros y lista; detalles y formularios en diálogos; escrituras API existentes,
+  revisiones optimistas y actualización tras guardar.
+- [x] Separar diagnóstico, ambiciones, evidencias y evolución en sus secciones,
+  no agruparlas en pestañas de un ciclo.
+- [x] Diagnóstico: Cubo a la izquierda, resumen a la derecha, selector/historial y
+  áreas debajo. Datos descriptivos reales, sin escalas numéricas inventadas.
+- [x] Reuniones, chat, equipo y alertas reutilizan módulos conectados existentes.
+- [x] Informes conectados al backend ya existente: listado paginado, composición
+  trazable, borradores, revisión humana y corrección vinculada de aprobados.
+- [x] Reutilizar el stylesheet canónico del mockup, sin modificar la referencia.
+- [x] Pruebas de orden/grupos contra el archivo real del mockup, rutas hash,
+  selector, paginación, errores/permisos y relaciones cruzadas; parsers de informes.
+- [ ] Comparación visual y recorridos autenticados en desktop/móvil: bloqueados
+  localmente por falta de clave/sesión Clerk y browser de escritorio desconectado.
+
+Límites explícitos: Kanban deshabilitado mientras sus estados sean TBD; indicadores
+360° numéricos pendientes, sin scores; finanzas pendiente de reglas/backend;
+descarga privada del PDF pendiente de integración. No se declara réplica visual
+idéntica ni despliegue verificado sin realizar revisión autenticada.
+
+Validación de esta entrega: seis grupos de pruebas frontend pasan; lint y
+typecheck de Web/contratos, build de Next.js, contract:check y diff --check pasan.
+Seguimiento/informes backend: 34 pruebas pasan, 2 omitidas por entorno PostgreSQL.
+El Dockerfile de Web incluye el CSS canónico utilizado durante el build.
+
 ## Dashboard del ciclo por fases — 2026-09-29
 
 Trazabilidad: US-PRO-001/002/006, US-PM-001/002 y regla común de avance confirmada

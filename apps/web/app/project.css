@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '../../../visual/prototype/src/catalitec.css';
+
+@theme inline {
+  --color-background: #f8f9f5;
+  --color-foreground: #2e322a;
+  --color-popover: #fff;
+  --color-popover-foreground: #2e322a;
+  --color-primary: #8a8541;
+  --color-primary-foreground: #fff;
+  --color-secondary: #eff2e7;
+  --color-secondary-foreground: #465037;
+  --color-muted: #eff2e7;
+  --color-muted-foreground: #75796f;
+  --color-accent: #e8eddc;
+  --color-accent-foreground: #465037;
+  --color-border: #e5e7df;
+  --color-input: #dce2d2;
+  --color-ring: #68642d;
+}
+
+/* Integration-only fixes; palette and layout come from the reference stylesheet. */
+.brand-button { border: 0; background: transparent; text-align: left; }
+.profile strong { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-context strong { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.area-card p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.activity-list .record-row { width: 100%; }
+.project-dialog { width: min(650px, calc(100vw - 40px)); max-width: 650px; max-height: 88dvh; overflow-y: auto; background: white; padding: 25px; }

@@ -5,6 +5,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/tsconfig ./packages/tsconfig
 COPY packages/contracts ./packages/contracts
 COPY apps/web ./apps/web
+COPY visual/prototype/src/catalitec.css ./visual/prototype/src/catalitec.css
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up

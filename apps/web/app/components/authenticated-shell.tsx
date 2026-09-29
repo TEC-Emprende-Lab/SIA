@@ -14,6 +14,7 @@ import {
 } from '../lib/identity'
 import { canOpenSection, navigationGroups, ROLE_SCOPE, sectionForPath } from '../lib/navigation'
 import styles from './shell.module.css'
+import { SessionHeader } from './session-header'
 
 const ReadyIdentityContext = createContext<Me | null>(null)
 
@@ -87,7 +88,7 @@ export function SignedOutNotice() {
         </p>
         <div className={styles.guestSteps} aria-label="Cómo empezar">
           <span>1. Inicia sesión con Google</span>
-          <span>2. Accede a tu expediente autorizado</span>
+          <span>2. Abre tu proyecto autorizado</span>
         </div>
       </section>
       <aside className={styles.guestCard}>
@@ -126,7 +127,7 @@ export function WorkspaceHome() {
   )
 }
 
-export function AuthenticatedShell({ children }: { children: ReactNode }) {
+export function AuthenticatedShell({ children, chrome = true }: { children: ReactNode; chrome?: boolean }) {
   const { isLoaded, isSignedIn } = useAuth()
   const pathname = usePathname()
   const [sessionReady, setSessionReady] = useState(false)
@@ -171,7 +172,7 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
     )
   }
   if (!isSignedIn) {
-    return <SignedOutNotice />
+    return <><SessionHeader /><SignedOutNotice /></>
   }
   if (state.status === 'loading') {
     return (
@@ -188,6 +189,10 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
   const section = sectionForPath(pathname)
   const allowed = section === null || canOpenSection(role, section)
   const groups = navigationGroups(role)
+
+  if (!chrome) {
+    return <ReadyIdentityContext.Provider value={state.me}>{children}</ReadyIdentityContext.Provider>
+  }
 
   return (
     <ReadyIdentityContext.Provider value={state.me}>

@@ -1,5 +1,5 @@
-import { HomeBody } from './components/sia-identity'
+import { ProjectApp } from './components/project-app'
 
 export default function Home() {
-  return <HomeBody />
+  return <ProjectApp />
 }
