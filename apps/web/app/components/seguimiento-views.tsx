@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, FileText, History, LayoutGrid, List, Plus, Box, Sparkles } from 'lucide-react'
 import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
+import { ActivityEvidence, ObjectiveReviewContext } from './tracking-review'
+import { SummaryCommunication } from './summary-communication'
 import type { ProjectSection } from '../lib/project-workspace'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 
@@ -114,16 +116,16 @@ function field(data: FormData, name: string): string {
 }
 
 type TrackingView = 'work' | 'summary' | 'diagnostics' | 'ambitions' | 'evidence' | 'evolution'
-type TrackingProps = { cycleId: string; program: string; view?: TrackingView; projectName?: string; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }
+type TrackingProps = { cycleId: string; program: string; view?: TrackingView; entrepreneurshipId?: string; projectName?: string; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }
 
-export function SeguimientoPanel({ cycleId, program, view = 'work', projectName = '', focusId, navigate }: TrackingProps) {
+export function SeguimientoPanel({ cycleId, program, view = 'work', entrepreneurshipId, projectName = '', focusId, navigate }: TrackingProps) {
   if (!tracked(program)) {
     return <p className={shell.meta}>Este programa no tiene seguimiento confirmado.</p>
   }
-  return <SeguimientoCycle cycleId={cycleId} view={view} projectName={projectName} program={program} focusId={focusId} navigate={navigate} />
+  return <SeguimientoCycle cycleId={cycleId} view={view} entrepreneurshipId={entrepreneurshipId} projectName={projectName} program={program} focusId={focusId} navigate={navigate} />
 }
 
-function SeguimientoCycle({ cycleId, view, projectName, program, focusId, navigate }: TrackingProps) {
+function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, program, focusId, navigate }: TrackingProps) {
   const me = useMe()
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
@@ -256,6 +258,7 @@ function SeguimientoCycle({ cycleId, view, projectName, program, focusId, naviga
         </ProjectPanel>
         <ProjectPanel title="El plan compartido">{bundle.objectives.length === 0 ? <p className="muted">Aún no hay objetivos registrados.</p> : bundle.objectives.map((objective) => { const progress = bundle.summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0; return <div className="summary-objective" key={objective.id}><ProjectLink onClick={() => navigate?.('Objetivos y actividades', objective.id)}>{objective.title}</ProjectLink><div className="inline"><ProjectProgress value={progress} label={`Avance de ${objective.title}`} /><span className="small">{Math.round(progress)}%</span></div><span className={`badge ${objective.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[objective.status]}</span></div> })}</ProjectPanel>
       </div>
+      {entrepreneurshipId && <SummaryCommunication key={`${entrepreneurshipId}/${cycleId}/${me.id}`} entrepreneurshipId={entrepreneurshipId} cycleId={cycleId} userId={me.id} navigate={navigate} />}
       <ProjectPanel title="Historial reciente">{bundle.validations.length === 0 ? <p className="muted">Aún no hay decisiones de validación registradas.</p> : [...bundle.validations].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5).map((validation) => <div className="record-row" key={validation.id}><CheckCircle2 size={20} /><div><strong>{DECISION_LABEL[validation.decision as keyof typeof DECISION_LABEL] ?? validation.decision}</strong><p>{validation.observation} · {formatDateTime(validation.created_at)}</p></div></div>)}<p className="small muted">Avance: promedio de objetivos aprobados, con igual peso. Modificar actividades o evidencias requiere revalidar su objetivo.</p></ProjectPanel>
     </>
   }
@@ -463,7 +466,7 @@ function ObjectiveSection({
       </FormDialog>
       </>} />
       <div className="plan-summary"><div><strong>{Math.round(summary.progress_percent)}%</strong><p>avance del proyecto</p></div><ProjectProgress value={summary.progress_percent} /><span className="muted small">{summary.objectives_approved} objetivos aprobados · mismo peso</span></div>
-      <div className="objectives-strip">{objectives.map((objective, index) => <div className="objective-strip" key={objective.id}><span className="number">{String(index + 1).padStart(2, '0')}</span><button className="plain objective-name" onClick={() => setObjectiveFilter(objective.id)}><strong>{objective.title}</strong><small>{Math.round(summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0)}% · {activities.filter((item) => item.objective_id === objective.id).length} actividades</small></button><span className={`badge ${objective.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[objective.status]}</span><button className="text-link" onClick={() => setSelectedObjective(objective.id)}>Editar</button>{objective.status === 'pending_validation' && canValidate(role) && <button className="btn secondary" onClick={() => setSelectedObjective(objective.id)}>Validar</button>}</div>)}</div>
+      <div className="objectives-strip">{objectives.map((objective, index) => <div className="objective-strip" key={objective.id}><span className="number">{String(index + 1).padStart(2, '0')}</span><button className="plain objective-name" onClick={() => setObjectiveFilter(objective.id)}><strong>{objective.title}</strong><small>{Math.round(summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0)}% · {activities.filter((item) => item.objective_id === objective.id).length} actividades</small></button><span className={`badge ${objective.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[objective.status]}</span><button className="text-link" onClick={() => setSelectedObjective(objective.id)}>Ver detalle</button>{objective.status === 'pending_validation' && canValidate(role) && <button className="btn secondary" onClick={() => setSelectedObjective(objective.id)}>Validar</button>}</div>)}</div>
       <div className="filters">
         <div className="segmented"><button disabled title="Los estados Kanban están pendientes de definición"><LayoutGrid size={15} />Kanban</button><button className="selected" aria-pressed="true"><List size={15} />Lista</button></div>
         <select aria-label="Filtrar actividades por objetivo" value={objectiveFilter} onChange={(event) => setObjectiveFilter(event.target.value)}><option value="all">Todos los objetivos</option>{objectives.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
@@ -472,7 +475,7 @@ function ObjectiveSection({
       </div>
       {objectives.length === 0 ? <p className={shell.meta}>No hay objetivos en este ciclo.</p> : null}
       <div className="activity-list">{activities.filter((item) => filtered.some((objective) => objective.id === item.objective_id) && (activityFilter === 'all' || (activityFilter === 'completed' ? Boolean(item.completed_at) : !item.completed_at))).map((activity) => <button className="record-row" key={activity.id} onClick={() => setSelectedActivity(activity.id)}><CheckCircle2 size={19} /><div><strong>{activity.title}</strong><p>{objectives.find((item) => item.id === activity.objective_id)?.title} · {formatDay(activity.ends_on)}</p></div><span className={`badge ${activity.completed_at ? 'olive' : 'neutral'}`}>{activity.completed_at ? 'Completada' : 'Pendiente'}</span><ChevronRight size={16} /></button>)}</div>
-      <Dialog open={Boolean(selectedObjective)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedObjective('') }}><DialogContent className="max-w-xl max-h-[85dvh] overflow-y-auto"><DialogHeader><DialogTitle>{objectives.find((item) => item.id === selectedObjective)?.title ?? 'Objetivo'}</DialogTitle><DialogDescription>Objetivo, aprobación y actividades del plan compartido.</DialogDescription></DialogHeader>{objectives.filter((item) => item.id === selectedObjective).map((objective) => (
+      <Dialog open={Boolean(selectedObjective)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedObjective('') }}><DialogContent className={styles.reviewDialog}><DialogHeader><DialogTitle>{objectives.find((item) => item.id === selectedObjective)?.title ?? 'Objetivo'}</DialogTitle><DialogDescription>Revisa el propósito, el trabajo registrado y sus evidencias antes de tomar una decisión.</DialogDescription></DialogHeader>{objectives.filter((item) => item.id === selectedObjective).map((objective) => (
               <ObjectiveCard
                 key={objective.id}
                 cycleId={cycleId}
@@ -480,8 +483,8 @@ function ObjectiveSection({
                 progress={summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0}
                 areas={areas}
                 ambitions={ambitions}
-                activities={activities.filter((item) => item.objective_id === objective.id && (activityFilter === 'all' || (activityFilter === 'completed' ? Boolean(item.completed_at) : !item.completed_at)))}
-                evidence={evidence}
+                activities={activities.filter((item) => item.objective_id === objective.id && item.cycle_id === objective.cycle_id)}
+                evidence={evidence.filter((item) => item.cycle_id === objective.cycle_id)}
                 validation={latest(validations, 'objective_id', objective.id)}
                 pendingId={pendingId}
                 actionError={actionError}
@@ -490,7 +493,7 @@ function ObjectiveSection({
                 run={run}
               />
             ))}</DialogContent></Dialog>
-      <Dialog open={Boolean(selectedActivity)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedActivity('') }}><DialogContent className="max-w-xl max-h-[85dvh] overflow-y-auto"><DialogHeader><DialogTitle>{activities.find((item) => item.id === selectedActivity)?.title ?? 'Actividad'}</DialogTitle><DialogDescription>Avance y evidencias vinculadas a la actividad.</DialogDescription></DialogHeader>{activities.filter((item) => item.id === selectedActivity).map((activity) => <ActivityCard key={activity.id} cycleId={cycleId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />)}</DialogContent></Dialog>
+      <Dialog open={Boolean(selectedActivity)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedActivity('') }}><DialogContent className={styles.activityDialog}><DialogHeader><DialogTitle>{activities.find((item) => item.id === selectedActivity)?.title ?? 'Actividad'}</DialogTitle><DialogDescription>Avance y evidencias vinculadas a la actividad.</DialogDescription></DialogHeader>{activities.filter((item) => item.id === selectedActivity).map((activity) => <ActivityCard key={activity.id} cycleId={cycleId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />)}</DialogContent></Dialog>
       {objectives.length > 0 && filtered.length === 0 ? <p className={shell.meta}>No hay coincidencias. Cambia los filtros o la búsqueda.</p> : null}
       <p className="small muted">Las actividades admiten finalización manual y reversible. Los estados intermedios Kanban están pendientes de definición.</p>
     </>
@@ -522,19 +525,31 @@ function ObjectiveCard({
 }) {
   const ambition = ambitions.find((item) => item.id === objective.ambition_id)
   return (
-    <article className={styles.block} id={`objective-${objective.id}`}>
+    <article className={styles.reviewLayout} id={`objective-${objective.id}`}>
+      <div className={styles.reviewMain}>
+        <ObjectiveReviewContext objective={objective} area={areaName(areas, objective.area_id)} ambition={ambition?.title} activities={activities} evidence={evidence} />
+        <section className={styles.reviewWork} aria-label="Trabajo registrado">
+          <h3>Qué se ha trabajado</h3>
+          <p className={styles.evidenceHelp}>Todas las actividades de este objetivo y las evidencias que las respaldan, sin los filtros de la lista.</p>
+          {activities.length === 0 && <p className={styles.evidenceEmpty}>No hay actividades registradas para este objetivo.</p>}
+          {activities.map((activity) => (
+            <ActivityCard key={activity.id} cycleId={cycleId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />
+          ))}
+        </section>
+        <FormDialog title="Nueva actividad" pending={pendingId === `activity-new-${objective.id}`} error={actionError} actionId={`activity-new-${objective.id}`}>
+          <ActivityForm id={`activity-new-${objective.id}`} title="Nueva actividad" submitLabel="Crear actividad" hint="La actividad queda a tu nombre." pending={pendingId === `activity-new-${objective.id}`} error={actionError}
+            onSubmit={(body) => run(`activity-new-${objective.id}`, async () => requestSeguimiento(seguimientoUrl(cycleId, 'activities'), parseActivity, { method: 'POST', body: { ...body, objective_id: objective.id, responsible_id: userId } }).then(asVoid))} />
+        </FormDialog>
+      </div>
+      <aside className={styles.reviewDecision} aria-label="Estado y decisión de validación">
       <div className={styles.row}>
-        <h3>{objective.title}</h3>
+        <h3>Revisión del objetivo</h3>
         <span className={styles.badge} data-status={objective.status}>
           {STATUS_LABEL[objective.status]}
         </span>
       </div>
       <div className={styles.objectiveProgress}><progress aria-label={`Avance de ${objective.title}`} value={progress} max={100} /><strong>{Math.round(progress)}%</strong></div>
-      {objective.description ? <p className={shell.meta}>{objective.description}</p> : null}
-      <p className={shell.meta}>
-        {objective.deliverable ? `Entregable de trabajo: ${objective.deliverable}. ` : ''}
-        {ambition ? `Ambición: ${ambition.title}.` : 'Sin ambición vinculada.'}
-      </p>
+      <p className={styles.evidenceHelp}>El porcentaje refleja actividades completadas, no sustituye la revisión de las evidencias.</p>
       {validation ? (
         <p className={shell.meta}>
           Última decisión ({formatDateTime(validation.created_at)}): {validation.observation}
@@ -599,35 +614,7 @@ function ObjectiveCard({
         }
       />
       </FormDialog>
-      {activities.map((activity) => (
-        <ActivityCard
-          key={activity.id}
-          cycleId={cycleId}
-          activity={activity}
-          evidence={evidence.filter((item) => item.activity_id === activity.id)}
-          pendingId={pendingId}
-          actionError={actionError}
-          run={run}
-        />
-      ))}
-      <FormDialog title="Nueva actividad" pending={pendingId === `activity-new-${objective.id}`} error={actionError} actionId={`activity-new-${objective.id}`}>
-      <ActivityForm
-        id={`activity-new-${objective.id}`}
-        title="Nueva actividad"
-        submitLabel="Crear actividad"
-        hint="La actividad queda a tu nombre."
-        pending={pendingId === `activity-new-${objective.id}`}
-        error={actionError}
-        onSubmit={(body) =>
-          run(`activity-new-${objective.id}`, async () =>
-            requestSeguimiento(seguimientoUrl(cycleId, 'activities'), parseActivity, {
-              method: 'POST',
-              body: { ...body, objective_id: objective.id, responsible_id: userId },
-            }).then(asVoid),
-          )
-        }
-      />
-      </FormDialog>
+      </aside>
     </article>
   )
 }
@@ -761,8 +748,9 @@ function ActivityCard({
         <CalendarDays aria-hidden="true" size={13} />{' '}
         {formatDay(activity.starts_on)} – {formatDay(activity.ends_on)}
       </p>
-      <p className={shell.meta}><Paperclip aria-hidden="true" size={13} /> {evidence.length} evidencias</p>
-      {activity.description ? <p className={shell.meta}>{activity.description}</p> : null}
+      <p className={styles.reviewDescription}>{activity.description || 'Sin descripción de la actividad registrada.'}</p>
+      {activity.completed_at && <p className={styles.evidenceHelp}>Marcada como completada: {formatDateTime(activity.completed_at)}</p>}
+      <ActivityEvidence activity={activity} evidence={evidence} />
       <div className={shell.actions}>
         <button
           type="button"
@@ -805,15 +793,6 @@ function ActivityCard({
         }
       />
       </FormDialog>
-      {evidence.length === 0 ? <p className={shell.meta}>Sin evidencias.</p> : null}
-      <ul className={shell.list}>
-        {evidence.map((item) => (
-          <li key={item.id}>
-            <a href={item.url}>{item.title}</a>
-            <span className={shell.cardMeta}> {item.kind}</span>
-          </li>
-        ))}
-      </ul>
       <FormDialog title="Agregar evidencia" pending={pendingId === `evidence-${activity.id}`} error={actionError} actionId={`evidence-${activity.id}`}>
       <EvidenceForm
         id={`evidence-${activity.id}`}

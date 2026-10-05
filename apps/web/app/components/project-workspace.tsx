@@ -105,7 +105,7 @@ export function ProjectWorkspace() {
   function content() {
     if (!project) return null
     const trackingViews = { Resumen: 'summary', 'Diagnóstico 360°': 'diagnostics', Ambiciones: 'ambitions', 'Objetivos y actividades': 'work', Evidencias: 'evidence', Evolución: 'evolution' } as const
-    if (route.section in trackingViews) return <SeguimientoPanel cycleId={project.cycle.id} program={project.enrollment.program} view={trackingViews[route.section as keyof typeof trackingViews]} projectName={name} focusId={route.id} navigate={navigate} />
+    if (route.section in trackingViews) return <SeguimientoPanel cycleId={project.cycle.id} entrepreneurshipId={project.entrepreneurship.id} program={project.enrollment.program} view={trackingViews[route.section as keyof typeof trackingViews]} projectName={name} focusId={route.id} navigate={navigate} />
     if (route.section === 'Reuniones') return <><ProjectHeading eyebrow="Conversaciones que impulsan" title="Reuniones" /><MeetingsPanel cycleId={project.cycle.id} program={project.enrollment.program} /></>
     if (route.section === 'Chat') return <><ProjectHeading eyebrow="Cerca, incluso a la distancia" title="Chat" /><ChannelsPanel entrepreneurshipId={project.entrepreneurship.id} cycleId={project.cycle.id} /></>
     if (route.section === 'Alertas') return <><ProjectHeading eyebrow="Lo que necesita atención" title="Alertas" /><BandejaView /></>
