@@ -3,13 +3,24 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { BriefcaseBusiness, CalendarPlus, FolderPlus, Search, X } from 'lucide-react'
 
 import { StatusPanel, useMe } from './authenticated-shell'
 import styles from './expediente.module.css'
 import { AssignmentPanel } from './administracion-views'
 import { ChannelsPanel } from './canales-views'
 import { MeetingsPanel } from './comunicacion-views'
+import { EntrepreneurshipTable } from './entrepreneurship-table'
+import { CycleWorkspaceTabs, ProjectWorkspaceTabs } from './project-workspace-tabs'
 import { SeguimientoPanel } from './seguimiento-views'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog'
 import {
   canRegisterExpediente,
   enrolledAtIso,
@@ -144,6 +155,73 @@ function Facts({ rows }: { rows: { term: string; value: string }[] }) {
   )
 }
 
+function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description: string
+  action?: ReactNode
+}) {
+  return (
+    <div className={styles.emptyState}>
+      <span className={styles.emptyIcon} aria-hidden="true"><BriefcaseBusiness /></span>
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+        {action ? <div className={styles.emptyAction}>{action}</div> : null}
+      </div>
+    </div>
+  )
+}
+
+function SectionHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description: string
+  action?: ReactNode
+}) {
+  return (
+    <div className={styles.sectionHeader}>
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+      {action ? <div className={styles.sectionAction}>{action}</div> : null}
+    </div>
+  )
+}
+
+function DetailHero({
+  eyebrow,
+  title,
+  description,
+  monogram,
+  action,
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  monogram: string
+  action?: ReactNode
+}) {
+  return (
+    <header className={styles.detailHero}>
+      <span className={styles.detailMonogram} aria-hidden="true">{monogram.slice(0, 2).toUpperCase()}</span>
+      <div className={styles.detailHeroCopy}>
+        <p className={styles.eyebrow}>{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+      {action ? <div className={styles.detailHeroAction}>{action}</div> : null}
+    </header>
+  )
+}
+
 function NameForm({
   title,
   fieldLabel,
@@ -213,7 +291,10 @@ export function ExpedienteListView() {
   const [formError, setFormError] = useState<string | null>(null)
   const [createdNotice, setCreatedNotice] = useState<string | null>(null)
   const [formKey, setFormKey] = useState(0)
+  const [query, setQuery] = useState('')
   usePageTitle('Expediente')
+
+  const visibleItems = items.filter((item) => item.name.toLocaleLowerCase('es-CR').includes(query.trim().toLocaleLowerCase('es-CR')))
 
   useEffect(() => {
     let cancelled = false
@@ -316,36 +397,62 @@ export function ExpedienteListView() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <h1>Expediente</h1>
-        <p className={styles.intro}>Emprendimientos que puedes consultar.</p>
+      <header className={styles.pageHero}>
+        <div>
+          <p className={styles.eyebrow}>Expediente</p>
+          <h1>Emprendimientos</h1>
+          <p className={styles.intro}>Consulta el historial y los ciclos a los que tienes acceso.</p>
+        </div>
+        {canRegisterExpediente(me.role) ? (
+          <Dialog>
+            <DialogTrigger className={styles.button}><FolderPlus aria-hidden="true" /> Nuevo emprendimiento</DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nuevo emprendimiento</DialogTitle>
+                <DialogDescription>El expediente conservará su historial entre programas y ciclos.</DialogDescription>
+              </DialogHeader>
+              <NameForm
+                key={formKey}
+                title="Datos del emprendimiento"
+                fieldLabel="Nombre"
+                submitLabel="Crear emprendimiento"
+                pending={pending}
+                error={formError}
+                onSubmit={(name) => void createEntrepreneurship(name)}
+              />
+            </DialogContent>
+          </Dialog>
+        ) : null}
       </header>
-      {canRegisterExpediente(me.role) ? (
-        <NameForm
-          key={formKey}
-          title="Nuevo emprendimiento"
-          fieldLabel="Nombre"
-          submitLabel="Crear emprendimiento"
-          pending={pending}
-          error={formError}
-          onSubmit={(name) => void createEntrepreneurship(name)}
-        />
-      ) : null}
       {createdNotice ? (
-        <p className={styles.meta} role="status">
+        <p className={styles.notice} role="status">
           {createdNotice}
         </p>
       ) : null}
-      <RecordList empty={items.length === 0 ? 'No hay emprendimientos en tu alcance.' : null}>
-        {items.map((item) => (
-          <li key={item.id}>
-            <Link className={styles.card} href={`/expediente/${item.id}`}>
-              <span className={styles.cardTitle}>{item.name}</span>
-              <span className={styles.cardMeta}>Creado {formatDateTime(item.created_at)}</span>
-            </Link>
-          </li>
-        ))}
-      </RecordList>
+      {items.length === 0 ? (
+        <EmptyState
+          title="No hay emprendimientos en tu alcance"
+          description={canRegisterExpediente(me.role) ? 'Crea el primer emprendimiento para iniciar su expediente.' : 'Cuando te asignen a un emprendimiento, aparecerá aquí.'}
+        />
+      ) : <>
+        <section className={styles.listWorkspace} aria-labelledby="lista-emprendimientos">
+          <div className={styles.listToolbar}>
+            <div>
+              <h2 id="lista-emprendimientos">Emprendimientos disponibles</h2>
+              <p>{query ? `${visibleItems.length} coincidencia${visibleItems.length === 1 ? '' : 's'} en los ${items.length} emprendimientos cargados.` : `${items.length} emprendimiento${items.length === 1 ? '' : 's'} cargado${items.length === 1 ? '' : 's'}.`}</p>
+            </div>
+            <label className={styles.searchField}>
+              <span className="sr-only">Buscar emprendimiento en los resultados cargados</span>
+              <Search aria-hidden="true" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre" type="search" />
+              {query ? <button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery('')}><X aria-hidden="true" /></button> : null}
+            </label>
+          </div>
+          {visibleItems.length === 0 ? (
+            <EmptyState title="No encontramos coincidencias" description="Prueba con otro nombre o limpia la búsqueda para consultar los emprendimientos cargados." />
+          ) : <EntrepreneurshipTable items={visibleItems} />}
+        </section>
+      </>}
       {hasMore ? (
         <div className={styles.actions}>
           <button type="button" className={styles.buttonSecondary} disabled={loadingMore} onClick={() => void loadMore()}>
@@ -418,34 +525,62 @@ export function ExpedienteDetailView({ entrepreneurshipId }: { entrepreneurshipI
       ) : null}
       {entrepreneurship.state.status === 'ready' ? (
         <>
-          <header className={styles.header}>
-            <h1>{entrepreneurship.state.data.name}</h1>
-          </header>
-          <Facts
-            rows={[
-              { term: 'Creado', value: formatDateTime(entrepreneurship.state.data.created_at) },
-              { term: 'Actualizado', value: formatDateTime(entrepreneurship.state.data.updated_at) },
-            ]}
+          <DetailHero
+            eyebrow="Expediente del emprendimiento"
+            title={entrepreneurship.state.data.name}
+            description="Historial de programas, ciclos y colaboración autorizada."
+            monogram={entrepreneurship.state.data.name}
+            action={canRegisterExpediente(me.role) ? (
+              <Dialog>
+                <DialogTrigger className={styles.button}><CalendarPlus aria-hidden="true" /> Inscribir en Prototipado</DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Inscribir en Prototipado</DialogTitle>
+                    <DialogDescription>La inscripción se conserva como parte del historial del emprendimiento.</DialogDescription>
+                  </DialogHeader>
+                  <EnrollmentForm pending={pending} error={formError} onSubmit={(value) => void createEnrollment(value)} />
+                </DialogContent>
+              </Dialog>
+            ) : undefined}
           />
-          <section className={styles.section} aria-labelledby="inscripciones-titulo">
-            <h2 id="inscripciones-titulo">Inscripciones</h2>
-            <EnrollmentSection
-              state={enrollments.state}
-              entrepreneurshipId={entrepreneurship.state.data.id}
-              onRetry={enrollments.reload}
-            />
-            <LoadMore
-              hasMore={enrollments.hasMore}
-              loading={enrollments.loadingMore}
-              error={enrollments.moreError}
-              onLoad={() => void enrollments.loadMore()}
-            />
-            {canRegisterExpediente(me.role) ? (
-              <EnrollmentForm pending={pending} error={formError} onSubmit={(value) => void createEnrollment(value)} />
-            ) : null}
-          </section>
-          <ChannelsPanel entrepreneurshipId={entrepreneurship.state.data.id} />
-          <AssignmentPanel scope={{ kind: 'entrepreneurship', id: entrepreneurship.state.data.id }} />
+          <div className={styles.detailLayout}>
+            <div className={styles.primaryColumn}>
+              <section className={styles.section} aria-labelledby="inscripciones-titulo">
+                <SectionHeader
+                  title="Inscripciones"
+                  description="Programas registrados para este emprendimiento."
+                />
+                <EnrollmentSection
+                  state={enrollments.state}
+                  entrepreneurshipId={entrepreneurship.state.data.id}
+                  onRetry={enrollments.reload}
+                />
+                <LoadMore
+                  hasMore={enrollments.hasMore}
+                  loading={enrollments.loadingMore}
+                  error={enrollments.moreError}
+                  onLoad={() => void enrollments.loadMore()}
+                />
+              </section>
+              <ChannelsPanel entrepreneurshipId={entrepreneurship.state.data.id} />
+            </div>
+            <aside className={styles.sideColumn} aria-label="Resumen del expediente">
+              <section className={styles.summaryCard}>
+                <h2>Resumen</h2>
+                <Facts
+                  rows={[
+                    { term: 'Creado', value: formatDateTime(entrepreneurship.state.data.created_at) },
+                    { term: 'Actualizado', value: formatDateTime(entrepreneurship.state.data.updated_at) },
+                  ]}
+                />
+              </section>
+              <section className={styles.guidanceCard}>
+                <h2>Cómo continuar</h2>
+                <p>Una inscripción agrupa los ciclos de trabajo del programa. Abre una inscripción para consultar o crear sus ciclos.</p>
+              </section>
+              <AssignmentPanel scope={{ kind: 'entrepreneurship', id: entrepreneurship.state.data.id }} />
+            </aside>
+          </div>
         </>
       ) : null}
     </div>
@@ -476,8 +611,10 @@ function EnrollmentSection({
     )
   }
   return (
-    <>
-      <RecordList empty={state.data.length === 0 ? 'Este emprendimiento no tiene inscripciones.' : null}>
+    state.data.length === 0 ? (
+      <EmptyState title="Aún no hay inscripciones" description="Las inscripciones registran el paso del emprendimiento por cada programa." />
+    ) : (
+      <RecordList empty={null}>
         {state.data.map((enrollment) => (
           <li key={enrollment.id}>
             <Link className={styles.card} href={`/expediente/${entrepreneurshipId}/inscripciones/${enrollment.id}`}>
@@ -487,7 +624,7 @@ function EnrollmentSection({
           </li>
         ))}
       </RecordList>
-    </>
+    )
   )
 }
 
@@ -507,8 +644,7 @@ function EnrollmentForm({
     onSubmit(typeof raw === 'string' ? raw : '')
   }
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <h2>Inscribir en Prototipado</h2>
+    <form className={styles.formCompact} onSubmit={handleSubmit}>
       <label className={styles.field}>
         Fecha de ingreso
         <input
@@ -574,6 +710,17 @@ export function EnrollmentDetailView({
     enrollment.state.data.entrepreneurship_id !== entrepreneurship.state.data.id
   const program = aligned && enrollment.state.status === 'ready' ? enrollment.state.data.program : null
   usePageTitle(program)
+
+  const onlyCycle = cycles.state.status === 'ready' && !cycles.hasMore && cycles.state.data.length === 1
+    ? cycles.state.data[0]
+    : null
+
+  useEffect(() => {
+    if (!aligned || !onlyCycle || enrollment.state.status !== 'ready' || entrepreneurship.state.status !== 'ready') {
+      return
+    }
+    router.replace(`/expediente/${entrepreneurship.state.data.id}/inscripciones/${enrollment.state.data.id}/ciclos/${onlyCycle.id}`)
+  }, [aligned, enrollment.state, entrepreneurship.state, onlyCycle, router])
 
   async function createCycle(rawName: string) {
     if (!aligned || enrollment.state.status !== 'ready' || entrepreneurship.state.status !== 'ready' || pending) {
@@ -643,34 +790,52 @@ export function EnrollmentDetailView({
       ) : null}
       {aligned && enrollment.state.status === 'ready' && entrepreneurship.state.status === 'ready' ? (
         <>
-          <header className={styles.header}>
-            <h1>{enrollment.state.data.program}</h1>
-          </header>
+          <DetailHero
+            eyebrow="Inscripción"
+            title={enrollment.state.data.program}
+            description={`Programa registrado para ${entrepreneurshipName}.`}
+            monogram={enrollment.state.data.program}
+          />
           <Facts rows={[{ term: 'Fecha de ingreso', value: formatDateTime(enrollment.state.data.enrolled_at) }]} />
           <section className={styles.section} aria-labelledby="ciclos-titulo">
-            <h2 id="ciclos-titulo">Ciclos</h2>
-            <CycleSection
-              state={cycles.state}
-              entrepreneurshipId={entrepreneurship.state.data.id}
-              enrollmentId={enrollment.state.data.id}
-              onRetry={cycles.reload}
+            <SectionHeader
+              title="Ciclos"
+              description="Proyectos o intervenciones registrados dentro de esta inscripción."
+              action={canRegisterExpediente(me.role) && enrollment.state.data.program === PROTOTIPADO_PROGRAM ? (
+                <Dialog>
+                  <DialogTrigger className={styles.button}><FolderPlus aria-hidden="true" /> Nuevo ciclo</DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Nuevo ciclo de Prototipado</DialogTitle>
+                      <DialogDescription>El ciclo organizará el trabajo, seguimiento y comunicación de esta inscripción.</DialogDescription>
+                    </DialogHeader>
+                    <NameForm
+                      title="Datos del ciclo"
+                      fieldLabel="Nombre del ciclo"
+                      submitLabel="Crear ciclo"
+                      pending={pending}
+                      error={formError}
+                      onSubmit={(name) => void createCycle(name)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              ) : undefined}
             />
-            <LoadMore
-              hasMore={cycles.hasMore}
-              loading={cycles.loadingMore}
-              error={cycles.moreError}
-              onLoad={() => void cycles.loadMore()}
-            />
-            {canRegisterExpediente(me.role) && enrollment.state.data.program === PROTOTIPADO_PROGRAM ? (
-              <NameForm
-                title="Nuevo ciclo de Prototipado"
-                fieldLabel="Nombre del ciclo"
-                submitLabel="Crear ciclo"
-                pending={pending}
-                error={formError}
-                onSubmit={(name) => void createCycle(name)}
+            {onlyCycle ? <LoadingLine>Abriendo el único ciclo disponible…</LoadingLine> : <>
+              <CycleSection
+                state={cycles.state}
+                entrepreneurshipId={entrepreneurship.state.data.id}
+                entrepreneurshipName={entrepreneurship.state.data.name}
+                program={enrollment.state.data.program}
+                onRetry={cycles.reload}
               />
-            ) : null}
+              <LoadMore
+                hasMore={cycles.hasMore}
+                loading={cycles.loadingMore}
+                error={cycles.moreError}
+                onLoad={() => void cycles.loadMore()}
+              />
+            </>}
           </section>
         </>
       ) : null}
@@ -681,12 +846,14 @@ export function EnrollmentDetailView({
 function CycleSection({
   state,
   entrepreneurshipId,
-  enrollmentId,
+  entrepreneurshipName,
+  program,
   onRetry,
 }: {
   state: ViewState<Cycle[]>
   entrepreneurshipId: string
-  enrollmentId: string
+  entrepreneurshipName: string
+  program: string
   onRetry: () => void
 }) {
   if (state.status === 'loading') {
@@ -704,21 +871,46 @@ function CycleSection({
     )
   }
   return (
-    <>
-      <RecordList empty={state.data.length === 0 ? 'Esta inscripción no tiene ciclos.' : null}>
-        {state.data.map((cycle) => (
-          <li key={cycle.id}>
-            <Link
-              className={styles.card}
-              href={`/expediente/${entrepreneurshipId}/inscripciones/${enrollmentId}/ciclos/${cycle.id}`}
-            >
-              <span className={styles.cardTitle}>{cycle.name}</span>
-              <span className={styles.cardMeta}>Creado {formatDateTime(cycle.created_at)}</span>
-            </Link>
-          </li>
-        ))}
-      </RecordList>
-    </>
+    state.data.length === 0 ? (
+      <EmptyState title="Aún no hay ciclos" description="Crea un ciclo cuando exista un proyecto o intervención concreta dentro de esta inscripción." />
+    ) : (
+      <CycleWorkspaceTabs cycles={state.data}>
+        {(cycle) => <CycleWorkspace cycle={cycle} entrepreneurshipId={entrepreneurshipId} entrepreneurshipName={entrepreneurshipName} program={program} />}
+      </CycleWorkspaceTabs>
+    )
+  )
+}
+
+function CycleWorkspace({
+  cycle,
+  entrepreneurshipId,
+  entrepreneurshipName,
+  program,
+}: {
+  cycle: Cycle
+  entrepreneurshipId: string
+  entrepreneurshipName: string
+  program: string
+}) {
+  return (
+    <div className={styles.cycleWorkspaceContent}>
+      <DetailHero
+        eyebrow="Espacio del ciclo"
+        title={cycle.name}
+        description={`${entrepreneurshipName} · ${program}`}
+        monogram={cycle.name}
+      />
+      <Facts rows={[{ term: 'Programa', value: program }, { term: 'Creado', value: formatDateTime(cycle.created_at) }]} />
+      <ProjectWorkspaceTabs
+        tabs={[
+          { value: 'resumen', label: 'Resumen', content: <SeguimientoPanel cycleId={cycle.id} entrepreneurshipId={entrepreneurshipId} program={program} view="summary" /> },
+          { value: 'seguimiento', label: 'Objetivos y actividades', content: <SeguimientoPanel cycleId={cycle.id} program={program} /> },
+          { value: 'reuniones', label: 'Reuniones', content: <MeetingsPanel cycleId={cycle.id} program={program} /> },
+          { value: 'canales', label: 'Canales', content: <ChannelsPanel entrepreneurshipId={entrepreneurshipId} cycleId={cycle.id} /> },
+          { value: 'equipo', label: 'Equipo', content: <AssignmentPanel scope={{ kind: 'cycle', id: cycle.id }} /> },
+        ]}
+      />
+    </div>
   )
 }
 
@@ -809,25 +1001,13 @@ export function CycleDetailView({
           }}
         />
       ) : null}
-      {aligned && cycle.state.status === 'ready' && enrollment.state.status === 'ready' ? (
-        <>
-          <header className={styles.header}>
-            <h1>{cycle.state.data.name}</h1>
-          </header>
-          <Facts
-            rows={[
-              { term: 'Programa', value: enrollment.state.data.program },
-              { term: 'Creado', value: formatDateTime(cycle.state.data.created_at) },
-            ]}
-          />
-          <SeguimientoPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />
-          <MeetingsPanel cycleId={cycle.state.data.id} program={enrollment.state.data.program} />
-          <ChannelsPanel
-            entrepreneurshipId={enrollment.state.data.entrepreneurship_id}
-            cycleId={cycle.state.data.id}
-          />
-          <AssignmentPanel scope={{ kind: 'cycle', id: cycle.state.data.id }} />
-        </>
+      {aligned && entrepreneurship.state.status === 'ready' && cycle.state.status === 'ready' && enrollment.state.status === 'ready' ? (
+        <CycleWorkspace
+          cycle={cycle.state.data}
+          entrepreneurshipId={entrepreneurship.state.data.id}
+          entrepreneurshipName={entrepreneurshipName}
+          program={enrollment.state.data.program}
+        />
       ) : null}
     </div>
   )

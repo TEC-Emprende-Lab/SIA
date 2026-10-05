@@ -14,8 +14,17 @@ import {
 } from '../lib/identity'
 import { canOpenSection, navigationGroups, ROLE_SCOPE, sectionForPath } from '../lib/navigation'
 import styles from './shell.module.css'
+import { SessionHeader } from './session-header'
 
 const ReadyIdentityContext = createContext<Me | null>(null)
+
+const NAVIGATION_ICONS: Record<string, string> = {
+  Inicio: '⌂',
+  Expediente: '▣',
+  Bandeja: '◉',
+  Invitaciones: '✉',
+  Usuarios: '♙',
+}
 
 export function useMe(): Me {
   const me = useContext(ReadyIdentityContext)
@@ -70,17 +79,37 @@ function IdentityStatus({ state }: { state: Exclude<IdentityState, { status: 'lo
 
 export function SignedOutNotice() {
   return (
-    <main className={styles.notice}>
-      <h1>SIA</h1>
-      <p>La aplicación de producción está en construcción.</p>
-      <p>Inicia sesión con Google para continuar. El primer acceso a SIA requiere invitación.</p>
+    <main className={styles.guest}>
+      <section className={styles.guestHero}>
+        <p className={styles.guestEyebrow}>TEC Emprende Lab · CataliTech</p>
+        <h1>SIA acompaña el avance que sí deja evidencia.</h1>
+        <p className={styles.guestLead}>
+          Un espacio para organizar el trabajo de cada emprendimiento, sus acuerdos y los aprendizajes de cada ciclo.
+        </p>
+        <div className={styles.guestSteps} aria-label="Cómo empezar">
+          <span>1. Inicia sesión con Google</span>
+          <span>2. Abre tu proyecto autorizado</span>
+        </div>
+      </section>
+      <aside className={styles.guestCard}>
+        <div className={styles.guestMark} aria-hidden="true">S</div>
+        <p className={styles.guestCardEyebrow}>Sistema de Incubación y Acompañamiento</p>
+        <h2>Tu espacio de trabajo está listo.</h2>
+        <p>
+          Inicia sesión para consultar los emprendimientos y ciclos que tienes asignados.
+        </p>
+        <p className={styles.guestNote}>
+          El primer acceso requiere una invitación vigente con el mismo correo verificado.
+        </p>
+      </aside>
     </main>
   )
 }
 
 export function WorkspaceHome() {
   const me = useMe()
-  const sections = navigationGroups(me.role)
+  const role = typeof me.role === 'string' ? me.role : ''
+  const sections = navigationGroups(role)
   if (sections.length === 0) {
     return (
       <EmptyState
@@ -89,7 +118,7 @@ export function WorkspaceHome() {
       />
     )
   }
-  const scope = isSiaRole(me.role) ? `${ROLE_SCOPE[me.role]}. ` : ''
+  const scope = isSiaRole(role) ? `${ROLE_SCOPE[role]}. ` : ''
   return (
     <EmptyState
       title="Sin expediente abierto"
@@ -98,7 +127,7 @@ export function WorkspaceHome() {
   )
 }
 
-export function AuthenticatedShell({ children }: { children: ReactNode }) {
+export function AuthenticatedShell({ children, chrome = true }: { children: ReactNode; chrome?: boolean }) {
   const { isLoaded, isSignedIn } = useAuth()
   const pathname = usePathname()
   const [sessionReady, setSessionReady] = useState(false)
@@ -143,7 +172,7 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
     )
   }
   if (!isSignedIn) {
-    return <SignedOutNotice />
+    return <><SessionHeader /><SignedOutNotice /></>
   }
   if (state.status === 'loading') {
     return (
@@ -156,9 +185,14 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
     return <IdentityStatus state={state} />
   }
 
+  const role = typeof state.me.role === 'string' ? state.me.role : ''
   const section = sectionForPath(pathname)
-  const allowed = section === null || canOpenSection(state.me.role, section)
-  const groups = navigationGroups(state.me.role)
+  const allowed = section === null || canOpenSection(role, section)
+  const groups = navigationGroups(role)
+
+  if (!chrome) {
+    return <ReadyIdentityContext.Provider value={state.me}>{children}</ReadyIdentityContext.Provider>
+  }
 
   return (
     <ReadyIdentityContext.Provider value={state.me}>
@@ -167,16 +201,25 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
           Saltar al contenido
         </a>
         <aside className={styles.nav}>
+          <Link href="/" className={styles.wordmark} aria-label="Inicio de SIA">
+            <span className={styles.brandMark}>S</span>
+            <span>
+              <strong>SIA</strong>
+              <small>TEC EMPRENDE LAB</small>
+            </span>
+          </Link>
           <div className={styles.identity}>
-            <p>
+            <span className={styles.identityAvatar} aria-hidden="true">{state.me.email.slice(0, 1).toUpperCase()}</span>
+            <div>
               <strong>{state.me.email}</strong>
-            </p>
-            <p>Rol {state.me.role}</p>
-            {isSiaRole(state.me.role) ? <p className={styles.scope}>{ROLE_SCOPE[state.me.role]}</p> : null}
+              <span>{role}</span>
+              {isSiaRole(role) ? <small className={styles.scope}>{ROLE_SCOPE[role]}</small> : null}
+            </div>
           </div>
           <nav aria-label="Navegación SIA">
             <div className={styles.links}>
               <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} className={styles.link}>
+                <span aria-hidden="true">{NAVIGATION_ICONS.Inicio}</span>
                 Inicio
               </Link>
             </div>
@@ -193,6 +236,7 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
                         className={styles.link}
                         aria-current={current ? 'page' : undefined}
                       >
+                        <span aria-hidden="true">{NAVIGATION_ICONS[item.label] ?? '·'}</span>
                         {item.label}
                       </Link>
                     )
@@ -202,17 +246,31 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </aside>
-        <main id="contenido-sia" className={styles.main}>
-          {allowed ? (
-            children
-          ) : (
-            <StatusPanel
-              status="forbidden"
-              title="Acceso no disponible"
-              description="Tu rol no incluye esta sección."
-            />
-          )}
-        </main>
+        <div className={styles.contentArea}>
+          <header className={styles.topbar}>
+            <div className={styles.breadcrumb}>
+              <Link href="/expediente">Expedientes</Link>
+              {section ? <><span aria-hidden="true">/</span><b>{section.label}</b></> : <b>Inicio</b>}
+            </div>
+            <div className={styles.topActions}>
+              <Link href="/bandeja" className={styles.notificationLink} aria-label="Abrir bandeja">
+                ◉<span>Bandeja</span>
+              </Link>
+              <span className={styles.rolePill}>{role}</span>
+            </div>
+          </header>
+          <main id="contenido-sia" className={styles.main}>
+            {allowed ? (
+              children
+            ) : (
+              <StatusPanel
+                status="forbidden"
+                title="Acceso no disponible"
+                description="Tu rol no incluye esta sección."
+              />
+            )}
+          </main>
+        </div>
       </div>
     </ReadyIdentityContext.Provider>
   )

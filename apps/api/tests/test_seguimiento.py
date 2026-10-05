@@ -242,6 +242,7 @@ async def test_official_canvas_and_program_objectives(tracking, cycle, program):
         "diagnostics",
         "validations",
         "schedule",
+        "summary",
     ],
 )
 async def test_all_reads_authorize_cycle_without_sibling_escalation(tracking, resource):
@@ -301,6 +302,68 @@ async def test_mutations_scope_and_validator_roles(tracking):
             headers={"x-actor": "coordinator"},
         )
     ).status_code == 409
+
+
+async def test_summary_equal_weights_and_revalidation(tracking):
+    client, _ = tracking
+    empty = await client.get(path("summary"))
+    assert empty.status_code == 200
+    assert empty.json()["progress_percent"] == 0
+    assert empty.json()["objectives"] == []
+    first = await create_objective(client)
+    second = await create_objective(client)
+    draft = await create_objective(client)
+    one = await create_activity(client, first)
+    two = await create_activity(client, second)
+    await create_activity(client, second)
+    await create_activity(client, second)
+    await create_activity(client, second)
+    for activity in (one, two):
+        result = await client.post(
+            path(f"activities/{activity['id']}/completion"),
+            json={"expected_revision": activity["revision"], "completed": True},
+        )
+        assert result.status_code == 200
+    await approve(client, "objectives", first["id"])
+    await approve(client, "objectives", second["id"])
+    result = (await client.get(path("summary"))).json()
+    assert result["progress_percent"] == 62.5  # (100 + 25) / 2, not 2 / 5
+    assert result["objectives_approved"] == 2
+    assert result["activities_total"] == 5
+    assert result["activities_completed"] == 2
+    assert (
+        next(o for o in result["objectives"] if o["objective_id"] == draft["id"])[
+            "progress_percent"
+        ]
+        == 0
+    )
+    updated = await current(client, "activities", one["id"])
+    result = await client.post(
+        path(f"activities/{one['id']}/completion"),
+        json={"expected_revision": updated["revision"], "completed": False},
+    )
+    assert result.status_code == 200
+    summary = (await client.get(path("summary"))).json()
+    assert summary["objectives_approved"] == 1
+    assert summary["progress_percent"] == 25
+    await approve(client, "objectives", first["id"])
+    assert (await client.get(path("summary"))).json()["progress_percent"] == 12.5
+    assert (await client.get(path("summary", "c2"))).json()["objectives_total"] == 0
+
+
+async def test_summary_denies_revoked_assignment(tracking):
+    client, sessions = tracking
+    async with sessions() as db:
+        assignment = await db.scalar(
+            select(ProgramCycleAssignment).where(ProgramCycleAssignment.user_id == "cycle-founder")
+        )
+        assignment.revoked_at = datetime.now(UTC)
+        assignment.revoked_by = "coordinator"
+        await db.commit()
+    assert (
+        await client.get(path("summary"), headers={"x-actor": "cycle-founder"})
+    ).status_code == 403
+    assert (await client.get(path("summary", "missing"))).status_code == 404
 
 
 async def test_cross_scope_references_and_optional_ambitions(tracking):

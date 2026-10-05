@@ -11,6 +11,21 @@
 - Un objetivo aprobado que cambia vuelve a estado pendiente de validacion.
 - Una actividad puede configurarse para autocompletado, pero su condicion concreta esta `TBD` y no se automatiza en el alcance inicial.
 
+## Avance del ciclo — decisión confirmada 2026-09-29
+
+Al aprobar la ejecución por fases del dashboard basado en el mockup, se confirma:
+
+- El avance de un objetivo es actividades completadas / actividades totales × 100;
+  sin actividades es 0 %.
+- El avance del ciclo es el promedio de los avances de los objetivos actualmente
+  aprobados, con igual peso por objetivo. Sin objetivos aprobados es 0 %.
+- Los objetivos no aprobados se muestran, pero no participan del promedio del ciclo.
+- FastAPI calcula los porcentajes a partir de registros vigentes: no se ingresan
+  manualmente ni se almacenan porcentajes derivados.
+- Se conserva la regla actual: cambiar actividades, finalizarlas/reabrirlas o añadir
+  evidencias invalida la aprobación del objetivo. Esto puede reducir el avance del
+  ciclo hasta una nueva validación; la UI debe explicarlo.
+
 ## Flujo de validacion
 
 1. El Emprendedor registra objetivo, actividad y evidencia en su emprendimiento autorizado.

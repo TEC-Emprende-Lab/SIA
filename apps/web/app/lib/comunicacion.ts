@@ -412,7 +412,7 @@ export function parseReceipt(value: unknown): { last_read_message_id: string } |
 export async function requestComunicacion<T>(
   path: string,
   parse: (value: unknown) => T | null,
-  init?: { method: 'POST' | 'PUT' | 'DELETE'; body?: unknown },
+  init?: { method?: 'POST' | 'PUT' | 'DELETE'; body?: unknown; signal?: AbortSignal },
 ): Promise<ComunicacionResult<T>> {
   let response: Response
   try {
@@ -421,6 +421,7 @@ export async function requestComunicacion<T>(
       headers: init?.body !== undefined ? { 'content-type': 'application/json' } : undefined,
       body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
       cache: 'no-store',
+      signal: init?.signal,
     })
   } catch {
     return { ok: false, status: 0, message: 'No se pudo consultar la comunicación.' }

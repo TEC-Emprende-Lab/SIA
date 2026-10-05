@@ -1,17 +1,310 @@
 # Consolidacion de decisiones
 
-## Fase 7 — UI conectada en local, 2026-09-29
+## Resumen conectado — reuniones, acuerdos y alertas, 2026-10-05
+
+Alcance autorizado por el usuario después de la mejora de evidencias. Trazabilidad:
+US-PRO-001/002/004, US-PM-001/002/003, `reuniones-minutas-y-canales.md` y
+`notificaciones-y-alertas.md`. No cambia reglas de negocio ni permisos.
+
+- [x] Añadir al Resumen próximas reuniones no revocadas del ciclo, ordenadas por
+  fecha real, con participantes y horario de Costa Rica.
+- [x] Mostrar acuerdos registrados de reuniones no revocadas, su fecha de compromiso,
+  reunión de origen y próximos pasos. Los estados de cumplimiento siguen `TBD`:
+  **no** se presentan como pendientes, vencidos ni completados.
+- [x] Mostrar alertas sin resolver del usuario actual, solo del ciclo seleccionado
+  o compartidas por el mismo emprendimiento; excluir ciclos hermanos y otros proyectos.
+- [x] Consultar todas las páginas autorizadas antes de ordenar y limitar la vista
+  a cinco registros por tarjeta; indicar explícitamente cuando existen más.
+- [x] Conservar carga, vacío, errores y reintento independientes por módulo, con
+  actualización manual y enlaces a Reuniones y a la bandeja personal completa.
+- [x] Cancelar consultas al desmontar/cambiar proyecto; usar identidad de proyecto,
+  ciclo y usuario como clave para no conservar datos de la selección anterior.
+- [ ] Verificar los nuevos paneles con Clerk/API en sesión autenticada desplegada.
+
+Implementación solo frontend sobre GET existentes de FastAPI/BFF, sin migraciones,
+contratos nuevos, Socket.IO, correo ni generación automática de alertas. La API actual
+ofrece acuerdos por reunión; el resumen consulta las reuniones autorizadas y sus acuerdos
+con un máximo de cuatro peticiones simultáneas, sin consultar minutas ni detalles extra.
+No se acredita escalabilidad con grandes expedientes; si el volumen lo exige, evaluar
+un agregado backend autorizado en vez de ampliar el fan-out. La bandeja de Coordinadora
+sigue siendo personal: no consulta alertas de otros usuarios.
+
+Verificación local: 17 grupos Web pasan (11 previos + 6 del Resumen). Se prueban
+paginación, cambios de zona horaria, scopes cruzados, revocaciones, fechas inválidas,
+errores 401/403/404/500, cancelación, concurrencia máxima de cuatro, estados de render
+independientes y acciones hacia los módulos existentes. Lint, typecheck, build Next.js,
+contratos y `git diff --check` pasan. Playwright sobre fixture aislada de los componentes
+con CSS canónico: 360/768/1440 px sin desbordamiento horizontal, con foco de teclado
+visible. Capturas: `/tmp/opencode/project-summary-{360,768,1440}.png`.
+Son pruebas unitarias/de render y visuales aisladas; no sustituyen una sesión real ni
+certifican autorización backend, staging, despliegue o validación del Gestor pendiente.
+Cambios preparados en `feature/evidencias-revision` para publicación por PR a `develop`.
+La integración y el despliegue remotos siguen pendientes de verificación.
+
+Preflight de publicación: Docker real disponible; build de `apps/web/Dockerfile`
+completo, con lockfile congelado, pasa (`sia-web:review-summary-local`). No hay variables
+runtime nuevas ni migraciones. Smoke de esa imagen sin clave Clerk de build devuelve
+500 por `Missing publishableKey`; añadir solo la clave pública en runtime no sustituye
+el ARG de build. La configuración real de Clerk del recurso Coolify no se modificó;
+el arranque autenticado y el despliegue siguen sin certificación. No se publica directo
+a `main` ni se declara lista la producción por este build.
+
+## Mejora UX — revisión de objetivos y evidencias, 2026-10-05
+
+Solicitud explícita del usuario durante la validación guiada como Coordinadora.
+Trazabilidad: US-PRO-001/002 y US-PM-001/002; seguimiento y evidencias del núcleo común.
+
+- [x] Ofrecer una vista de revisión más amplia que permita entender qué se buscaba
+  con el objetivo y qué realizó la persona, usando la información existente.
+- [x] Dar mucho más protagonismo visual a las evidencias de cada actividad: no
+  reducirlas a un contador o a un enlace poco destacado al final del diálogo.
+- [x] Presentar contexto del objetivo, actividades y evidencias antes o junto a
+  la decisión de validación, sin obligar a buscar las evidencias debajo del formulario.
+- [x] Verificar render de componentes, adaptación móvil y foco de teclado de enlaces
+  en una fixture visual aislada; no sustituye el recorrido conectado.
+- [ ] Revisar la vista completa con Clerk/API en sesión autenticada, teclado y móvil.
+
+Alcance: presentación implementada localmente en `feature/evidencias-revision`,
+no desplegada. No cambia permisos, reglas de aprobación ni persistencia.
+Previsualizaciones y campos nuevos: TBD;
+no implica habilitar cargas privadas ni integraciones externas.
+
+Implementación: diálogo de objetivo ampliado (1120 px máx.), contexto real de
+descripción/área/entregable/ambición, conteos por alcance y todas las actividades del
+objetivo sin aplicar el filtro de la lista. Evidencias antes de las acciones, en
+tarjetas con título, tipo, descripción, fecha, URL desplegable y apertura explícita
+en pestaña nueva; sin imágenes, iframes ni peticiones automáticas al contenido externo. Decisión
+de validación junto al contenido en escritorio y después de él en pantallas pequeñas.
+Los datos faltantes se muestran explícitamente, sin inferir resultados ni autorías.
+
+Verificación local: 11 grupos de pruebas Web pasan (7 existentes + 4 de render y
+regresión); lint, typecheck, build Next.js y contratos pasan. Playwright sobre fixture
+aislada de los componentes y su CSS: 360/768/1440 px sin desbordamiento horizontal,
+incluida URL larga desplegada con teclado, enlaces externos con foco visible. Capturas locales en
+`/tmp/opencode/tracking-review-{360,768,1440}.png`. No hay migraciones ni cambios API.
+La prueba estructural conserva el gating del formulario por rol/estado; no se afirma
+haber verificado de nuevo la autorización backend o una sesión real con esta entrega.
+
+Evidencia de prueba guiada (capturas, no prueba automatizada): Emprendedor creó
+un objetivo, una actividad, completó la actividad y envió el objetivo a validación.
+Coordinadora visualiza el objetivo pendiente, la actividad completada, una evidencia
+por enlace y el formulario de aprobación. Una captura posterior muestra el objetivo
+aprobado y el avance general en 100 % (un objetivo aprobado con su actividad completada).
+El usuario da por funcionales la persistencia tras recarga y el Resumen posterior a
+aprobación, sin aportar capturas adicionales; se registra como confirmación manual,
+no como verificación automatizada. Por instrucción explícita del usuario, el recorrido
+del Gestor asignado queda pendiente. La validación móvil también sigue pendiente;
+no se declara cerrada la validación operativa completa ni la de los tres roles.
+
+## Corrección de 404 en seguimiento — 2026-09-29
+
+US-PRO-001/002, US-PM-001/002. Evidencia: OpenAPI de la API desplegada consultada
+en vivo no expone `/cycles/{cycle_id}/seguimiento/summary`; el frontend cargaba
+ese endpoint junto con todas las secciones, propagando `Not Found` a todas ellas.
+
+- Compatibilidad BFF: solo ante 404 de summary, consultar objetivos y actividades
+  autorizados en FastAPI y calcular en servidor la misma fórmula confirmada.
+- No cambiar permisos, persistencia ni reglas; conservar errores 401/403/404 de
+  los recursos reales. Sin seed ni fallback de datos inventados.
+- Pruebas: pesos equivalentes, ciclo vacío, objetivo sin actividades, borradores
+  excluidos del avance y separación de ciclos.
+- Pendiente: desplegar la API actual para que sirva summary directamente;
+  verificar pantallas en sesión autenticada de producción.
+
+## Corrección: mockup como fuente visual, backend conectado — 2026-09-29
+
+Instrucción vigente: usar `visual/prototype` como fuente estricta del diseño y
+navegación, **con backend**, según aclaración del usuario. No usar datos seed en
+la aplicación conectada ni sustituir autorización por simulación de roles.
+
+Trazabilidad: US-PRO-001/002/004/005/006, US-PM-001/002/003; núcleo común
+expediente, comunicación, roles e informes. No cambian reglas ni contratos API.
+
+- [x] Entrada `/`: espacio del proyecto con Clerk + identidad real de FastAPI.
+- [x] Sidebar persistente: GENERAL, ACOMPAÑAMIENTO, ESPACIO DEL PROYECTO y todas
+  las secciones en el orden del mockup; topbar, breadcrumbs, búsqueda local con
+  datos autorizados, notificaciones y perfil Clerk; encabezado contextual real.
+- [x] Selector de proyectos: agrega la jerarquía de persistencia internamente,
+  pagina las listas autorizadas y no expone el recorrido inscripción/ciclo.
+- [x] Redirigir enlaces antiguos de ciclos al proyecto correspondiente y los
+  enlaces generales de Expediente a la nueva entrada; conservar código e historial.
+- [x] Resumen: hero con anillo de avance backend, Lo que sigue, El plan compartido
+  y decisiones recientes, en las posiciones del mockup.
+- [x] Objetivos y actividades: acciones en cabecera, resumen, tira de objetivos,
+  filtros y lista; detalles y formularios en diálogos; escrituras API existentes,
+  revisiones optimistas y actualización tras guardar.
+- [x] Separar diagnóstico, ambiciones, evidencias y evolución en sus secciones,
+  no agruparlas en pestañas de un ciclo.
+- [x] Diagnóstico: Cubo a la izquierda, resumen a la derecha, selector/historial y
+  áreas debajo. Datos descriptivos reales, sin escalas numéricas inventadas.
+- [x] Reuniones, chat, equipo y alertas reutilizan módulos conectados existentes.
+- [x] Informes conectados al backend ya existente: listado paginado, composición
+  trazable, borradores, revisión humana y corrección vinculada de aprobados.
+- [x] Reutilizar el stylesheet canónico del mockup, sin modificar la referencia.
+- [x] Pruebas de orden/grupos contra el archivo real del mockup, rutas hash,
+  selector, paginación, errores/permisos y relaciones cruzadas; parsers de informes.
+- [ ] Comparación visual y recorridos autenticados en desktop/móvil: bloqueados
+  localmente por falta de clave/sesión Clerk y browser de escritorio desconectado.
+
+Límites explícitos: Kanban deshabilitado mientras sus estados sean TBD; indicadores
+360° numéricos pendientes, sin scores; finanzas pendiente de reglas/backend;
+descarga privada del PDF pendiente de integración. No se declara réplica visual
+idéntica ni despliegue verificado sin realizar revisión autenticada.
+
+Validación de esta entrega: seis grupos de pruebas frontend pasan; lint y
+typecheck de Web/contratos, build de Next.js, contract:check y diff --check pasan.
+Seguimiento/informes backend: 34 pruebas pasan, 2 omitidas por entorno PostgreSQL.
+El Dockerfile de Web incluye el CSS canónico utilizado durante el build.
+
+## Dashboard del ciclo por fases — 2026-09-29
+
+Trazabilidad: US-PRO-001/002/006, US-PM-001/002 y regla común de avance confirmada
+por el usuario al autorizar ejecutar el plan por fases.
+
+- [x] Fase 1: `GET /cycles/{cycle_id}/seguimiento/summary`, autorizado en backend,
+  agregado SQL sin N+1 ni porcentajes persistidos; pruebas de igual peso, ciclo vacío,
+  objetivo sin actividades, reapertura, revalidación, separación de ciclos y revocación.
+- [x] Fase 2 (base funcional): cabecera y barras de avance, filtros locales,
+  formularios de objetivo/actividad/evidencia en diálogos y operaciones API existentes.
+- [x] Fase 3: panel lateral del seguimiento con avance del ciclo, conteos y progreso
+  por objetivo. Se refresca después de escrituras y no usa datos simulados.
+- [x] Fase 4 (primer bloque): pestaña Resumen del ciclo con avance, actividades
+  pendientes ordenadas por fecha y objetivos pendientes de validación reales.
+- [ ] Comparación visual autenticada con el mockup y validación de teclado/móvil.
+- [x] Continuar el dashboard general por módulos: reuniones, acuerdos y alertas reales
+  (implementación local 2026-10-05; ver límites y verificación en la sección superior).
+
+No se implementan Kanban, puntajes de diagnóstico, cargas privadas o finanzas `TBD`.
+No se afirma paridad visual idéntica: esta entrega es la base conectada de las fases.
+API: 117 pruebas pasan; 9 se omiten por requisitos de entorno, incluidos PostgreSQL.
+Ruff y mypy pasan; contratos OpenAPI, lint/typecheck/build Web verificados.
+
+## Integración de `feature/shell-autenticado` — 2026-09-29
 
 Referencias: US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002;
-identidad, expediente y comunicación según el núcleo. No modifica reglas de negocio.
+identidad, expediente, seguimiento y comunicación según el núcleo común. No modifica
+reglas de negocio: FastAPI conserva toda autorización.
 
-- [x] Conectar `apps/web` a la API de identidad, expediente, seguimiento y comunicación, con carga, error, paginación y permisos.
-- [x] Editar una actividad conservando objetivo y responsable. Un cambio real reabre un objetivo aprobado.
-- [x] Corregir una fotografía que no está aprobada, conservando la fotografía de origen.
-- [x] `pnpm --filter @sia/web lint` y `typecheck`.
-- [x] Recorrido local de navegador a API: expediente, reapertura por edición de actividad, evidencia, corrección y reenvío de fotografía, reunión, canal, bandeja y 403 de un rol sin asignación.
+- [x] Integrar el shell autenticado por rol, expediente, seguimiento, comunicación,
+  bandeja, invitaciones y usuarios.
+- [x] Consolidar el BFF en `sia-bff.ts`; el proxy genérico conserva su allowlist y usa la
+  misma emisión y validación de JWT `sia`.
+- [x] Resolver los conflictos documentales manteniendo los límites `TBD` y sin declarar
+  staging verificado.
+- [x] Ejecutar lint, typecheck y build de la web tras la integración.
 
-Menciones, otro responsable y la asignación hecha por el gestor siguen `TBD`: no hay listado de personas del ciclo. Finanzas espera a la Fase 6. Staging **NO verificado**.
+La exploración previa del 2026-09-28 queda sustituida por esta integración: la rama remota
+`feature/shell-autenticado` contenía el corte de UI conectada que no estaba disponible en
+las referencias locales entonces inspeccionadas.
+
+## Exploración previa a Fase 7 — UI conectada, 2026-09-28
+
+Objetivo: evitar duplicar trabajo antes de implementar la UI conectada.
+
+1. Inspeccionar ramas locales/remotas, refs y commits no integrados que incluyan trabajo de `apps/web` o Fase 7.
+2. Revisar el árbol y la documentación vigente para identificar UI conectada parcial, contratos y recorridos ya existentes.
+3. Consolidar hallazgos y definir el primer corte de implementación sin alterar requisitos ni decisiones `TBD`.
+
+Resultado: no se encontraron ramas, commits ni objetos no integrados con UI conectada. La
+única integración existente es Clerk → `GET /api/sia/me` → `GET /users/me`; el
+prototipo visual conserva datos ficticios y no se reutilizará como fuente de reglas.
+
+## Fase 7 — UI conectada, 2026-09-28
+
+Alcance confirmado: identidad, expediente, seguimiento y comunicación. Informes técnicos
+y Finanzas quedan fuera de esta fase; también R2/adjuntos, PDF, IA, correo, grabaciones y
+Socket.IO. Referencias: US-PRO-001/002/004/005/006 y US-PM-001/002/003; reglas de
+expediente, seguimiento, reuniones, minutas, canales y alertas del núcleo común.
+
+1. Restaurar `develop` y crear `feature/ui-conectada` desde esa rama, según CONTRIBUTING.
+2. Crear shell autenticado, cliente de API server-only con JWT `sia` y uso de tipos
+   generados; conservar FastAPI como autoridad de autorización.
+3. Conectar emprendimientos, inscripciones y ciclos con paginación, estados de carga/error
+   y navegación contextual por ciclo.
+4. Conectar canvas, ambiciones, objetivos, actividades, evidencias URL, validaciones,
+   cronograma y diagnósticos descriptivos; no portar reglas ficticias del prototipo.
+5. Conectar reuniones, minutas, acuerdos, canales, mensajes, alertas y notificaciones sin
+   simular integraciones externas pendientes.
+6. Añadir pruebas de interfaz y recorridos de navegador a Clerk/FastAPI locales para acceso,
+   invitación, scope y acciones autorizadas/no autorizadas.
+7. Ejecutar lint, typecheck, pruebas web/E2E, checks de contratos y verificaciones API
+   aplicables; documentar evidencia sin declarar staging verificado.
+
+Progreso: `develop` fue restaurada desde `main` y la rama local
+`feature/ui-conectada` contiene el shell, BFF autenticado, expediente, seguimiento y
+comunicación conectados. Lint, typecheck, build y drift de contratos pasan. Los E2E
+autenticados quedan bloqueados hasta configurar `apps/web/.env.local` con Clerk, la
+plantilla JWT `sia`, `SIA_API_URL` y un usuario invitado de prueba; ese archivo no existe
+en este entorno. No se declara Fase 7 ni staging verificados.
+
+## Evolución visual conectada desde el mockup — 2026-09-28
+
+Objetivo: trasladar la arquitectura visual y de interacción de `visual/prototype` a la
+web conectada, preservando FastAPI como autoridad y sin convertir datos demo o decisiones
+`TBD` en reglas de negocio. Referencias: US-PRO-001/002/004/005/006 y US-PM-001/002/003.
+
+1. Reemplazar el shell de cuatro pestañas por navegación persistente del proyecto,
+   contexto de emprendimiento/ciclo, barra superior y adaptación móvil.
+2. Separar las vistas reales de Resumen, Diagnóstico 360°, Ambiciones, Objetivos y
+   actividades, Evidencias, Evolución, Reuniones, Chat y Alertas; reutilizar únicamente
+   rutas BFF autorizadas y mostrar estados de carga, vacío y error.
+3. Exponer Informes a través del allowlist BFF y construir su historial y acciones con
+   los contratos existentes; PDF, R2 e IA se presentan como pendientes, nunca simulados.
+4. Conservar diagnóstico descriptivo por área, actividades con finalización manual,
+   evidencias URL inmutables y transiciones/validaciones originadas en la API. No portar
+   puntajes 1–5, radar, deltas numéricos, estados Kanban ni automatizaciones del mockup.
+5. Mantener Finanzas como no disponible, y Equipo/búsqueda global como pendientes de
+   endpoints autorizados y decisiones funcionales; no exponer datos demo.
+6. Verificar autorización visual y backend, responsive, accesibilidad, lint, tipos,
+   build, contratos y recorrido autenticado local antes de documentar el corte.
+
+Estado: en ejecución. La evaluación del mockup identifica que su shell, jerarquía,
+navegación y patrones de interacción pueden implementarse en frontend; los módulos se
+conectan por cortes según la disponibilidad de API indicada arriba.
+
+Actualización de interfaz — 2026-09-29: se trasladó a la Web conectada el shell visual
+de proyecto (sidebar, barra superior, migas de pan, encabezado y tabs de ciclo) y se
+unificaron las superficies de expediente, seguimiento y comunicación con tarjetas,
+formularios, badges y estados responsivos del lenguaje del mockup. Referencias:
+US-PRO-001/002/004/005/006 y US-PM-001/002/003. No se cambió API ni autorización;
+diagnósticos permanecen descriptivos, actividades solo usan su finalización real y
+finanzas, puntajes, radar, búsqueda global y adjuntos privados siguen fuera por `TBD`
+o ausencia de backend.
+
+Actualización de sistema de diseño — 2026-09-29: se habilitó Tailwind CSS v4 y la
+configuración local de shadcn (`components.json`, fuentes bajo `app/components/ui`) sin
+retirar los CSS Modules existentes. Referencia de interacción: expediente (alcance y
+consulta histórica) y US-PRO-001/US-PM-001. La lista de emprendimientos ahora usa
+TanStack Table para ordenamiento local de la página recibida de FastAPI y el alta usa un
+diálogo accesible; las secciones del ciclo usan tabs de Radix con teclado. La paginación,
+los permisos y las escrituras siguen siendo los de la API: no se agregaron filtros de
+servidor, datos demo, roles ni reglas nuevas. Lint, typecheck, build, contratos y diff
+de espacios pasan. El recorrido local de navegador permanece bloqueado por ausencia de
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; no se configuró ni creó una cuenta Clerk nueva.
+
+Mejora UX de Expediente — 2026-09-29: referencias `expediente-del-emprendimiento`,
+roles comunes y US-PRO-001/005/006. Se reordenó la experiencia en una jerarquía de
+emprendimiento → inscripción → ciclo: encabezados contextuales, acciones de creación
+en diálogos accesibles, búsqueda local explícitamente limitada a resultados cargados,
+tabla ordenable, resúmenes, ayuda contextual y estados vacíos accionables. El ciclo ya
+no presenta un estado ficticio de “Activo”. No se modificaron contratos, datos,
+autorización, historial, estados del programa ni reglas `TBD`. Lint, typecheck, build,
+contratos y revisión de espacios pasan; el recorrido navegador autenticado permanece
+pendiente de claves y una sesión Clerk de prueba.
+
+Navegación de ciclos — 2026-09-29: en la inscripción, múltiples ciclos autorizados
+se presentan como pestañas Radix y cambian su espacio de trabajo en la misma vista, sin
+convertir la selección en una redirección. La ruta individual se conserva para enlaces
+directos y para abrir automáticamente el único ciclo solo cuando la página completa no
+reporta más resultados. No se modifica autorización, alcance de ciclos ni contratos.
+
+Resultado del corte visual: shell de proyecto, navegación responsive, contexto de ciclo,
+vistas conectadas de seguimiento, comunicación, alertas e informes implementados. El BFF
+autoriza ahora las rutas de informes existentes. `pnpm --filter @sia/web lint`,
+`typecheck`, `build`, `pnpm --filter @sia/contracts check`, `git diff --check` y el
+detector visual pasan. El recorrido autenticado continúa pendiente: la sesión aislada de
+automatización no posee la sesión Clerk invitada; no se declara validado hasta probarla
+contra FastAPI local.
 
 ## Reorganización de fases de entrega — 2026-09-16
 

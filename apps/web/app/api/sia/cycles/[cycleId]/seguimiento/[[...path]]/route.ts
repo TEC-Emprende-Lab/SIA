@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 
 import { proxySia } from '../../../../../../lib/sia-bff'
+import { parseActivityList, parseObjectiveList } from '../../../../../../lib/seguimiento'
+import { trackingSummary } from '../../../../../../lib/tracking-summary'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +21,7 @@ function allows(method: string, path: readonly string[]): boolean {
   if (extra !== undefined || !resource) {
     return false
   }
-  if (path.length === 1 && (resource === 'canvas' || resource === 'schedule' || resource === 'validations')) {
+  if (path.length === 1 && (resource === 'canvas' || resource === 'schedule' || resource === 'validations' || resource === 'summary')) {
     return method === 'GET'
   }
   if (path.length === 1 && COLLECTIONS.has(resource)) {
@@ -94,11 +96,31 @@ async function forward(request: Request, context: RouteContext): Promise<NextRes
     body = read
   }
   const suffix = path.map((segment) => encodeURIComponent(segment)).join('/')
-  return proxySia(`/cycles/${encodeURIComponent(cycleId)}/seguimiento/${suffix}`, {
+  const base = `/cycles/${encodeURIComponent(cycleId)}/seguimiento/`
+  const response = await proxySia(`${base}${suffix}`, {
     method: request.method,
     search: '',
     body,
   })
+  // Older deployments lack /summary. Preserve backend authorization: never
+  // derive from seeds or swallow denied/missing cycle responses.
+  if (request.method !== 'GET' || suffix !== 'summary' || response.status !== 404) return response
+  const [objectivesResponse, activitiesResponse] = await Promise.all([
+    proxySia(`${base}objectives`, { method: 'GET', search: '' }),
+    proxySia(`${base}activities`, { method: 'GET', search: '' }),
+  ])
+  if (!objectivesResponse.ok) return objectivesResponse
+  if (!activitiesResponse.ok) return activitiesResponse
+  try {
+    const objectives = parseObjectiveList(await objectivesResponse.json())
+    const activities = parseActivityList(await activitiesResponse.json())
+    if (!objectives || !activities) throw new Error('Invalid summary inputs')
+    return NextResponse.json(trackingSummary(cycleId, objectives, activities), {
+      headers: { 'cache-control': 'no-store' },
+    })
+  } catch {
+    return NextResponse.json({ detail: 'La API devolvió datos de avance no válidos.' }, { status: 502 })
+  }
 }
 
 export function GET(request: Request, context: RouteContext) {
