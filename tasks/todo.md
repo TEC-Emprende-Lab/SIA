@@ -1,5 +1,48 @@
 # Consolidacion de decisiones
 
+## Kanban de objetivos y actividades, 2026-10-05
+
+Alcance autorizado por el usuario en la planificación: columnas derivadas de datos
+existentes, arrastre que ejecuta las acciones existentes y `@dnd-kit/core` como única
+dependencia nueva. Trazabilidad: US-PRO-001/002 y US-PM-001/002,
+`objetivos-actividades-evidencias.md` y `actores-roles-y-permisos.md`. No cambia reglas
+de negocio, permisos ni contratos.
+
+- [x] Habilitar el conmutador Kanban/Lista de la sección y añadir selector
+  Objetivos/Actividades dentro del tablero; la Lista sigue siendo la vista por defecto.
+- [x] Tablero de objetivos con las cinco columnas de su estado real (Borrador,
+  Pendiente de validación, Corrección solicitada, Rechazado, Aprobado), sin estados nuevos.
+- [x] Tablero de actividades con columnas derivadas: Pendientes (en plazo), Vencidas
+  (fecha de fin vencida) y Completadas (finalización manual y reversible). **No** se
+  crean estados intermedios de actividad: siguen `TBD` en `modelo-de-datos-detallado.md`.
+- [x] Arrastre con `@dnd-kit/core` (pointer/touch/teclado, anuncios en español) que
+  traduce cada soltada a un endpoint existente: `submit`, `validations` y `completion`,
+  siempre con `expected_revision`; la autorización sigue validándola FastAPI.
+- [x] Motivos explícitos cuando una soltada no es válida (columna de origen, rol sin
+  validación, objetivo aprobado, columna derivada de fechas), con aviso `role="status"`.
+- [x] Soltar sobre Aprobado/Corrección/Rechazo abre el detalle con la decisión
+  preseleccionada: la observación sigue obligatoria (regla existente de la API), por lo
+  que la decisión se registra allí y no por soltada ciega.
+- [x] Acceso alternativo: botón “Ver detalle” en cada tarjeta y arrastre por teclado
+  (Tab, Espacio, flechas, Espacio); los botones del detalle siguen siendo el camino sin
+  arrastre. Sin cambios de permisos: Emprendedor ve bloqueada la validación.
+- [x] Filtros de objetivo y búsqueda aplican también al tablero; el filtro de estado de
+  la lista se oculta en modo tablero porque las columnas expresan ese estado.
+- [x] Pruebas: `apps/web/tests/tracking-kanban.mjs` (matriz de transiciones, roles,
+  clasificación por fechas, alcance por objetivo, marcado estructural del panel) y
+  `pnpm --filter @sia/web test` completo (23 grupos).
+- [ ] Verificar arrastre y permisos en sesión autenticada desplegada (Coordinadora y
+  Emprendedor); el recorrido del Gestor sigue pendiente por decisión del usuario.
+
+Implementación solo frontend sobre endpoints existentes de seguimiento, sin migraciones,
+cambios de API ni de contratos. Dependencia nueva: `@dnd-kit/core` (^6.3.1), estándar
+mantenido para React 19 con sensores touch y teclado. No se persiste orden de tarjetas
+dentro de una columna (no existe endpoint de reordenamiento y queda fuera de alcance).
+Verificación local: `pnpm --filter @sia/web test`, `pnpm lint`, `pnpm typecheck`,
+`pnpm contract:check`, `pnpm --filter @sia/web build` y `git diff --check` en verde;
+preview aislado Playwright a 360/768/1440 px sin desbordamiento horizontal de página y
+con foco de teclado visible (`/tmp/opencode/tracking-kanban-{360,768,1440}.png`).
+
 ## Resumen conectado — reuniones, acuerdos y alertas, 2026-10-05
 
 Alcance autorizado por el usuario después de la mejora de evidencias. Trazabilidad:

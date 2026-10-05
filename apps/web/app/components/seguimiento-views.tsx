@@ -5,6 +5,7 @@ import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, Chev
 import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
 import { ActivityEvidence, ObjectiveReviewContext } from './tracking-review'
 import { SummaryCommunication } from './summary-communication'
+import { TrackingKanban, type ObjectiveDropAction, type ObjectiveDecision } from './tracking-kanban'
 import type { ProjectSection } from '../lib/project-workspace'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 
@@ -131,6 +132,9 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<ActionError>(null)
+  // La vista elegida vive aquí para sobrevivir a la recarga que sigue a cada guardado.
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list')
+  const [board, setBoard] = useState<'objectives' | 'activities'>('objectives')
 
   useEffect(() => {
     let cancelled = false
@@ -279,6 +283,10 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
         activities={bundle.activities}
         evidence={bundle.evidence}
         validations={bundle.validations}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        board={board}
+        setBoard={setBoard}
       />
     </>
   )
@@ -436,6 +444,10 @@ function ObjectiveSection({
   actionError,
   role,
   userId,
+  viewMode,
+  setViewMode,
+  board,
+  setBoard,
   run,
 }: Actions & {
   focusId?: string
@@ -446,6 +458,10 @@ function ObjectiveSection({
   activities: Activity[]
   evidence: Evidence[]
   validations: Validation[]
+  viewMode: 'list' | 'board'
+  setViewMode: (value: 'list' | 'board') => void
+  board: 'objectives' | 'activities'
+  setBoard: (value: 'objectives' | 'activities') => void
 }) {
   const [query, setQuery] = useState('')
   const [objectiveFilter, setObjectiveFilter] = useState(objectives.some((item) => item.id === focusId) ? focusId! : 'all')
@@ -453,7 +469,29 @@ function ObjectiveSection({
   const [selectedActivity, setSelectedActivity] = useState(activities.some((item) => item.id === focusId) ? focusId! : '')
   const [newActivityObjective, setNewActivityObjective] = useState(objectives[0]?.id ?? '')
   const [activityFilter, setActivityFilter] = useState('all')
+  const [pendingDecision, setPendingDecision] = useState<ObjectiveDecision | null>(null)
   const filtered = objectives.filter((item) => (objectiveFilter === 'all' || item.id === objectiveFilter) && (item.title.toLocaleLowerCase('es-CR').includes(query.toLocaleLowerCase('es-CR')) || activities.some((activity) => activity.objective_id === item.id && activity.title.toLocaleLowerCase('es-CR').includes(query.toLocaleLowerCase('es-CR')))))
+  function dropObjective(objective: Objective, drop: ObjectiveDropAction) {
+    if (drop.action === 'submit') {
+      void run(`submit-${objective.id}`, async () =>
+        requestSeguimiento(seguimientoUrl(cycleId, `objectives/${objective.id}/submit`), parseObjective, {
+          method: 'POST',
+          body: { expected_revision: objective.revision },
+        }).then(asVoid),
+      )
+      return
+    }
+    setPendingDecision(drop.decision)
+    setSelectedObjective(objective.id)
+  }
+  function dropActivity(activity: Activity, completed: boolean) {
+    void run(`done-${activity.id}`, async () =>
+      requestSeguimiento(seguimientoUrl(cycleId, `activities/${activity.id}/completion`), parseActivity, {
+        method: 'POST',
+        body: { expected_revision: activity.revision, completed },
+      }).then(asVoid),
+    )
+  }
   return (
     <>
       <ProjectHeading eyebrow="De la intención a la acción" title="Objetivos y actividades" description="Un plan compartido para avanzar, aprender y dejar evidencia." action={<>
@@ -468,14 +506,38 @@ function ObjectiveSection({
       <div className="plan-summary"><div><strong>{Math.round(summary.progress_percent)}%</strong><p>avance del proyecto</p></div><ProjectProgress value={summary.progress_percent} /><span className="muted small">{summary.objectives_approved} objetivos aprobados · mismo peso</span></div>
       <div className="objectives-strip">{objectives.map((objective, index) => <div className="objective-strip" key={objective.id}><span className="number">{String(index + 1).padStart(2, '0')}</span><button className="plain objective-name" onClick={() => setObjectiveFilter(objective.id)}><strong>{objective.title}</strong><small>{Math.round(summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0)}% · {activities.filter((item) => item.objective_id === objective.id).length} actividades</small></button><span className={`badge ${objective.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[objective.status]}</span><button className="text-link" onClick={() => setSelectedObjective(objective.id)}>Ver detalle</button>{objective.status === 'pending_validation' && canValidate(role) && <button className="btn secondary" onClick={() => setSelectedObjective(objective.id)}>Validar</button>}</div>)}</div>
       <div className="filters">
-        <div className="segmented"><button disabled title="Los estados Kanban están pendientes de definición"><LayoutGrid size={15} />Kanban</button><button className="selected" aria-pressed="true"><List size={15} />Lista</button></div>
+        <div className="segmented">
+          <button type="button" className={viewMode === 'board' ? 'selected' : ''} aria-pressed={viewMode === 'board'} onClick={() => setViewMode('board')}><LayoutGrid size={15} />Kanban</button>
+          <button type="button" className={viewMode === 'list' ? 'selected' : ''} aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List size={15} />Lista</button>
+          {viewMode === 'board' ? <>
+            <button type="button" className={board === 'objectives' ? 'selected' : ''} aria-pressed={board === 'objectives'} onClick={() => setBoard('objectives')}>Objetivos</button>
+            <button type="button" className={board === 'activities' ? 'selected' : ''} aria-pressed={board === 'activities'} onClick={() => setBoard('activities')}>Actividades</button>
+          </> : null}
+        </div>
         <select aria-label="Filtrar actividades por objetivo" value={objectiveFilter} onChange={(event) => setObjectiveFilter(event.target.value)}><option value="all">Todos los objetivos</option>{objectives.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
-        <select aria-label="Estado de las actividades" value={activityFilter} onChange={(event) => setActivityFilter(event.target.value)}><option value="all">Todas las actividades</option><option value="pending">Pendientes</option><option value="completed">Completadas</option></select>
+        {viewMode === 'list' ? <select aria-label="Estado de las actividades" value={activityFilter} onChange={(event) => setActivityFilter(event.target.value)}><option value="all">Todas las actividades</option><option value="pending">Pendientes</option><option value="completed">Completadas</option></select> : null}
         <label className="search-box"><Search size={16} /><input aria-label="Buscar objetivo o actividad" type="search" placeholder="Buscar…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
       </div>
       {objectives.length === 0 ? <p className={shell.meta}>No hay objetivos en este ciclo.</p> : null}
+      {viewMode === 'board' ? (
+        <TrackingKanban
+          board={board}
+          objectives={filtered}
+          activities={activities}
+          areas={areas}
+          summary={summary}
+          role={role}
+          pendingId={pendingId}
+          actionError={actionError}
+          onDropObjective={dropObjective}
+          onDropActivity={dropActivity}
+          onOpenObjective={setSelectedObjective}
+          onOpenActivity={setSelectedActivity}
+        />
+      ) : (
       <div className="activity-list">{activities.filter((item) => filtered.some((objective) => objective.id === item.objective_id) && (activityFilter === 'all' || (activityFilter === 'completed' ? Boolean(item.completed_at) : !item.completed_at))).map((activity) => <button className="record-row" key={activity.id} onClick={() => setSelectedActivity(activity.id)}><CheckCircle2 size={19} /><div><strong>{activity.title}</strong><p>{objectives.find((item) => item.id === activity.objective_id)?.title} · {formatDay(activity.ends_on)}</p></div><span className={`badge ${activity.completed_at ? 'olive' : 'neutral'}`}>{activity.completed_at ? 'Completada' : 'Pendiente'}</span><ChevronRight size={16} /></button>)}</div>
-      <Dialog open={Boolean(selectedObjective)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedObjective('') }}><DialogContent className={styles.reviewDialog}><DialogHeader><DialogTitle>{objectives.find((item) => item.id === selectedObjective)?.title ?? 'Objetivo'}</DialogTitle><DialogDescription>Revisa el propósito, el trabajo registrado y sus evidencias antes de tomar una decisión.</DialogDescription></DialogHeader>{objectives.filter((item) => item.id === selectedObjective).map((objective) => (
+      )}
+      <Dialog open={Boolean(selectedObjective)} onOpenChange={(open) => { if (!open && !pendingId) { setSelectedObjective(''); setPendingDecision(null) } }}><DialogContent className={styles.reviewDialog}><DialogHeader><DialogTitle>{objectives.find((item) => item.id === selectedObjective)?.title ?? 'Objetivo'}</DialogTitle><DialogDescription>Revisa el propósito, el trabajo registrado y sus evidencias antes de tomar una decisión.</DialogDescription></DialogHeader>{objectives.filter((item) => item.id === selectedObjective).map((objective) => (
               <ObjectiveCard
                 key={objective.id}
                 cycleId={cycleId}
@@ -490,12 +552,13 @@ function ObjectiveSection({
                 actionError={actionError}
                 role={role}
                 userId={userId}
+                pendingDecision={pendingDecision}
                 run={run}
               />
             ))}</DialogContent></Dialog>
       <Dialog open={Boolean(selectedActivity)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedActivity('') }}><DialogContent className={styles.activityDialog}><DialogHeader><DialogTitle>{activities.find((item) => item.id === selectedActivity)?.title ?? 'Actividad'}</DialogTitle><DialogDescription>Avance y evidencias vinculadas a la actividad.</DialogDescription></DialogHeader>{activities.filter((item) => item.id === selectedActivity).map((activity) => <ActivityCard key={activity.id} cycleId={cycleId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />)}</DialogContent></Dialog>
       {objectives.length > 0 && filtered.length === 0 ? <p className={shell.meta}>No hay coincidencias. Cambia los filtros o la búsqueda.</p> : null}
-      <p className="small muted">Las actividades admiten finalización manual y reversible. Los estados intermedios Kanban están pendientes de definición.</p>
+      <p className="small muted">Las columnas del Kanban reflejan datos reales: los objetivos por su estado de validación y las actividades por su fecha de fin y su finalización manual y reversible. No hay estados intermedios de actividad: siguen pendientes de definición.</p>
     </>
   )
 }
@@ -513,6 +576,7 @@ function ObjectiveCard({
   actionError,
   role,
   userId,
+  pendingDecision,
   run,
 }: Actions & {
   progress: number
@@ -522,6 +586,7 @@ function ObjectiveCard({
   activities: Activity[]
   evidence: Evidence[]
   validation: Validation | null
+  pendingDecision?: ObjectiveDecision | null
 }) {
   const ambition = ambitions.find((item) => item.id === objective.ambition_id)
   return (
@@ -580,6 +645,7 @@ function ObjectiveCard({
           id={`validate-${objective.id}`}
           pending={pendingId === `validate-${objective.id}`}
           error={actionError}
+          initialDecision={pendingDecision ?? undefined}
           onSubmit={(decision, observation) =>
             run(`validate-${objective.id}`, async () =>
               requestSeguimiento(
@@ -981,11 +1047,13 @@ function ValidationForm({
   id,
   pending,
   error,
+  initialDecision,
   onSubmit,
 }: {
   id: string
   pending: boolean
   error: ActionError
+  initialDecision?: ObjectiveDecision
   onSubmit: (decision: 'approve' | 'request_correction' | 'reject', observation: string) => void
 }) {
   const [localError, setLocalError] = useState<string | null>(null)
@@ -1010,7 +1078,7 @@ function ValidationForm({
       <h4>Validar</h4>
       <label className={styles.field}>
         Decisión
-        <select name="decision" required defaultValue="approve" disabled={pending}>
+        <select name="decision" required defaultValue={initialDecision ?? 'approve'} disabled={pending}>
           {Object.entries(DECISION_LABEL).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
@@ -1018,6 +1086,7 @@ function ValidationForm({
           ))}
         </select>
       </label>
+      {initialDecision ? <p className={shell.meta}>Decisión elegida en el tablero. La observación confirma el registro.</p> : null}
       <label className={styles.field}>
         Observación
         <textarea name="observation" required maxLength={20000} disabled={pending} />
