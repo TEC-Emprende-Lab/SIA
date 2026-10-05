@@ -1,5 +1,101 @@
 # Consolidacion de decisiones
 
+## Resumen conectado — reuniones, acuerdos y alertas, 2026-10-05
+
+Alcance autorizado por el usuario después de la mejora de evidencias. Trazabilidad:
+US-PRO-001/002/004, US-PM-001/002/003, `reuniones-minutas-y-canales.md` y
+`notificaciones-y-alertas.md`. No cambia reglas de negocio ni permisos.
+
+- [x] Añadir al Resumen próximas reuniones no revocadas del ciclo, ordenadas por
+  fecha real, con participantes y horario de Costa Rica.
+- [x] Mostrar acuerdos registrados de reuniones no revocadas, su fecha de compromiso,
+  reunión de origen y próximos pasos. Los estados de cumplimiento siguen `TBD`:
+  **no** se presentan como pendientes, vencidos ni completados.
+- [x] Mostrar alertas sin resolver del usuario actual, solo del ciclo seleccionado
+  o compartidas por el mismo emprendimiento; excluir ciclos hermanos y otros proyectos.
+- [x] Consultar todas las páginas autorizadas antes de ordenar y limitar la vista
+  a cinco registros por tarjeta; indicar explícitamente cuando existen más.
+- [x] Conservar carga, vacío, errores y reintento independientes por módulo, con
+  actualización manual y enlaces a Reuniones y a la bandeja personal completa.
+- [x] Cancelar consultas al desmontar/cambiar proyecto; usar identidad de proyecto,
+  ciclo y usuario como clave para no conservar datos de la selección anterior.
+- [ ] Verificar los nuevos paneles con Clerk/API en sesión autenticada desplegada.
+
+Implementación solo frontend sobre GET existentes de FastAPI/BFF, sin migraciones,
+contratos nuevos, Socket.IO, correo ni generación automática de alertas. La API actual
+ofrece acuerdos por reunión; el resumen consulta las reuniones autorizadas y sus acuerdos
+con un máximo de cuatro peticiones simultáneas, sin consultar minutas ni detalles extra.
+No se acredita escalabilidad con grandes expedientes; si el volumen lo exige, evaluar
+un agregado backend autorizado en vez de ampliar el fan-out. La bandeja de Coordinadora
+sigue siendo personal: no consulta alertas de otros usuarios.
+
+Verificación local: 17 grupos Web pasan (11 previos + 6 del Resumen). Se prueban
+paginación, cambios de zona horaria, scopes cruzados, revocaciones, fechas inválidas,
+errores 401/403/404/500, cancelación, concurrencia máxima de cuatro, estados de render
+independientes y acciones hacia los módulos existentes. Lint, typecheck, build Next.js,
+contratos y `git diff --check` pasan. Playwright sobre fixture aislada de los componentes
+con CSS canónico: 360/768/1440 px sin desbordamiento horizontal, con foco de teclado
+visible. Capturas: `/tmp/opencode/project-summary-{360,768,1440}.png`.
+Son pruebas unitarias/de render y visuales aisladas; no sustituyen una sesión real ni
+certifican autorización backend, staging, despliegue o validación del Gestor pendiente.
+Cambios preparados en `feature/evidencias-revision` para publicación por PR a `develop`.
+La integración y el despliegue remotos siguen pendientes de verificación.
+
+Preflight de publicación: Docker real disponible; build de `apps/web/Dockerfile`
+completo, con lockfile congelado, pasa (`sia-web:review-summary-local`). No hay variables
+runtime nuevas ni migraciones. Smoke de esa imagen sin clave Clerk de build devuelve
+500 por `Missing publishableKey`; añadir solo la clave pública en runtime no sustituye
+el ARG de build. La configuración real de Clerk del recurso Coolify no se modificó;
+el arranque autenticado y el despliegue siguen sin certificación. No se publica directo
+a `main` ni se declara lista la producción por este build.
+
+## Mejora UX — revisión de objetivos y evidencias, 2026-10-05
+
+Solicitud explícita del usuario durante la validación guiada como Coordinadora.
+Trazabilidad: US-PRO-001/002 y US-PM-001/002; seguimiento y evidencias del núcleo común.
+
+- [x] Ofrecer una vista de revisión más amplia que permita entender qué se buscaba
+  con el objetivo y qué realizó la persona, usando la información existente.
+- [x] Dar mucho más protagonismo visual a las evidencias de cada actividad: no
+  reducirlas a un contador o a un enlace poco destacado al final del diálogo.
+- [x] Presentar contexto del objetivo, actividades y evidencias antes o junto a
+  la decisión de validación, sin obligar a buscar las evidencias debajo del formulario.
+- [x] Verificar render de componentes, adaptación móvil y foco de teclado de enlaces
+  en una fixture visual aislada; no sustituye el recorrido conectado.
+- [ ] Revisar la vista completa con Clerk/API en sesión autenticada, teclado y móvil.
+
+Alcance: presentación implementada localmente en `feature/evidencias-revision`,
+no desplegada. No cambia permisos, reglas de aprobación ni persistencia.
+Previsualizaciones y campos nuevos: TBD;
+no implica habilitar cargas privadas ni integraciones externas.
+
+Implementación: diálogo de objetivo ampliado (1120 px máx.), contexto real de
+descripción/área/entregable/ambición, conteos por alcance y todas las actividades del
+objetivo sin aplicar el filtro de la lista. Evidencias antes de las acciones, en
+tarjetas con título, tipo, descripción, fecha, URL desplegable y apertura explícita
+en pestaña nueva; sin imágenes, iframes ni peticiones automáticas al contenido externo. Decisión
+de validación junto al contenido en escritorio y después de él en pantallas pequeñas.
+Los datos faltantes se muestran explícitamente, sin inferir resultados ni autorías.
+
+Verificación local: 11 grupos de pruebas Web pasan (7 existentes + 4 de render y
+regresión); lint, typecheck, build Next.js y contratos pasan. Playwright sobre fixture
+aislada de los componentes y su CSS: 360/768/1440 px sin desbordamiento horizontal,
+incluida URL larga desplegada con teclado, enlaces externos con foco visible. Capturas locales en
+`/tmp/opencode/tracking-review-{360,768,1440}.png`. No hay migraciones ni cambios API.
+La prueba estructural conserva el gating del formulario por rol/estado; no se afirma
+haber verificado de nuevo la autorización backend o una sesión real con esta entrega.
+
+Evidencia de prueba guiada (capturas, no prueba automatizada): Emprendedor creó
+un objetivo, una actividad, completó la actividad y envió el objetivo a validación.
+Coordinadora visualiza el objetivo pendiente, la actividad completada, una evidencia
+por enlace y el formulario de aprobación. Una captura posterior muestra el objetivo
+aprobado y el avance general en 100 % (un objetivo aprobado con su actividad completada).
+El usuario da por funcionales la persistencia tras recarga y el Resumen posterior a
+aprobación, sin aportar capturas adicionales; se registra como confirmación manual,
+no como verificación automatizada. Por instrucción explícita del usuario, el recorrido
+del Gestor asignado queda pendiente. La validación móvil también sigue pendiente;
+no se declara cerrada la validación operativa completa ni la de los tres roles.
+
 ## Corrección de 404 en seguimiento — 2026-09-29
 
 US-PRO-001/002, US-PM-001/002. Evidencia: OpenAPI de la API desplegada consultada
@@ -75,7 +171,8 @@ por el usuario al autorizar ejecutar el plan por fases.
 - [x] Fase 4 (primer bloque): pestaña Resumen del ciclo con avance, actividades
   pendientes ordenadas por fecha y objetivos pendientes de validación reales.
 - [ ] Comparación visual autenticada con el mockup y validación de teclado/móvil.
-- [ ] Continuar el dashboard general por módulos: reuniones, acuerdos y alertas reales.
+- [x] Continuar el dashboard general por módulos: reuniones, acuerdos y alertas reales
+  (implementación local 2026-10-05; ver límites y verificación en la sección superior).
 
 No se implementan Kanban, puntajes de diagnóstico, cargas privadas o finanzas `TBD`.
 No se afirma paridad visual idéntica: esta entrega es la base conectada de las fases.
