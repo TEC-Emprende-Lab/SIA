@@ -107,9 +107,9 @@ La API queda lista solo cuando `GET /readyz` devuelve `200`.
 | Campo | Valor |
 |---|---|
 | Build Pack | `Dockerfile` |
-| Base Directory | `/` |
-| Dockerfile Location | `apps/web/Dockerfile` |
-| Docker Build Stage / Target | Vacío |
+| Base Directory | `/.` |
+| Dockerfile Location | `/Dockerfile` |
+| Docker Build Stage / Target | `web-runtime` |
 | Ports Exposes | `3000` |
 | Port Mappings | Vacío |
 | Health check | `/api/health` |
@@ -125,8 +125,10 @@ Desactivar Basic Authentication de Coolify si Clerk es el único flujo de acceso
 
 ## Prototipo visual
 
-Para publicar únicamente la demo visual, usar el Dockerfile raíz, puerto `8080` y la guía
-histórica del prototipo. Esa aplicación no tiene Clerk, FastAPI, PostgreSQL ni persistencia.
+Para publicar únicamente la demo visual, usar el Dockerfile raíz sin target, puerto `8080` y
+la guía histórica del prototipo. Esa aplicación no tiene Clerk, FastAPI, PostgreSQL ni
+persistencia. El target `web-runtime` del mismo Dockerfile se reserva para la Web conectada,
+que necesita el contexto raíz del monorepo.
 
 ## Operación
 
