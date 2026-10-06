@@ -36,6 +36,8 @@ COPY --from=web-build /app/node_modules ./node_modules
 COPY --from=web-build /app/packages ./packages
 COPY --from=web-build /app/apps/web ./apps/web
 EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
 CMD ["pnpm", "--filter", "@sia/web", "start"]
 
 FROM nginx:stable-alpine AS prototype-runtime
