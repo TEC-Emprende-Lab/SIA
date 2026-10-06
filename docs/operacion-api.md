@@ -4,6 +4,7 @@
 
 Estado revisado el **2026-09-16**, sobre `35775c0`: identidad/invitaciones, expediente y seguimiento persistente para
 US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002.
+Última verificación operativa: **2026-10-06**, sobre `1725260` (sección «Verificación operativa — 2026-10-06»).
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
 [`apps/api/app/modules/seguimiento/README.md`](../apps/api/app/modules/seguimiento/README.md).
@@ -256,15 +257,55 @@ Las suites emiten dos advertencias de deprecación de Starlette/TestClient (http
 BlockingPortal de AnyIO); no son fallos de pruebas. La primera pasada TypeScript usó Node 20
 del host y avisó de engine no soportado; los controles finales se repitieron con Node 24.21.0.
 
+## Verificación operativa — 2026-10-06
+
+Corte del [estado actual del README](../README.md#estado-actual): `main` en `1725260`
+(fusión del PR #20, 2026-10-05), que integra `develop` (`2ebfca0`, PR #19). Ese corte
+incluye la revisión de evidencias y el Resumen conectado (PR #17) y el tablero Kanban
+(PR #19).
+
+Cambios del núcleo desde el corte anterior del README (`919dff5`, 2026-09-29):
+
+- `e16c2a4` añade el avance de ciclo en `apps/api/app/modules/seguimiento/` (`routes.py`,
+  `service.py`, `schemas/seguimiento.py`) con 63 líneas nuevas de pruebas y los contratos
+  regenerados, sin migraciones nuevas. La regla está documentada en
+  `00-nucleo-comun/objetivos-actividades-evidencias.md` («Avance del ciclo»).
+- El resto de ese intervalo no toca `apps/api` ni `apps/api/alembic`: frontend,
+  documentación y el `exports` de `packages/contracts/package.json` (`ba01636`). El
+  tablero Kanban no añade contratos: reutiliza `submit`, `validations` y `completion`.
+
+Evidencia remota: `Application quality` y `Prototype quality` verdes sobre `main`
+`1725260` ([run 37354456543](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456543),
+[run 37354456484](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456484)) y sobre
+`develop` `2ebfca0`. El job `web-and-contracts` ejecuta `pnpm install --frozen-lockfile`,
+`pnpm lint`, `pnpm typecheck`, `export_openapi.py --check` y `pnpm contract:check`; **no**
+ejecuta la suite de `apps/web`, que se corrió localmente (23 grupos, 2026-10-06).
+
+Smoke HTTP del despliegue público, 2026-10-06, sin sesión:
+
+| Recurso | Ruta | Resultado |
+|---|---|---|
+| Web (`eo08w8k8oocksksw0ok4s8gk.157.151.134.169.sslip.io`) | `GET /` y `GET /api/health` | 200 |
+| API (`sgc4www0cw84okgwcwggs4wo.157.151.134.169.sslip.io`) | `GET /healthz` (liveness) y `GET /readyz` (readiness) | 200 |
+| Bundle publicado | marcadores de Resumen («Qué se busca lograr») y de Kanban («estados intermedios de actividad») | presentes en los chunks servidos |
+
+Limitaciones: es un smoke sin autenticación ni roles, no un recorrido por rol; no existe
+un entorno de staging separado de `main`, así que la única URL pública comprobada sirve
+`main`. Las URLs son las `sslip.io` del despliegue actual y pueden cambiar al
+recrearse. La suite de `apps/web` sigue fuera de CI.
+
 ## Pendientes
 
 - Validación real en staging con Clerk/Google OAuth, Redis y servicios externos configurados.
 - Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
   actual documentado del prototipo no equivale a desplegar esta API.
-- Binarios privados R2, informes/PDF y finanzas. La UI de expediente, seguimiento, reuniones, canales y bandeja está conectada en local (Fase 7, 2026-09-29). Menciones y elegir a otra persona del ciclo siguen `TBD`: no hay listado de personas del ámbito.
+- Binarios privados R2, informes/PDF y finanzas. La UI de expediente, seguimiento, reuniones, canales y bandeja está conectada y publicada en `main` (Fase 7, 2026-09-29; smoke de despliegue 2026-10-06). Menciones y elegir a otra persona del ciclo siguen `TBD`: no hay listado de personas del ámbito.
 - Escalas de diagnóstico, catálogo oficial de entregables, evidencia mínima, transiciones y
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
+- Recorrido autenticado por rol sobre la publicación (Coordinadora, Emprendedor y Gestor),
+  añadir `pnpm --filter @sia/web test` a CI, entorno de staging separado de `main` y HTTPS
+  del despliegue: pendientes.
 
-En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. Esta revisión documental tampoco realiza commit, push ni migraciones.
+En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. La revisión documental del 2026-09-16 no hizo commit ni push; la actualización del 2026-10-06 entra por pull request de documentación, sin migraciones ni cambios de código.

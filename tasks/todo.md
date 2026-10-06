@@ -1,5 +1,43 @@
 # Consolidacion de decisiones
 
+## Actualización de estado documental — 2026-10-06
+
+Actualización del estado real después de liberar el trabajo de frontend reciente. Sin
+cambios de reglas, permisos, API ni contratos: no se modifican los documentos de núcleo
+ni de programa, que siguen siendo la fuente de requisitos.
+
+- [x] `README.md`: corte nuevo (`main` en `1725260`, 2026-10-05) y filas de Seguimiento
+  (avance por objetivo/ciclo), Web real (revisión de evidencias, Resumen conectado,
+  tablero Kanban) y Calidad y despliegue (CI verdes, smoke de producción, suite de la Web
+  fuera de CI).
+- [x] `docs/operacion-api.md`: sección «Verificación operativa — 2026-10-06» con los
+  cambios de núcleo desde `919dff5`, enlaces a runs de CI y smoke HTTP del despliegue;
+  pendientes actualizados.
+- [x] Este registro: liberación y limpieza de ramas.
+
+Estado verificado el 2026-10-06:
+
+- `main` `1725260` (PR #20, 2026-10-05) integra `develop` `2ebfca0` (PR #19). CI verde en
+  ambas ramas: `Application quality` run 37354456543 y `Prototype quality` run 37354456484.
+- Despliegue público por HTTP, sin sesión: Web `GET /` y `GET /api/health` en 200 sobre
+  `http://eo08w8k8oocksksw0ok4s8gk.157.151.134.169.sslip.io`; API `GET /healthz` y
+  `GET /readyz` en 200 sobre
+  `http://sgc4www0cw84okgwcwggs4wo.157.151.134.169.sslip.io`. Los chunks publicados
+  contienen los marcadores de Resumen («Qué se busca lograr») y de Kanban («estados
+  intermedios de actividad»), lo que confirma que sirve `main`.
+- Ramas de trabajo fusionadas eliminadas, locales y remotas: solo quedan `develop` y
+  `main`; la rama local `main` se sincronizó a `1725260`.
+- Suite de `apps/web` local: 23 grupos en verde con `pnpm --filter @sia/web test`.
+
+Pendientes abiertos:
+
+- [ ] Revisión autenticada por rol sobre la publicación: Coordinadora y Emprendedor en el
+  Kanban, la revisión de evidencias y el Resumen. El recorrido del Gestor sigue aplazado
+  por indicación del usuario.
+- [ ] Añadir `pnpm --filter @sia/web test` a CI: `web-and-contracts` termina en
+  `pnpm contract:check` y hoy no ejecuta esa suite.
+- [ ] Entorno de staging separado de `main` y HTTPS del despliegue: sin resolver.
+
 ## Kanban de objetivos y actividades, 2026-10-05
 
 Alcance autorizado por el usuario en la planificación: columnas derivadas de datos
