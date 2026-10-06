@@ -47,6 +47,6 @@ Quedan fuera del primer alcance:
 - Tiempo real: Socket.IO servido por FastAPI.
 - Tareas asincronas: worker Python con PostgreSQL como cola persistente.
 - Redis: rate limiting distribuido y adaptador Socket.IO al escalar.
-- Despliegue: Coolify; `develop` despliega a staging y `main` a produccion.
+- Despliegue: Coolify; `develop` despliega a staging (`https://sia.dev.neuroboard.app`) y `main` a produccion. La disponibilidad HTTP de staging se verifica por separado de los permisos y flujos autenticados.
 
 Todo trafico de produccion usa HTTPS. FastAPI valida firma, emisor, audiencia y vigencia del JWT antes de aplicar autorizacion. Los endpoints sensibles o costosos usan rate limiting distribuido y responden `429` sin ejecutar la accion cuando se excede el limite.

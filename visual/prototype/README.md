@@ -2,7 +2,7 @@
 
 Mockup responsive y navegable de Lumen Biotech con diagnóstico evolutivo e informes técnicos. Usa datos ficticios y no se conecta a autenticación, base de datos ni servicios externos.
 
-**Estado revisado — 2026-09-16:** la API persistente ya existe por separado; esta demo conserva estado local y sus escalas/estados no definen las reglas de programa pendientes. Consultar la [matriz canónica](../../README.md#estado-actual) y la [evidencia CI](../../docs/operacion-api.md#evidencia-vigente--2026-09-16). La UI real está conectada en local; staging sigue sin verificar.
+**Estado revisado — 2026-10-06:** la API persistente ya existe por separado; esta demo conserva estado local y sus escalas/estados no definen las reglas de programa pendientes. Consultar la [matriz canónica](../../README.md#estado-actual) y la [evidencia de staging](../../docs/operacion-api.md#verificación-de-staging--2026-10-06). La UI real está publicada en staging; el recorrido autenticado por roles sigue pendiente de una credencial de prueba válida.
 
 ## Ejecutar localmente
 
