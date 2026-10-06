@@ -6,7 +6,7 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 
 ## Estado actual
 
-**Corte: 2026-10-06, `main` en `1725260`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
+**Corte: 2026-10-06, `develop` en `7e0947e` y `main` en `1725260`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
 
 | Componente | Estado real en el repositorio | Límite / pendiente |
 |---|---|---|
@@ -20,7 +20,7 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 | Comunicación y alertas | API integrada para reuniones, minutas, acuerdos, canales, mensajes, menciones, recibos de lectura, alertas y notificaciones internas; las minutas aprobadas son inmutables. | Socket.IO/Redis, Resend, adjuntos privados, grabaciones y proveedor IA/worker reales siguen pendientes o `TBD`. |
 | Informes técnicos (Fase 5) | API por período que compone fuentes trazables (objetivos, actividades, evidencias, minutas, acuerdos), aprobación humana, versión inmutable con corrección vinculada y encolado del PDF; consumidor del worker sobre la cola persistente. | Render de PDF + R2, IA real, fuente de finanzas (Fase 6) y cableado del deployable `apps/worker` pendientes o `TBD`. |
 | Finanzas | Solo representaciones de prototipo. | Sin backend (Fase 6); partidas, flujo, integración administrativa y Revisor financiero `TBD`. |
-| Calidad y despliegue | Dockerfiles de Web/API, Compose y guía Coolify para recursos separados; lint, tipos, build y contratos correctos y las dos workflows de CI verdes sobre `main` `1725260` (2026-10-05). Smoke de producción sin sesión el 2026-10-06: Web `/` y `/api/health`, API `/healthz` y `/readyz` en 200, con los marcadores de Resumen y Kanban en los chunks publicados. | La CI no ejecuta la suite de `apps/web` (23 grupos, solo local); no hay entorno de staging separado de `main`; OAuth real, servicios externos y recorrido operativo por roles continúan sin certificación. |
+| Calidad y despliegue | Dockerfiles de Web/API, Compose y guía Coolify para recursos separados; las dos workflows de CI verdes sobre `develop` `7e0947e` (2026-10-06). Staging público en `https://sia.dev.neuroboard.app`: Web `/` y `/api/health` en 200 sin sesión. | La CI no ejecuta la suite de `apps/web` (23 grupos, solo local). El recorrido autenticado por roles no se certificó en este corte: la credencial local de Coordinadora fue rechazada por Clerk. No se infieren migraciones, API, Redis, R2, backups ni rollback a partir del smoke de Web. |
 
 La [guía operativa de la API](docs/operacion-api.md) conserva evidencia local/CI, enlaces a runs, arranque y restricciones. El [plan de escalabilidad](tasks/plan-escalabilidad.md) describe arquitectura objetivo y siguientes fases; [tasks/todo.md](tasks/todo.md) conserva la historia. Trazabilidad backend: US-PRO-001/002/005/006 y US-PM-001/002; detalle y límites de aceptación en el [módulo de seguimiento](apps/api/app/modules/seguimiento/README.md).
 
@@ -71,7 +71,8 @@ pnpm build
 ## Despliegue en Coolify
 
 La aplicación operativa usa dos recursos: Web desde `apps/web/Dockerfile`, puerto `3000`, y
-API desde `apps/api/Dockerfile`, puerto `8000`, además de PostgreSQL y Redis. La
+API desde `apps/api/Dockerfile`, puerto `8000`, además de PostgreSQL y Redis. El entorno de
+integración de `develop` está publicado en `https://sia.dev.neuroboard.app`. La
 [guía de Coolify](deploy/coolify/README.md) contiene la configuración, variables runtime,
 migraciones y validación. El Dockerfile raíz mantiene solo la demo del prototipo en `8080`.
 
@@ -86,7 +87,7 @@ migraciones y validación. El Dockerfile raíz mantiene solo la demo del prototi
 
 ## Colaboración
 
-- `develop` es la rama de integración destinada a staging.
+- `develop` es la rama de integración desplegada a staging (`https://sia.dev.neuroboard.app`).
 - `main` es la rama destinada a producción; su CI verde no certifica un despliegue remoto.
 - Toda funcionalidad nace desde `develop` en una rama corta.
 - No se hace push directo a ramas protegidas.

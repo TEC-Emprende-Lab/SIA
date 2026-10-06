@@ -1,5 +1,18 @@
 # Consolidacion de decisiones
 
+## Corrección de staging — 2026-10-06
+
+La afirmación previa de que no existía un staging separado quedó desactualizada. El
+entorno de integración de `develop` está publicado en
+`https://sia.dev.neuroboard.app`; `GET /` y `GET /api/health` respondieron 200 sin
+sesión. También quedaron en success los workflows `Application quality` y `Prototype
+quality` del SHA `7e0947e`.
+
+La verificación autenticada no se completó: Clerk rechazó la credencial local de
+Coordinadora con 422 (`Password is incorrect`). Se requieren credenciales de prueba
+vigentes para confirmar los flujos y permisos por rol. El detalle verificable y los
+límites están en [operación API](../docs/operacion-api.md#verificación-de-staging--2026-10-06).
+
 ## Actualización de estado documental — 2026-10-06
 
 Actualización del estado real después de liberar el trabajo de frontend reciente. Sin
@@ -15,7 +28,7 @@ ni de programa, que siguen siendo la fuente de requisitos.
   pendientes actualizados.
 - [x] Este registro: liberación y limpieza de ramas.
 
-Estado verificado el 2026-10-06:
+Estado histórico verificado antes de la corrección de staging, 2026-10-06:
 
 - `main` `1725260` (PR #20, 2026-10-05) integra `develop` `2ebfca0` (PR #19). CI verde en
   ambas ramas: `Application quality` run 37354456543 y `Prototype quality` run 37354456484.
@@ -36,7 +49,9 @@ Pendientes abiertos:
   por indicación del usuario.
 - [ ] Añadir `pnpm --filter @sia/web test` a CI: `web-and-contracts` termina en
   `pnpm contract:check` y hoy no ejecuta esa suite.
-- [ ] Entorno de staging separado de `main` y HTTPS del despliegue: sin resolver.
+- [x] Entorno de staging separado de `main` y HTTPS del despliegue: disponible en
+  `https://sia.dev.neuroboard.app`; falta certificar sus recorridos autenticados,
+  migraciones, observabilidad, backups y rollback.
 
 ## Kanban de objetivos y actividades, 2026-10-05
 
@@ -439,7 +454,7 @@ Plan de trabajo (documentación; no cambia requisitos ni reglas de negocio):
 - [x] Incorporar revocación de asignaciones por scope, instalación independiente del prototipo y conteos con procedencia; marcar resultados anteriores como históricos y staging como no verificado.
 - [x] Verificar enlaces internos y `git diff --check`, revisar el diff y registrar resultados. No realizar commit ni push.
 
-Estado vigente: [matriz canónica](../README.md#estado-actual). Evidencia confirmada y procedencia del último local comunicado: [operación API](../docs/operacion-api.md#evidencia-vigente--2026-09-16). Backend de identidad, expediente y seguimiento integrado; UI real y módulos restantes en curso. Staging **NO verificado**.
+Estado vigente en esa fecha: [matriz canónica](../README.md#estado-actual). Evidencia confirmada y procedencia del último local comunicado: [operación API](../docs/operacion-api.md#evidencia-histórica--2026-09-16). Backend de identidad, expediente y seguimiento integrado; UI real y módulos restantes en curso. Staging **NO verificado** en ese corte histórico; ver la [corrección de staging del 2026-10-06](#corrección-de-staging--2026-10-06).
 
 Resultado documental: README y plan alineados con el código; operación enlaza runs y logs CI del SHA inspeccionado, separa el último local comunicado de la evidencia histórica y describe la corrección de revocación. CONTRIBUTING, README visuales e IMPLEMENTATION del prototipo reproducen `--ignore-workspace`. El borrador de modelo se conserva íntegro con nota histórica y la guía Coolify diferencia CI de despliegue remoto. Verificación con script temporal Python 3 fuera del repo: 38 documentos Markdown versionados de proyecto y 54 enlaces Markdown internos, comprobando existencia y anclas de encabezado, sin errores; `git diff --check` correcto y diff revisado. No se reejecutaron suites, ni se hizo commit/push.
 

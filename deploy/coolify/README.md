@@ -6,8 +6,10 @@ debe publicar como la aplicación operativa.
 
 ## Recursos requeridos
 
-El despliegue remoto y el dominio siguen sin verificarse en este corte. La evidencia de
-arranque y migraciones de la API está en [operación API](../../docs/operacion-api.md).
+El staging público está disponible en `https://sia.dev.neuroboard.app`: el 2026-10-06
+la Web `/` y `/api/health` respondieron 200 sin sesión. Esta comprobación no acredita por
+sí sola las migraciones, la API interna, Redis, R2, backups ni rollback; la evidencia y
+los límites vigentes están en [operación API](../../docs/operacion-api.md#verificación-de-staging--2026-10-06).
 
 1. Crear PostgreSQL 16 y Redis 7 en el mismo proyecto/entorno de Coolify.
 2. Crear la aplicación API desde el repositorio `TEC-Emprende-Lab/SIA`.
@@ -30,7 +32,7 @@ no subir una copia completa ni pegar secretos en tickets, chat o Git.
 
 ### Recursos y ramas
 
-Crear un proyecto de Coolify llamado, por ejemplo, `sia-staging`, con recursos separados:
+El staging existente debe conservar recursos separados con esta configuración de referencia:
 
 1. PostgreSQL 16 y Redis 7 internos, con volúmenes propios de staging.
 2. API desde `develop`, usando `apps/api/Dockerfile`.
