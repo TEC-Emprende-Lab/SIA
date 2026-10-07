@@ -61,7 +61,12 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Bases desechables: una evidencia privada no tiene URL que restaurar.
+    # El trigger de Postgres bloquea ese borrado; se desactiva solo en este paso.
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("ALTER TABLE evidence_references DISABLE TRIGGER tracking_immutable")
     op.execute("DELETE FROM evidence_references WHERE url IS NULL")
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("ALTER TABLE evidence_references ENABLE TRIGGER tracking_immutable")
     op.drop_index("ix_evidence_references_document_id", table_name="evidence_references")
     with op.batch_alter_table("evidence_references") as batch:
         batch.drop_constraint("ck_evidence_references_source", type_="check")
