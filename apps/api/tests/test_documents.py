@@ -106,9 +106,7 @@ async def test_assigned_user_uploads_and_receives_signed_url_without_storage_key
     finally:
         app.dependency_overrides.clear()
 
-    audits = (
-        await db.scalars(select(AuditLog).where(AuditLog.entity_id == document_id))
-    ).all()
+    audits = (await db.scalars(select(AuditLog).where(AuditLog.entity_id == document_id))).all()
     assert {item.action for item in audits} == {"document.created", "document.access"}
     assert all("url" not in (item.after or {}) for item in audits)
 
@@ -125,7 +123,9 @@ async def test_download_does_not_cross_entrepreneurships(db: AsyncSession, monke
     db.add_all([own, other])
     await db.flush()
     db.add(
-        EntrepreneurshipAssignment(entrepreneurship_id=own.id, user_id=founder.id, role="Emprendedor")
+        EntrepreneurshipAssignment(
+            entrepreneurship_id=own.id, user_id=founder.id, role="Emprendedor"
+        )
     )
     foreign = Document(
         entrepreneurship_id=other.id,

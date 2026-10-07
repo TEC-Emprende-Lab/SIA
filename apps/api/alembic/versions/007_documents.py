@@ -56,9 +56,7 @@ def upgrade() -> None:
             "fk_evidence_references_document_id", "documents", ["document_id"], ["id"]
         )
         batch.create_check_constraint("ck_evidence_references_source", _SOURCE)
-    op.create_index(
-        "ix_evidence_references_document_id", "evidence_references", ["document_id"]
-    )
+    op.create_index("ix_evidence_references_document_id", "evidence_references", ["document_id"])
 
 
 def downgrade() -> None:
