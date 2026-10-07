@@ -1,0 +1,13 @@
+.sources { min-width: 0; overflow-wrap: anywhere; }
+.sources h4 { margin: 0 0 .75rem; font-size: .85rem; }
+.list { display: grid; gap: .85rem; margin: 0; padding: 0; list-style: none; }
+.source { display: grid; gap: .35rem; padding: .8rem; border: 1px solid var(--line); border-radius: .5rem; }
+.source p { margin: 0; }
+.link { width: fit-content; color: #586332; text-decoration: underline; text-underline-offset: .2em; }
+.link:focus-visible, .references summary:focus-visible { outline: 2px solid #68642d; outline-offset: 3px; }
+.references { color: #75796f; font-size: .75rem; }
+.references summary { width: fit-content; cursor: pointer; }
+.references dl { margin: .5rem 0 0; }
+.references dt { font-weight: 600; }
+.references dd { margin: 0 0 .4rem; }
+.narrative { white-space: pre-wrap; overflow-wrap: anywhere; }
