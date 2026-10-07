@@ -1,0 +1,1 @@
+el .env compartido cuenta con una contraseña que no es valida a la hora de hacer login en la plataforma de staging. No permite probar con esas credenciales. No se porque. 
