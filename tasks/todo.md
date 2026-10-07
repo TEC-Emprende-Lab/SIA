@@ -1,5 +1,18 @@
 # Consolidacion de decisiones
 
+## Pulido de fuentes de informes — 2026-10-07
+
+- US-PRO-004 / US-PM-003; reglas de `docs/00-nucleo-comun/ia-e-informes.md`.
+- La ventana de Informes presenta secciones en español, fechas de las fuentes,
+  referencias consultables y enlaces HTTP(S) de evidencia, desde la composición
+  conservada en cada versión. No consulta ni recompone los registros originales.
+- Conserva saltos de línea de la redacción y muestra estados explícitos sin fuentes.
+- Verificación local: `pnpm --filter @sia/web exec node tests/reports.mjs` comprueba
+  instantánea congelada, escape de texto, referencias, fechas y protocolos de URL.
+- No modifica API, permisos, versiones aprobadas, PDF, almacenamiento privado ni finanzas.
+- Validación visual autenticada en staging pendiente; la herramienta de navegador
+  agotó el tiempo de espera. Los cambios locales aún no están desplegados.
+
 ## Corrección de staging — 2026-10-06
 
 La afirmación previa de que no existía un staging separado quedó desactualizada. El
