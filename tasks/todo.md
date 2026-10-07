@@ -1,5 +1,20 @@
 # Consolidacion de decisiones
 
+## Estado informativo de Equipo — 2026-10-07
+
+- Corrección de presentación del alcance actual; sin nueva capacidad funcional.
+  Referencias: `vision-y-alcance.md` (interfaz comprensible) y
+  `actores-roles-y-permisos.md` (gestión por alcance). US específica de Equipo: TBD.
+- Emprendedor ve un aviso de disponibilidad en Equipo en lugar de una vista vacía.
+  Gestor recibe el mismo límite actual en lenguaje de uso, sin exponer detalles de API.
+  Coordinadora ve explícitamente que el listado contiene solo asignaciones de esta visita.
+- Se conserva el diseño existente, el comportamiento reutilizable de AssignmentPanel,
+  las peticiones y la autorización backend. No se inventa un listado de integrantes.
+- Verificación estática por rol, lint y typecheck correctos; la suite de web pasó
+  con este bloque y `pnpm --filter @sia/web build` compiló correctamente.
+  Validación visual autenticada en staging pendiente de despliegue
+  y de acceso funcional al navegador.
+
 ## Formulario de informes — 2026-10-07
 
 - US-PRO-004 / US-PM-003; contratos actuales de `app/schemas/informes.py`.
