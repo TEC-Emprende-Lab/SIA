@@ -5103,6 +5103,73 @@
         }
       }
     },
+    "/cycles/{cycle_id}/reports/{report_id}/pdf": {
+      "get": {
+        "tags": [
+          "informes"
+        ],
+        "summary": "Get Report Pdf",
+        "operationId": "get_report_pdf_cycles__cycle_id__reports__report_id__pdf_get",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportPdfAccessOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cycles/{cycle_id}/reports/{report_id}/approval": {
       "post": {
         "tags": [
@@ -7705,17 +7772,6 @@
             ],
             "title": "Approved At"
           },
-          "pdf_storage_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pdf Storage Key"
-          },
           "pdf_generated_at": {
             "anyOf": [
               {
@@ -7757,13 +7813,32 @@
           "supersedes_id",
           "reviewed_by",
           "approved_at",
-          "pdf_storage_key",
           "pdf_generated_at",
           "created_by",
           "revision",
           "created_at"
         ],
         "title": "ReportOut"
+      },
+      "ReportPdfAccessOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expires In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "expires_in"
+        ],
+        "title": "ReportPdfAccessOut",
+        "description": "Enlace temporal. No incluye la clave del objeto."
       },
       "ReportUpdate": {
         "properties": {

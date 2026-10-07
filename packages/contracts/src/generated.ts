@@ -941,6 +941,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cycles/{cycle_id}/reports/{report_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Report Pdf */
+        get: operations["get_report_pdf_cycles__cycle_id__reports__report_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cycles/{cycle_id}/reports/{report_id}/approval": {
         parameters: {
             query?: never;
@@ -1954,8 +1971,6 @@ export interface components {
             reviewed_by: string | null;
             /** Approved At */
             approved_at: string | null;
-            /** Pdf Storage Key */
-            pdf_storage_key: string | null;
             /** Pdf Generated At */
             pdf_generated_at: string | null;
             /** Created By */
@@ -1967,6 +1982,16 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * ReportPdfAccessOut
+         * @description Enlace temporal. No incluye la clave del objeto.
+         */
+        ReportPdfAccessOut: {
+            /** Url */
+            url: string;
+            /** Expires In */
+            expires_in: number;
         };
         /** ReportUpdate */
         ReportUpdate: {
@@ -4702,6 +4727,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_pdf_cycles__cycle_id__reports__report_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportPdfAccessOut"];
                 };
             };
             /** @description Validation Error */

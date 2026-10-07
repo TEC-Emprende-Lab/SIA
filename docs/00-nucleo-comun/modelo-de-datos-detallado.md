@@ -478,7 +478,7 @@ Rastro de toda acción sensible. Lo escriben los servicios en la **misma transac
 - Registra al menos: aprobaciones, cambios de objetivos aprobados, movimientos de presupuesto, validaciones, cierres, mensajes editados/eliminados y emisión de informes. Sin índice de scope por diseño (es transversal); las consultas van por `entity_type`/`entity_id`/`actor_id`.
 
 ### `documents` (transversal — decisión de diseño #6) 🟢
-Tabla central de archivos privados. La API guarda el objeto y publica metadatos; la clave `storage_key` no sale en el contrato. La descarga es una URL firmada emitida tras autorizar el emprendimiento. Límites MIME y tamaño siguen `TBD`. Aún no la referencian chat, facturas ni el PDF del informe.
+Tabla central de archivos privados. La API guarda el objeto y publica metadatos; la clave `storage_key` no sale en el contrato. La descarga es una URL firmada emitida tras autorizar el emprendimiento. Límites MIME y tamaño siguen `TBD`. Chat y facturas aún no la referencian. El PDF del informe aprobado usa el mismo almacén de objetos, pero su clave queda en `technical_reports.pdf_storage_key` y no crea fila aquí.
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -491,7 +491,7 @@ Tabla central de archivos privados. La API guarda el objeto y publica metadatos;
 | `uploaded_by` | FK → `users.id` | |
 | `created_at` | timestamptz | |
 
-- **Referenciada por:** `evidence_references.document_id` cuando el respaldo es archivo privado. `chat_attachments`, `invoices` y `technical_report_documents` siguen sin implementar. La emisión de **URL firmada** la hace la API en `GET .../documents/{id}/access`.
+- **Referenciada por:** `evidence_references.document_id` cuando el respaldo es archivo privado. `chat_attachments`, `invoices` y `technical_report_documents` siguen sin implementar. La emisión de **URL firmada** la hace la API en `GET .../documents/{id}/access`. El PDF del informe se pide en `GET /cycles/{cycle_id}/reports/{report_id}/pdf`; esa respuesta tampoco incluye la clave.
 
 ### `job_queue` (infra — worker) 🟡 *pendiente*
 Cola persistente en PostgreSQL (decidido: PostgreSQL como cola, sin Redis en MVP). Aquí viven las tareas del worker (minutas IA, correo Resend, alertas, PDF), **idempotentes**.
@@ -684,7 +684,7 @@ Estado final de los 7 pendientes que dejaste abiertos:
 | 3 | Validation polimórfica/por tipo | ✅ Cerrado | Semi-tipada (`objective_id` XOR `diagnostic_id`). |
 | 4 | schedule_item tabla/vista | ✅ Cerrado | Derivado de `activities`; sin tabla. |
 | 5 | Finanzas | 🔴 Diseño tentativo | Modelado con banderas; **no implementar** hasta que el programa cierre partidas/flujo/estados. |
-| 6 | `documents` unificado | ✅ Decisión: sí | Tabla `documents` y URL firmada implementadas. Chat, facturas y PDF aún no la referencian. Límites MIME/tamaño `TBD`. |
+| 6 | `documents` unificado | ✅ Decisión: sí | Tabla `documents` y URL firmada implementadas. El PDF del informe usa el mismo almacén, con la clave en `technical_reports`, no una fila de `documents`. Chat y facturas siguen sin referenciarla. Límites MIME/tamaño `TBD`. |
 | 7 | Rol RevisorFinanciero | 🔴 TBD | `role` es texto validado → añadirlo luego sin migración de esquema. |
 
 Extra del borrador ya resuelto en código: **`meeting_action` no existe** (fusionado en `agreements.next_steps`); **participantes** de reunión = JSON descriptivo; **taxonomía de `channels`** sigue `TBD` (sin columna `tipo`).

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.db.session import get_db
 from app.main import create_app
+from app.models.audit import AuditLog
 from app.models.comunicacion import Agreement, Meeting, Minutes
 from app.models.expediente import (
     Entrepreneurship,
@@ -35,6 +36,7 @@ from app.models.seguimiento import (
 from app.models.user import User
 from app.modules.informes import service
 from app.security.deps import get_current_user
+from app.storage.store import MemoryObjectStore, UnconfiguredObjectStore, get_object_store
 
 PERIOD = {"period_start": "2026-09-01", "period_end": "2026-09-30"}
 IN_PERIOD = datetime(2026, 9, 15, 10, tzinfo=UTC)
@@ -327,6 +329,67 @@ async def test_worker_failure_retries_without_writing_pdf(reports):
         job = await db.scalar(select(Job).where(Job.idempotency_key == f"informe-pdf:{report_id}"))
         assert job.status == "pending" and job.attempts == 1 and job.last_error
         report = await db.get(TechnicalReport, report_id)
+        assert report.pdf_storage_key is None
+
+
+async def test_worker_stores_snapshot_pdf_and_signed_access_hides_the_key(reports):
+    client, sessions = reports
+    created = await create(client, narrative="Revisión del prototipo")
+    report_id = created.json()["id"]
+    await approve(client, report_id)
+    assert (await client.get(f"/cycles/c1/reports/{report_id}/pdf")).status_code == 404
+    assert (
+        await client.get(f"/cycles/c1/reports/{report_id}/pdf", headers=headers("outside"))
+    ).status_code == 403
+    memory = MemoryObjectStore()
+
+    async def store(report):
+        return await service.store_report_pdf(report, memory)
+
+    async with sessions() as db:
+        await service.generate_pending_pdf(db, "w1", store=store)
+    async with sessions() as db:
+        report = await db.get(TechnicalReport, report_id)
+        body, mime = memory.objects[report.pdf_storage_key]
+        assert mime == "application/pdf" and body.startswith(b"%PDF")
+        assert b"Revisi\\363n del prototipo" in body
+        assert b"Pendiente de completar" in body
+        assert b"Objetivo" in body and b"https://example.org/e" in body
+        assert report.pdf_storage_key.encode() not in body
+    visible = await client.get(f"/cycles/c1/reports/{report_id}")
+    assert visible.status_code == 200
+    assert "pdf_storage_key" not in visible.json()
+    assert visible.json()["pdf_generated_at"]
+    client._transport.app.dependency_overrides[get_object_store] = lambda: memory
+    access = await client.get(f"/cycles/c1/reports/{report_id}/pdf")
+    assert access.status_code == 200, access.text
+    payload = access.json()
+    assert payload["url"].startswith("https://storage.test/reports/")
+    assert "pdf_storage_key" not in payload and "storage_key" not in payload
+    async with sessions() as db:
+        audits = (
+            await db.scalars(
+                select(AuditLog).where(
+                    AuditLog.entity_id == report_id, AuditLog.action == "report.pdf_access"
+                )
+            )
+        ).all()
+        assert len(audits) == 1
+        assert audits[0].after == {"expires_in": 300}
+        assert "url" not in audits[0].after
+
+
+async def test_unconfigured_storage_retries_without_writing_the_pointer(reports, monkeypatch):
+    monkeypatch.setattr(service, "get_object_store", lambda: UnconfiguredObjectStore())
+    client, sessions = reports
+    report_id = (await create(client)).json()["id"]
+    await approve(client, report_id)
+    async with sessions() as db:
+        await service.generate_pending_pdf(db, "w1")
+    async with sessions() as db:
+        job = await db.scalar(select(Job).where(Job.idempotency_key == f"informe-pdf:{report_id}"))
+        report = await db.get(TechnicalReport, report_id)
+        assert job.status == "pending" and "no configurado" in job.last_error
         assert report.pdf_storage_key is None
 
 

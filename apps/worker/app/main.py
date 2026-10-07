@@ -1,16 +1,15 @@
-import logging
-import time
+"""La imagen del worker no usa este módulo.
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger(__name__)
+El proceso que consume la cola es ``python -m app.worker`` del paquete de la API,
+que es lo que copia ``apps/worker/Dockerfile``.
+"""
 
 
-def run() -> None:
-    """Keep the Phase 0 worker alive until persistent jobs are introduced."""
-    logger.info('{"event":"worker.started","service":"worker"}')
-    while True:
-        time.sleep(60)
+def main() -> None:
+    raise SystemExit(
+        "El consumidor de la cola es python -m app.worker, dentro de la imagen de la API."
+    )
 
 
 if __name__ == "__main__":
-    run()
+    main()

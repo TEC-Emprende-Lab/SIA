@@ -37,11 +37,16 @@ inventa; **finanzas se marca `Pendiente de completar`** (Fase 6 pendiente).
 ## Worker
 
 `service.generate_pending_pdf(db, worker_id, *, store)` es un ciclo del consumidor:
-reclama un `informe.pdf` de la cola (`FOR UPDATE SKIP LOCKED`), genera+almacena el
-PDF del informe aprobado, escribe el puntero y marca la tarea `done`; ante error
-la cola reintenta con backoff. `store` es inyectable; el default es **`TBD`**
-(R2/render pendiente) y falla de forma controlada, como el resto de integraciones
-externas del backend.
+reclama un `informe.pdf` de la cola (`FOR UPDATE SKIP LOCKED`), renderiza la
+narrativa y la composición ya guardadas (`pdf.py`, sin secciones nuevas), guarda
+el objeto y escribe `pdf_storage_key` / `pdf_generated_at`. Ante error la cola
+reintenta. Sin almacenamiento configurado el objeto no se escribe y la tarea
+sigue pendiente. La clave no sale en `ReportOut`. Quien puede leer el ciclo pide
+`GET /cycles/{id}/reports/{id}/pdf` y recibe una URL firmada; la auditoría
+guarda solo `expires_in`.
+
+`python -m app.worker` ejecuta ese ciclo. La imagen `apps/worker` incluye el
+paquete de la API y usa ese comando.
 
 ## Pruebas
 
@@ -52,11 +57,7 @@ reintento, período inválido y autenticación.
 
 ## Decisiones pendientes (TBD)
 
-- **Plantilla y campos obligatorios** del informe mensual: sin definir; el
-  contenido vive en `narrative` + `composition` genéricos, sin inventar secciones.
-- **Render de PDF y almacenamiento privado R2** con URL firmada: pendiente.
+- **Plantilla y campos obligatorios** del informe mensual: sin definir; el PDF
+  solo vuelca `narrative` + `composition`, sin inventar secciones.
 - **Proveedor IA real** para borradores asistidos: pendiente (no se inventan hechos).
 - **Fuente de finanzas** (Fase 6): ausente, marcada como pendiente.
-- **Cableado del deployable `apps/worker`**: el consumidor vive en el paquete de la
-  API (donde están cola y modelos); ejecutarlo desde `apps/worker` es un paso de
-  despliegue (Fase 8).

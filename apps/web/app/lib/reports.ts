@@ -21,6 +21,23 @@ export async function reportRequest<T>(path: string, parse: (value: unknown) => 
   if (data === null) throw new Error('La respuesta de informes no es válida.')
   return data
 }
+export async function requestReportPdf(
+  cycleId: string,
+  reportId: string,
+): Promise<{ url: string; expires_in: number }> {
+  const response = await fetch(`/api/sia/cycles/${cycleId}/reports/${reportId}/pdf`, { cache: 'no-store' })
+  const payload: unknown = await response.json().catch(() => null)
+  if (!response.ok || typeof payload !== 'object' || !payload || Array.isArray(payload)) {
+    const detail = typeof payload === 'object' && payload && 'detail' in payload && typeof payload.detail === 'string' ? payload.detail : 'No se pudo preparar el PDF.'
+    throw new Error(detail)
+  }
+  const body = payload as Record<string, unknown>
+  if ('pdf_storage_key' in body || 'storage_key' in body || typeof body.url !== 'string' || !body.url || typeof body.expires_in !== 'number') {
+    throw new Error('La respuesta del PDF no es válida.')
+  }
+  return { url: body.url, expires_in: body.expires_in }
+}
+
 export function parseReports(value: unknown): Report[] | null {
   if (!Array.isArray(value)) return null
   const reports = value.map(parseReport)

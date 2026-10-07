@@ -5,7 +5,29 @@ import { ChevronRight, FileText, Plus } from 'lucide-react'
 import { useMe } from './authenticated-shell'
 import { ProjectHeading } from './project-reference-ui'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
-import { parseReport, parseReports, reportRequest, type Report } from '../lib/reports'
+import { parseReport, parseReports, reportRequest, requestReportPdf, type Report } from '../lib/reports'
+
+function ReportPdfButton({ cycleId, reportId }: { cycleId: string; reportId: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+  async function prepare() {
+    setPending(true)
+    setError('')
+    try {
+      setUrl((await requestReportPdf(cycleId, reportId)).url)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'No se pudo preparar el PDF.')
+    } finally {
+      setPending(false)
+    }
+  }
+  if (url) return <a className="btn secondary" href={url} target="_blank" rel="noopener noreferrer">Abrir PDF</a>
+  return <>
+    <button type="button" className="btn secondary" onClick={() => void prepare()} disabled={pending}>{pending ? 'Preparando enlace…' : 'Preparar enlace privado'}</button>
+    {error ? <p role="alert">{error}</p> : <p className="small muted">El enlace se pide al abrirlo y caduca. No se muestra el archivo aquí.</p>}
+  </>
+}
 
 export function ReportsView({ cycleId, focusId }: { cycleId: string; focusId?: string }) {
   const me = useMe()
@@ -74,7 +96,8 @@ export function ReportsView({ cycleId, focusId }: { cycleId: string; focusId?: s
     <Dialog open={Boolean(current)} onOpenChange={(open) => { if (!open && !busy) setDetail('') }}><DialogContent><DialogHeader><DialogTitle>Informe {current?.kind} · versión {current?.version}</DialogTitle><DialogDescription>{current?.period_start} – {current?.period_end} · {current?.status}</DialogDescription></DialogHeader>{current && <>
       <p>{current.narrative || 'Pendiente de completar'}</p><h3>Fuentes del informe</h3>{Object.entries(current.composition).map(([kind, sources]) => <div key={kind}><strong>{kind}</strong>{Array.isArray(sources) ? <ul>{sources.map((source, index) => <li key={index}>{typeof source === 'object' && source ? String(source.title ?? source.description ?? source.id ?? 'Fuente') : String(source)}</li>)}</ul> : <p>Pendiente de completar</p>}</div>)}
       {manage && <form key={`${current.id}/${current.revision}`} onSubmit={(event) => void save(event, current)}><label className="field">Acción<select name="action" disabled={busy}>{current.status === 'aprobado' ? <option value="correct">Crear corrección vinculada</option> : <><option value="edit">Guardar borrador</option><option value="approve">Aprobar después de revisión humana</option></>}</select></label><label className="field">Redacción<textarea name="narrative" defaultValue={current.narrative} disabled={busy} /></label><label className="field">Observación de la decisión<textarea name="observation" required disabled={busy} /></label><label className="check-row"><input name="reviewed" type="checkbox" disabled={busy} />Confirmo que revisé el contenido y sus fuentes (obligatorio para aprobar).</label>{error && <p role="alert">{error}</p>}<div className="modal-actions"><button className="btn primary" disabled={busy}>{busy ? 'Guardando…' : 'Confirmar'}</button></div></form>}
-      <p className="small muted">Las versiones aprobadas son inmutables. La descarga privada del PDF todavía requiere completar su integración.</p>
+      <p className="small muted">Las versiones aprobadas son inmutables. El PDF se genera después de aprobar y no forma parte del borrador.</p>
+      {current.status === 'aprobado' && current.pdf_generated_at ? <ReportPdfButton cycleId={cycleId} reportId={current.id} /> : current.status === 'aprobado' ? <p className="small muted">El PDF todavía no está listo.</p> : null}
     </>}</DialogContent></Dialog>
   </>
 }
