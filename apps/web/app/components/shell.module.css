@@ -288,14 +288,34 @@
   margin-top: 2rem;
 }
 
-.guestSteps span {
-  padding: 0.55rem 0.75rem;
-  border: 1px solid #dce0ce;
-  border-radius: 999px;
-  color: #596142;
-  background: #f0f2e9;
-  font-size: 0.78rem;
-  font-weight: 600;
+.guestAction {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid #7c8041;
+  border-radius: 0.5rem;
+  color: #fff;
+  background: #7c8041;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.guestAction:hover {
+  border-color: #626636;
+  background: #626636;
+}
+
+.guestActionSecondary {
+  border-color: #d6daca;
+  color: #465037;
+  background: #fff;
+}
+
+.guestActionSecondary:hover {
+  border-color: #bcc2aa;
+  background: #f4f6ed;
 }
 
 .guestCard {
