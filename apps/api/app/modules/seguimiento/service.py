@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.service import write_audit
 from app.db.base import Base
+from app.models.document import Document
 from app.models.seguimiento import (
     Activity,
     Ambition,
@@ -259,6 +260,10 @@ async def validate_references(
             raise HTTPException(422, "El responsable no tiene acceso al ciclo")
     if isinstance(payload, EvidenceCreate):
         await scoped_entity(db, scope, Activity, payload.activity_id)
+        if payload.document_id is not None:
+            document = await db.get(Document, payload.document_id)
+            if document is None or document.entrepreneurship_id != scope.entrepreneurship_id:
+                raise HTTPException(404, "Documento no encontrado")
     if isinstance(payload, DiagnosticCreate):
         area_ids = set(
             (

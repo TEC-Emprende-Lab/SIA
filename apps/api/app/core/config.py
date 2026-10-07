@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     invitation_expires_days: int = 7
     rate_limit_requests: int = 60
     rate_limit_window_seconds: int = 60
+    storage_endpoint: str = ""
+    storage_bucket: str = ""
+    storage_access_key: str = ""
+    storage_secret_key: str = ""
+    storage_region: str = "auto"
+    storage_signed_url_seconds: int = 300
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="SIA_", extra="ignore")
 

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.db.session import get_db
 from app.models.audit import AuditLog
+from app.models.document import Document
 from app.models.expediente import (
     Entrepreneurship,
     EntrepreneurshipAssignment,
@@ -48,7 +49,12 @@ from app.security.deps import get_current_user
 
 def migrate(connection, direction):
     versions = Path(__file__).resolve().parents[1] / "alembic" / "versions"
-    files = ["001_initial_identity.py", "002_expediente.py", "003_seguimiento.py"]
+    files = [
+        "001_initial_identity.py",
+        "002_expediente.py",
+        "003_seguimiento.py",
+        "007_documents.py",
+    ]
     if direction == "downgrade":
         files.reverse()
     with Operations.context(MigrationContext.configure(connection)):
@@ -793,3 +799,78 @@ async def test_postgres_history_guards_and_binding_scope(tracking):
             with pytest.raises(DBAPIError):
                 await db.execute(text(statement), parameters)
             await db.rollback()
+
+
+async def test_private_evidence_uses_same_entrepreneurship_document(tracking):
+    client, sessions = tracking
+    async with sessions() as db:
+        db.add(
+            Document(
+                id="doc-e1",
+                entrepreneurship_id="e1",
+                storage_key="documents/e1/doc-e1",
+                name="prueba.pdf",
+                mime="application/pdf",
+                size=4,
+                uploaded_by="founder",
+            )
+        )
+        db.add(
+            Document(
+                id="doc-e2",
+                entrepreneurship_id="e2",
+                storage_key="documents/e2/doc-e2",
+                name="ajeno.pdf",
+                mime="application/pdf",
+                size=4,
+                uploaded_by="founder",
+            )
+        )
+        await db.commit()
+    objective = await create_objective(client)
+    activity = await create_activity(client, objective)
+    foreign = await client.post(
+        path("evidence"),
+        json={
+            "title": "Ajeno",
+            "activity_id": activity["id"],
+            "kind": "file",
+            "document_id": "doc-e2",
+        },
+    )
+    assert foreign.status_code == 404
+    created = await client.post(
+        path("evidence"),
+        json={
+            "title": "Privado",
+            "activity_id": activity["id"],
+            "kind": "file",
+            "document_id": "doc-e1",
+        },
+    )
+    assert created.status_code == 201
+    body = created.json()
+    assert body["document_id"] == "doc-e1"
+    assert body["url"] is None
+    assert "storage_key" not in body
+    both = await client.post(
+        path("evidence"),
+        json={
+            "title": "Ambos",
+            "activity_id": activity["id"],
+            "kind": "file",
+            "document_id": "doc-e1",
+            "url": "https://example.test/ambos",
+        },
+    )
+    assert both.status_code == 422
+    as_link = await client.post(
+        path("evidence"),
+        json={
+            "title": "Enlace",
+            "activity_id": activity["id"],
+            "kind": "link",
+            "document_id": "doc-e1",
+        },
+    )
+    assert as_link.status_code == 422

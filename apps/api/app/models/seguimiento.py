@@ -137,12 +137,23 @@ class Activity(Editable, Base):
 
 
 class Evidence(Record, Base):
-    """Append-only references; no binary upload, storage keys or remote fetching."""
+    """Append-only. Un enlace guarda URL; un archivo privado guarda document_id.
+
+    Las referencias HTTP(S) ya registradas se conservan. La clave de almacenamiento
+    vive en documents, no aquí.
+    """
 
     __tablename__ = "evidence_references"
     __table_args__ = (
         ForeignKeyConstraint(["activity_id", "cycle_id"], ["activities.id", "activities.cycle_id"]),
         CheckConstraint("kind IN ('link', 'file', 'photograph', 'video')"),
+        CheckConstraint(
+            "(kind = 'link' AND url IS NOT NULL AND document_id IS NULL) OR "
+            "(kind IN ('file', 'photograph', 'video') AND "
+            "((url IS NOT NULL AND document_id IS NULL) OR "
+            "(url IS NULL AND document_id IS NOT NULL)))",
+            name="ck_evidence_references_source",
+        ),
     )
 
     cycle_id: Mapped[str] = mapped_column(
@@ -151,7 +162,8 @@ class Evidence(Record, Base):
     activity_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
-    url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    url: Mapped[str | None] = mapped_column(String(2048))
+    document_id: Mapped[str | None] = mapped_column(ForeignKey("documents.id"), index=True)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
 

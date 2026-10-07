@@ -1,4 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import { ExternalLink, FileText, Paperclip } from 'lucide-react'
+import { requestDocumentAccess } from '../lib/documents'
 import { formatDateTime } from '../lib/expediente'
 import { httpUrl, type Activity, type Evidence, type Objective } from '../lib/seguimiento'
 import styles from './seguimiento.module.css'
@@ -32,26 +36,69 @@ export function ObjectiveReviewContext({ objective, area, ambition, activities, 
 }
 
 /** Referencias externas: nunca cargar ni incrustar automáticamente contenido remoto. */
-export function ActivityEvidence({ activity, evidence }: { activity: Activity; evidence: Evidence[] }) {
+export function ActivityEvidence({ activity, evidence, entrepreneurshipId }: {
+  activity: Activity
+  evidence: Evidence[]
+  entrepreneurshipId?: string
+}) {
   const related = evidence.filter((item) => item.activity_id === activity.id && item.cycle_id === activity.cycle_id)
   return <section className={styles.evidenceReview} aria-label={`Evidencias de ${activity.title}`}>
     <div className={styles.row}><h5><Paperclip size={19} aria-hidden="true" /> Evidencias de esta actividad</h5><span className={styles.badge}>{related.length} {related.length === 1 ? 'registrada' : 'registradas'}</span></div>
     <p className={styles.evidenceHelp}>Respaldo del trabajo registrado. Las referencias se abren en una pestaña nueva.</p>
     {related.length === 0 ? <p className={styles.evidenceEmpty}>Esta actividad todavía no tiene evidencias registradas.</p> : <ul className={styles.evidenceReviewList}>
       {related.map((item) => {
+        const privateFile = Boolean(item.document_id)
         const url = httpUrl(item.url)
         return <li key={item.id} className={styles.evidenceReviewCard}>
           <div className={styles.evidenceIcon}><FileText size={25} aria-hidden="true" /></div>
           <div className={styles.evidenceBody}>
-            <span className={styles.evidenceKind}>{EVIDENCE_LABEL[item.kind] ?? 'Evidencia'} · referencia externa</span>
+            <span className={styles.evidenceKind}>{EVIDENCE_LABEL[item.kind] ?? 'Evidencia'} · {privateFile ? 'archivo privado' : 'referencia externa'}</span>
             <h6>{item.title}</h6>
             <p className={styles.reviewDescription}>{item.description || 'Sin descripción de la evidencia registrada.'}</p>
             <p className={styles.evidenceDate}>Registrada: {formatDateTime(item.created_at)}</p>
-            {'url' in url ? <a className={styles.evidenceOpen} href={url.url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir evidencia: ${item.title} (pestaña nueva)`}>Abrir evidencia <ExternalLink size={16} aria-hidden="true" /></a> : <p className={styles.evidenceEmpty}>Referencia no disponible: URL inválida.</p>}
-            <details className={styles.evidenceAddress}><summary>Ver URL completa</summary><p className={styles.evidenceUrl}>{item.url}</p></details>
+            {privateFile ? (
+              entrepreneurshipId && item.document_id ? (
+                <PrivateDocumentButton entrepreneurshipId={entrepreneurshipId} documentId={item.document_id} title={item.title} />
+              ) : (
+                <p className={styles.evidenceEmpty}>Archivo privado. Se entrega solo con autorización del proyecto.</p>
+              )
+            ) : (
+              <>
+                {'url' in url ? <a className={styles.evidenceOpen} href={url.url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir evidencia: ${item.title} (pestaña nueva)`}>Abrir evidencia <ExternalLink size={16} aria-hidden="true" /></a> : <p className={styles.evidenceEmpty}>Referencia no disponible: URL inválida.</p>}
+                <details className={styles.evidenceAddress}><summary>Ver URL completa</summary><p className={styles.evidenceUrl}>{item.url}</p></details>
+              </>
+            )}
           </div>
         </li>
       })}
     </ul>}
   </section>
+}
+
+export function PrivateDocumentButton({ entrepreneurshipId, documentId, title }: {
+  entrepreneurshipId: string
+  documentId: string
+  title: string
+}) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+  async function prepare() {
+    setPending(true)
+    setError(null)
+    const result = await requestDocumentAccess(entrepreneurshipId, documentId)
+    setPending(false)
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+    setUrl(result.data.url)
+  }
+  if (url) {
+    return <a className={styles.evidenceOpen} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir archivo privado: ${title} (pestaña nueva)`}>Abrir archivo privado <ExternalLink size={16} aria-hidden="true" /></a>
+  }
+  return <>
+    <button type="button" className={styles.evidenceOpen} onClick={() => void prepare()} disabled={pending}>{pending ? 'Preparando enlace…' : 'Preparar enlace privado'}</button>
+    {error ? <p className={styles.evidenceEmpty} role="alert">{error}</p> : <p className={styles.evidenceHelp}>El enlace se pide al abrirlo y caduca. No se muestra el archivo aquí.</p>}
+  </>
 }

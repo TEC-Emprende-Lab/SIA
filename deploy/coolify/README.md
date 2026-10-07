@@ -37,6 +37,11 @@ Configurar solo como variables de runtime:
 | `SIA_ENVIRONMENT` | `production` |
 | `SIA_DATABASE_URL` | URL interna de PostgreSQL con prefijo `postgresql+asyncpg://` |
 | `SIA_REDIS_URL` | URL interna de Redis, terminada en `/0` |
+| `SIA_STORAGE_ENDPOINT` | Opcional. Endpoint S3 de R2 o MinIO. Vacío: la carga de archivos responde 503. |
+| `SIA_STORAGE_BUCKET` | Opcional. Bucket privado. |
+| `SIA_STORAGE_ACCESS_KEY` | Opcional. Clave de acceso del bucket. |
+| `SIA_STORAGE_SECRET_KEY` | Opcional. Secreto del bucket. No commitearlo. |
+| `SIA_STORAGE_REGION` | Opcional. `auto` en R2; `us-east-1` en MinIO local. |
 | `SIA_CLERK_JWKS_URL` | JWKS público de la instancia Clerk |
 | `SIA_CLERK_ISSUER` | Issuer de la instancia Clerk |
 | `SIA_CLERK_AUDIENCE` | `sia` |

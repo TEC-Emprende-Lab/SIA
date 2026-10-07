@@ -142,6 +142,7 @@ async def _compose(
                 "title": e.title,
                 "kind": e.kind,
                 "url": e.url,
+                "document_id": e.document_id,
             }
             for e in evidence
         ],
