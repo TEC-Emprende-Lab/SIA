@@ -1,5 +1,22 @@
 # Consolidacion de decisiones
 
+## Formulario de informes — 2026-10-07
+
+- US-PRO-004 / US-PM-003; contratos actuales de `app/schemas/informes.py`.
+- Acciones explícitas de guardar, aprobar o crear corrección. La revisión humana
+  solo se pide al aprobar; se mantiene la exigencia de guardar la redacción antes.
+- Valida orden de fechas y observaciones no vacías. Se siguen permitiendo períodos
+  de un día y redacción vacía: no se inventan campos obligatorios ni una plantilla.
+- Tras guardar se usa la respuesta de la API y su revisión nueva. Un conflicto
+  conserva el texto, explica cómo recuperarse y no reintenta escrituras automáticamente.
+- Validación local: lint, typecheck y suite de web completa (28 grupos) correctos.
+  Las pruebas existentes requieren crear su directorio temporal `/tmp/opencode`
+  antes de ejecutarlas en una instalación limpia; no se modificaron esas pruebas.
+- Aceptación comprobada en pruebas de formulario/solicitudes: revisión humana,
+  cambios sin guardar, revisión esperada, corrección vinculada sin mutar la aprobada,
+  errores de red/422/409 y preservación de las fuentes. No certifica el recorrido
+  autenticado en staging ni la generación de PDF.
+
 ## Pulido de fuentes de informes — 2026-10-07
 
 - US-PRO-004 / US-PM-003; reglas de `docs/00-nucleo-comun/ia-e-informes.md`.
