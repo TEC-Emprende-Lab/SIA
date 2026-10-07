@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     rate_limit_requests: int = 60
     rate_limit_window_seconds: int = 60
     storage_endpoint: str = ""
+    storage_public_endpoint: str = ""
     storage_bucket: str = ""
     storage_access_key: str = ""
     storage_secret_key: str = ""

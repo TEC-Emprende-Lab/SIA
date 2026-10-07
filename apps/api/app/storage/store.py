@@ -54,6 +54,7 @@ def get_object_store() -> ObjectStore:
 
     return S3ObjectStore(
         endpoint=settings.storage_endpoint.strip(),
+        public_endpoint=settings.storage_public_endpoint.strip(),
         bucket=settings.storage_bucket.strip(),
         access_key=settings.storage_access_key.strip(),
         secret_key=settings.storage_secret_key.strip(),

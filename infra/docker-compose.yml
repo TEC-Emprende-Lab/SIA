@@ -70,6 +70,7 @@ services:
       SIA_CLERK_AUDIENCE: ${SIA_CLERK_AUDIENCE:-sia}
       SIA_CLERK_SECRET_KEY: ${SIA_CLERK_SECRET_KEY:-}
       SIA_STORAGE_ENDPOINT: http://minio:9000
+      SIA_STORAGE_PUBLIC_ENDPOINT: http://localhost:9000
       SIA_STORAGE_BUCKET: sia-private
       SIA_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER:-sia-local}
       SIA_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-local-development-only}
