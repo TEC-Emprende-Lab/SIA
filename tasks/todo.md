@@ -1,5 +1,50 @@
 # Consolidacion de decisiones
 
+## Estado informativo de Equipo — 2026-10-07
+
+- Corrección de presentación del alcance actual; sin nueva capacidad funcional.
+  Referencias: `vision-y-alcance.md` (interfaz comprensible) y
+  `actores-roles-y-permisos.md` (gestión por alcance). US específica de Equipo: TBD.
+- Emprendedor ve un aviso de disponibilidad en Equipo en lugar de una vista vacía.
+  Gestor recibe el mismo límite actual en lenguaje de uso, sin exponer detalles de API.
+  Coordinadora ve explícitamente que el listado contiene solo asignaciones de esta visita.
+- Se conserva el diseño existente, el comportamiento reutilizable de AssignmentPanel,
+  las peticiones y la autorización backend. No se inventa un listado de integrantes.
+- Verificación estática por rol, lint y typecheck correctos; la suite de web pasó
+  con este bloque y `pnpm --filter @sia/web build` compiló correctamente.
+  Validación visual autenticada en staging pendiente de despliegue
+  y de acceso funcional al navegador.
+
+## Formulario de informes — 2026-10-07
+
+- US-PRO-004 / US-PM-003; contratos actuales de `app/schemas/informes.py`.
+- Acciones explícitas de guardar, aprobar o crear corrección. La revisión humana
+  solo se pide al aprobar; se mantiene la exigencia de guardar la redacción antes.
+- Valida orden de fechas y observaciones no vacías. Se siguen permitiendo períodos
+  de un día y redacción vacía: no se inventan campos obligatorios ni una plantilla.
+- Tras guardar se usa la respuesta de la API y su revisión nueva. Un conflicto
+  conserva el texto, explica cómo recuperarse y no reintenta escrituras automáticamente.
+- Validación local: lint, typecheck y suite de web completa (28 grupos) correctos.
+  Las pruebas existentes requieren crear su directorio temporal `/tmp/opencode`
+  antes de ejecutarlas en una instalación limpia; no se modificaron esas pruebas.
+- Aceptación comprobada en pruebas de formulario/solicitudes: revisión humana,
+  cambios sin guardar, revisión esperada, corrección vinculada sin mutar la aprobada,
+  errores de red/422/409 y preservación de las fuentes. No certifica el recorrido
+  autenticado en staging ni la generación de PDF.
+
+## Pulido de fuentes de informes — 2026-10-07
+
+- US-PRO-004 / US-PM-003; reglas de `docs/00-nucleo-comun/ia-e-informes.md`.
+- La ventana de Informes presenta secciones en español, fechas de las fuentes,
+  referencias consultables y enlaces HTTP(S) de evidencia, desde la composición
+  conservada en cada versión. No consulta ni recompone los registros originales.
+- Conserva saltos de línea de la redacción y muestra estados explícitos sin fuentes.
+- Verificación local: `pnpm --filter @sia/web exec node tests/reports.mjs` comprueba
+  instantánea congelada, escape de texto, referencias, fechas y protocolos de URL.
+- No modifica API, permisos, versiones aprobadas, PDF, almacenamiento privado ni finanzas.
+- Validación visual autenticada en staging pendiente; la herramienta de navegador
+  agotó el tiempo de espera. Los cambios locales aún no están desplegados.
+
 ## Corrección de staging — 2026-10-06
 
 La afirmación previa de que no existía un staging separado quedó desactualizada. El

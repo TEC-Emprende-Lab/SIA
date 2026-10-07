@@ -109,7 +109,12 @@ export function ProjectWorkspace() {
     if (route.section === 'Reuniones') return <><ProjectHeading eyebrow="Conversaciones que impulsan" title="Reuniones" /><MeetingsPanel cycleId={project.cycle.id} program={project.enrollment.program} /></>
     if (route.section === 'Chat') return <><ProjectHeading eyebrow="Cerca, incluso a la distancia" title="Chat" /><ChannelsPanel entrepreneurshipId={project.entrepreneurship.id} cycleId={project.cycle.id} /></>
     if (route.section === 'Alertas') return <><ProjectHeading eyebrow="Lo que necesita atención" title="Alertas" /><BandejaView /></>
-    if (route.section === 'Equipo') return <><ProjectHeading eyebrow="Personas que acompañan" title="Equipo" /><AssignmentPanel scope={{ kind: 'cycle', id: project.cycle.id }} /></>
+    if (route.section === 'Equipo') return <>
+      <ProjectHeading eyebrow="Personas que acompañan" title="Equipo" />
+      {me.role === 'Emprendedor'
+        ? <section className="panel empty"><p>La consulta de integrantes del equipo aún no está disponible en esta pantalla.</p></section>
+        : <AssignmentPanel scope={{ kind: 'cycle', id: project.cycle.id }} />}
+    </>
     if (route.section === 'Informes') return <ReportsView cycleId={project.cycle.id} focusId={route.id} />
     return <><ProjectHeading eyebrow="Recursos para avanzar" title={route.section} /><section className="panel"><p className="muted">Las reglas y el backend de finanzas y compras están pendientes de definición. No se muestran datos de demostración.</p></section></>
   }
