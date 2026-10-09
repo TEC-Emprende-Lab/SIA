@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, FileText, History, LayoutGrid, List, Plus, Box, Sparkles } from 'lucide-react'
 import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
-import { ActivityEvidence, ObjectiveReviewContext } from './tracking-review'
+import { ActivityEvidence, ObjectiveReviewContext, PrivateDocumentButton } from './tracking-review'
 import { SummaryCommunication } from './summary-communication'
 import { TrackingKanban, type ObjectiveDropAction, type ObjectiveDecision } from './tracking-kanban'
 import type { ProjectSection } from '../lib/project-workspace'
@@ -13,6 +13,7 @@ import { useMe } from './authenticated-shell'
 import shell from './expediente.module.css'
 import styles from './seguimiento.module.css'
 import { formatDateTime, trimmedName } from '../lib/expediente'
+import { uploadPrivateDocument } from '../lib/documents'
 import {
   canSubmit,
   canValidate,
@@ -246,7 +247,7 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
 
   const bundle = state.data
   const areas = [...bundle.canvas.areas].sort((left, right) => left.position - right.position)
-  const shared = { cycleId, pendingId, actionError, run, role: me.role, userId: me.id }
+  const shared = { cycleId, entrepreneurshipId, pendingId, actionError, run, role: me.role, userId: me.id }
 
   if (view === 'summary') {
     const upcoming = bundle.activities.filter((item) => !item.completed_at).sort((left, right) => left.ends_on.localeCompare(right.ends_on)).slice(0, 5)
@@ -313,6 +314,7 @@ function FormDialog({ title, children, pending, error, actionId, trigger, primar
 
 type Actions = {
   cycleId: string
+  entrepreneurshipId?: string
   pendingId: string | null
   actionError: ActionError
   role: string
@@ -444,6 +446,7 @@ function ObjectiveSection({
   actionError,
   role,
   userId,
+  entrepreneurshipId,
   viewMode,
   setViewMode,
   board,
@@ -552,11 +555,12 @@ function ObjectiveSection({
                 actionError={actionError}
                 role={role}
                 userId={userId}
+                entrepreneurshipId={entrepreneurshipId}
                 pendingDecision={pendingDecision}
                 run={run}
               />
             ))}</DialogContent></Dialog>
-      <Dialog open={Boolean(selectedActivity)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedActivity('') }}><DialogContent className={styles.activityDialog}><DialogHeader><DialogTitle>{activities.find((item) => item.id === selectedActivity)?.title ?? 'Actividad'}</DialogTitle><DialogDescription>Avance y evidencias vinculadas a la actividad.</DialogDescription></DialogHeader>{activities.filter((item) => item.id === selectedActivity).map((activity) => <ActivityCard key={activity.id} cycleId={cycleId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />)}</DialogContent></Dialog>
+      <Dialog open={Boolean(selectedActivity)} onOpenChange={(open) => { if (!open && !pendingId) setSelectedActivity('') }}><DialogContent className={styles.activityDialog}><DialogHeader><DialogTitle>{activities.find((item) => item.id === selectedActivity)?.title ?? 'Actividad'}</DialogTitle><DialogDescription>Avance y evidencias vinculadas a la actividad.</DialogDescription></DialogHeader>{activities.filter((item) => item.id === selectedActivity).map((activity) => <ActivityCard key={activity.id} cycleId={cycleId} entrepreneurshipId={entrepreneurshipId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />)}</DialogContent></Dialog>
       {objectives.length > 0 && filtered.length === 0 ? <p className={shell.meta}>No hay coincidencias. Cambia los filtros o la búsqueda.</p> : null}
       <p className="small muted">Las columnas del Kanban reflejan datos reales: los objetivos por su estado de validación y las actividades por su fecha de fin y su finalización manual y reversible. No hay estados intermedios de actividad: siguen pendientes de definición.</p>
     </>
@@ -576,6 +580,7 @@ function ObjectiveCard({
   actionError,
   role,
   userId,
+  entrepreneurshipId,
   pendingDecision,
   run,
 }: Actions & {
@@ -598,7 +603,7 @@ function ObjectiveCard({
           <p className={styles.evidenceHelp}>Todas las actividades de este objetivo y las evidencias que las respaldan, sin los filtros de la lista.</p>
           {activities.length === 0 && <p className={styles.evidenceEmpty}>No hay actividades registradas para este objetivo.</p>}
           {activities.map((activity) => (
-            <ActivityCard key={activity.id} cycleId={cycleId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />
+            <ActivityCard key={activity.id} cycleId={cycleId} entrepreneurshipId={entrepreneurshipId} activity={activity} evidence={evidence.filter((item) => item.activity_id === activity.id)} pendingId={pendingId} actionError={actionError} run={run} />
           ))}
         </section>
         <FormDialog title="Nueva actividad" pending={pendingId === `activity-new-${objective.id}`} error={actionError} actionId={`activity-new-${objective.id}`}>
@@ -791,6 +796,7 @@ function ObjectiveForm({
 
 function ActivityCard({
   cycleId,
+  entrepreneurshipId,
   activity,
   evidence,
   pendingId,
@@ -798,6 +804,7 @@ function ActivityCard({
   run,
 }: {
   cycleId: string
+  entrepreneurshipId?: string
   activity: Activity
   evidence: Evidence[]
   pendingId: string | null
@@ -816,7 +823,7 @@ function ActivityCard({
       </p>
       <p className={styles.reviewDescription}>{activity.description || 'Sin descripción de la actividad registrada.'}</p>
       {activity.completed_at && <p className={styles.evidenceHelp}>Marcada como completada: {formatDateTime(activity.completed_at)}</p>}
-      <ActivityEvidence activity={activity} evidence={evidence} />
+      <ActivityEvidence activity={activity} evidence={evidence} entrepreneurshipId={entrepreneurshipId} />
       <div className={shell.actions}>
         <button
           type="button"
@@ -964,69 +971,125 @@ function ActivityForm({
   )
 }
 
-function EvidenceSection({ cycleId, evidence, activities, focusId, navigate, pendingId, actionError, run }: Actions & { evidence: Evidence[]; activities: Activity[]; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }) {
+function EvidenceSection({ cycleId, entrepreneurshipId, evidence, activities, focusId, navigate, pendingId, actionError, run }: Actions & { evidence: Evidence[]; activities: Activity[]; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }) {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(focusId ?? '')
   const [activityId, setActivityId] = useState(activities[0]?.id ?? '')
   const current = evidence.find((item) => item.id === selected)
   const visible = evidence.filter((item) => item.title.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es')))
   return <>
-    <ProjectHeading eyebrow="El respaldo de cada paso" title="Evidencias" description="El trabajo del proyecto, documentado y conectado con sus actividades." action={<FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new"><label className={styles.field}>Actividad<select value={activityId} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>{activityId ? <EvidenceForm id="evidence-new" pending={pendingId === 'evidence-new'} error={actionError} onSubmit={(body) => run('evidence-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidence, { method: 'POST', body: { ...body, activity_id: activityId } }).then(asVoid))} /> : <p>Registra primero una actividad.</p>}<p className="small muted">Los archivos privados están pendientes de integración. Se registran referencias por URL.</p></FormDialog>} />
+    <ProjectHeading eyebrow="El respaldo de cada paso" title="Evidencias" description="El trabajo del proyecto, documentado y conectado con sus actividades." action={<FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new"><label className={styles.field}>Actividad<select value={activityId} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>{activityId ? <EvidenceForm id="evidence-new" entrepreneurshipId={entrepreneurshipId} pending={pendingId === 'evidence-new'} error={actionError} onSubmit={(body) => run('evidence-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidence, { method: 'POST', body: { ...body, activity_id: activityId } }).then(asVoid))} /> : <p>Registra primero una actividad.</p>}<p className="small muted">Un enlace sigue siendo una URL. Un archivo queda privado y solo se abre con autorización.</p></FormDialog>} />
     <div className="filters"><span className="muted">{evidence.length} evidencias en el proyecto</span><label className="search-box"><Search size={16} /><input aria-label="Buscar evidencias" placeholder="Buscar evidencia…" value={query} onChange={(event) => setQuery(event.target.value)} /></label></div>
     <div className="evidence-grid">{visible.map((item) => <button className="evidence-card" key={item.id} onClick={() => setSelected(item.id)}><div className={`evidence-cover ${item.kind === 'link' ? 'blue' : 'sand'}`}><FileText size={38} strokeWidth={1} /><span>{item.kind === 'link' ? 'ENLACE' : item.kind === 'file' ? 'DOCUMENTO' : item.kind === 'photograph' ? 'FOTOGRAFÍA' : 'VIDEO'}</span></div><div><h3>{item.title}</h3><p>{activities.find((activity) => activity.id === item.activity_id)?.title}</p><footer>{formatDateTime(item.created_at)}</footer></div></button>)}</div>
     {visible.length === 0 && <div className="empty"><h3>Sin evidencias para mostrar</h3><p>Agrega un respaldo o cambia el texto de búsqueda.</p></div>}
-    <Dialog open={Boolean(current)} onOpenChange={(open) => { if (!open) setSelected('') }}><DialogContent><DialogHeader><DialogTitle>{current?.title}</DialogTitle><DialogDescription>Evidencia vinculada a una actividad del proyecto.</DialogDescription></DialogHeader>{current && <><p className="muted small">{formatDateTime(current.created_at)}</p><div className="document-preview"><FileText size={28} /><h3>Contenido de referencia</h3><p>{current.description || 'Sin descripción registrada.'}</p></div><a className="text-link" href={current.url} target="_blank" rel="noopener noreferrer">Abrir referencia</a><ProjectLink onClick={() => navigate?.('Objetivos y actividades', current.activity_id)}>Ver actividad de origen</ProjectLink></>}</DialogContent></Dialog>
+    <Dialog open={Boolean(current)} onOpenChange={(open) => { if (!open) setSelected('') }}><DialogContent><DialogHeader><DialogTitle>{current?.title}</DialogTitle><DialogDescription>Evidencia vinculada a una actividad del proyecto.</DialogDescription></DialogHeader>{current && <><p className="muted small">{formatDateTime(current.created_at)}</p><div className="document-preview"><FileText size={28} /><h3>Contenido de referencia</h3><p>{current.description || 'Sin descripción registrada.'}</p></div>{current.document_id && entrepreneurshipId ? <PrivateDocumentButton entrepreneurshipId={entrepreneurshipId} documentId={current.document_id} title={current.title} /> : current.url ? <a className="text-link" href={current.url} target="_blank" rel="noopener noreferrer">Abrir referencia</a> : <p className="small muted">Archivo privado. Se entrega solo con autorización del proyecto.</p>}<ProjectLink onClick={() => navigate?.('Objetivos y actividades', current.activity_id)}>Ver actividad de origen</ProjectLink></>}</DialogContent></Dialog>
   </>
 }
 
+type EvidenceDraft =
+  | { title: string; description: string; kind: 'link'; url: string }
+  | { title: string; description: string; kind: 'file' | 'photograph' | 'video'; document_id: string }
+
 function EvidenceForm({
   id,
+  entrepreneurshipId,
   pending,
   error,
   onSubmit,
 }: {
   id: string
+  entrepreneurshipId?: string
   pending: boolean
   error: ActionError
-  onSubmit: (body: { title: string; description: string; kind: 'link'; url: string }) => void
+  onSubmit: (body: EvidenceDraft) => void
 }) {
   const [localError, setLocalError] = useState<string | null>(null)
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [source, setSource] = useState<'link' | 'file'>('link')
+  const [uploading, setUploading] = useState(false)
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
     const name = trimmedName(field(data, 'title'))
-    const url = httpUrl(field(data, 'url'))
     if ('error' in name) {
       setLocalError(name.error)
       return
     }
-    if ('error' in url) {
-      setLocalError(url.error)
+    const description = field(data, 'description').trim()
+    if (source === 'link') {
+      const url = httpUrl(field(data, 'url'))
+      if ('error' in url) {
+        setLocalError(url.error)
+        return
+      }
+      setLocalError(null)
+      onSubmit({ title: name.name, description, kind: 'link', url: url.url })
+      return
+    }
+    if (!entrepreneurshipId) {
+      setLocalError('No se puede adjuntar un archivo sin el emprendimiento del proyecto.')
+      return
+    }
+    const selected = data.get('file')
+    if (!(selected instanceof File) || selected.size === 0) {
+      setLocalError('El archivo está vacío.')
+      return
+    }
+    const kind = field(data, 'private_kind')
+    if (kind !== 'file' && kind !== 'photograph' && kind !== 'video') {
+      setLocalError('Elige si el archivo es documento, fotografía o video.')
       return
     }
     setLocalError(null)
-    onSubmit({
-      title: name.name,
-      description: field(data, 'description').trim(),
-      kind: 'link',
-      url: url.url,
-    })
+    setUploading(true)
+    const uploaded = await uploadPrivateDocument(entrepreneurshipId, selected)
+    setUploading(false)
+    if (!uploaded.ok) {
+      setLocalError(uploaded.message)
+      return
+    }
+    onSubmit({ title: name.name, description, kind, document_id: uploaded.data.id })
   }
+  const busy = pending || uploading
   return (
-    <form className={shell.form} onSubmit={handleSubmit}>
-      <h4>Nueva evidencia por URL</h4>
+    <form className={shell.form} onSubmit={(event) => void handleSubmit(event)}>
+      <h4>Nueva evidencia</h4>
       <label className={styles.field}>
         Título
-        <input name="title" required maxLength={200} disabled={pending} />
+        <input name="title" required maxLength={200} disabled={busy} />
       </label>
       <label className={styles.field}>
         Descripción
-        <textarea name="description" maxLength={20000} disabled={pending} />
+        <textarea name="description" maxLength={20000} disabled={busy} />
       </label>
       <label className={styles.field}>
-        URL
-        <input name="url" type="url" required disabled={pending} />
+        Tipo de respaldo
+        <select name="source" value={source} disabled={busy} onChange={(event) => setSource(event.target.value === 'file' ? 'file' : 'link')}>
+          <option value="link">Enlace</option>
+          <option value="file">Archivo privado</option>
+        </select>
       </label>
+      {source === 'link' ? (
+        <label className={styles.field}>
+          URL
+          <input name="url" type="url" required disabled={busy} />
+        </label>
+      ) : (
+        <>
+          <label className={styles.field}>
+            Clase
+            <select name="private_kind" defaultValue="file" disabled={busy}>
+              <option value="file">Documento</option>
+              <option value="photograph">Fotografía</option>
+              <option value="video">Video</option>
+            </select>
+          </label>
+          <label className={styles.field}>
+            Archivo
+            <input name="file" type="file" required disabled={busy} />
+          </label>
+          <p className="small muted">El tipo y el tamaño permitidos siguen sin definirse. El archivo no se muestra hasta pedirlo.</p>
+        </>
+      )}
       {localError ? (
         <p className={shell.formError} role="alert">
           {localError}
@@ -1035,8 +1098,8 @@ function EvidenceForm({
         <ErrorLine id={id} error={error} />
       )}
       <div className={shell.actions}>
-        <button className={shell.button} type="submit" disabled={pending}>
-          {pending ? 'Guardando…' : 'Registrar evidencia'}
+        <button className={shell.button} type="submit" disabled={busy}>
+          {busy ? 'Guardando…' : 'Registrar evidencia'}
         </button>
       </div>
     </form>

@@ -11,6 +11,7 @@ from app.models.comunicacion import (
     Notification,
     ReadReceipt,
 )
+from app.models.document import Document
 from app.models.expediente import (
     Entrepreneurship,
     EntrepreneurshipAssignment,
@@ -49,6 +50,7 @@ __all__ = [
     "CanvasArea",
     "CycleCanvas",
     "Diagnostic",
+    "Document",
     "Evidence",
     "Objective",
     "ProgramCanvas",

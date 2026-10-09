@@ -86,9 +86,10 @@ export function SignedOutNotice() {
         <p className={styles.guestLead}>
           Un espacio para organizar el trabajo de cada emprendimiento, sus acuerdos y los aprendizajes de cada ciclo.
         </p>
-        <div className={styles.guestSteps} aria-label="Cómo empezar">
-          <span>1. Inicia sesión con Google</span>
-          <span>2. Abre tu proyecto autorizado</span>
+        <div className={styles.guestSteps}>
+          <Link className={styles.guestAction} href="/sign-in">Iniciar sesión</Link>
+          <Link className={`${styles.guestAction} ${styles.guestActionSecondary}`} href="/sign-up">Registrarse</Link>
+          <Link className={`${styles.guestAction} ${styles.guestActionSecondary}`} href="/sign-in?redirect_url=/expediente">Abrir proyecto autorizado</Link>
         </div>
       </section>
       <aside className={styles.guestCard}>

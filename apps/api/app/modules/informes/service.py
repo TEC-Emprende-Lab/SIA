@@ -8,14 +8,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.service import write_audit
+from app.core.config import settings
 from app.models.comunicacion import Agreement, Meeting, Minutes
 from app.models.informes import TechnicalReport
 from app.models.queue import Job
 from app.models.seguimiento import Activity, Evidence, Objective
 from app.models.user import User
 from app.modules.informes import policy
+from app.modules.informes.pdf import render_report_pdf
 from app.queue import service as queue
 from app.schemas import informes as s
+from app.storage.store import ObjectStore, StorageNotConfigured, get_object_store
 
 PDF_JOB = "informe.pdf"
 
@@ -142,6 +145,7 @@ async def _compose(
                 "title": e.title,
                 "kind": e.kind,
                 "url": e.url,
+                "document_id": e.document_id,
             }
             for e in evidence
         ],
@@ -302,16 +306,56 @@ async def correct_report(
 Storage = Callable[[TechnicalReport], Awaitable[str]]
 
 
-async def _pdf_unconfigured(_report: TechnicalReport) -> str:
-    # TODO(TBD): render de PDF + almacenamiento privado R2 con URL firmada.
-    raise NotImplementedError("Generación/almacenamiento de PDF pendiente (R2)")
+def report_object_key(report: TechnicalReport) -> str:
+    return f"reports/{report.entrepreneurship_id}/{report.id}.pdf"
+
+
+async def store_report_pdf(report: TechnicalReport, store: ObjectStore | None = None) -> str:
+    """Guarda el PDF de la instantánea. Devuelve la clave; no una URL."""
+    target = get_object_store() if store is None else store
+    key = report_object_key(report)
+    try:
+        await target.put(key, render_report_pdf(report), "application/pdf")
+    except StorageNotConfigured as exc:
+        raise StorageNotConfigured("Almacenamiento privado no configurado") from exc
+    return key
+
+
+async def issue_pdf_access(
+    db: AsyncSession,
+    actor: User,
+    cycle_id: str,
+    report_id: str,
+    store: ObjectStore,
+) -> s.ReportPdfAccessOut:
+    await policy.cycle_scope(db, actor, cycle_id)
+    report = await _get(db, cycle_id, report_id)
+    if report.pdf_storage_key is None:
+        raise HTTPException(404, "El PDF todavía no está generado")
+    expires_in = settings.storage_signed_url_seconds
+    try:
+        url = await store.signed_get_url(report.pdf_storage_key, expires_seconds=expires_in)
+    except StorageNotConfigured as exc:
+        raise HTTPException(503, "Almacenamiento privado no configurado") from exc
+    except KeyError as exc:
+        raise HTTPException(404, "El PDF no está disponible") from exc
+    await write_audit(
+        db,
+        actor.id,
+        "report.pdf_access",
+        "TechnicalReport",
+        report.id,
+        after={"expires_in": expires_in},
+    )
+    await db.commit()
+    return s.ReportPdfAccessOut(url=url, expires_in=expires_in)
 
 
 async def generate_pending_pdf(
     db: AsyncSession,
     worker_id: str,
     *,
-    store: Storage = _pdf_unconfigured,
+    store: Storage = store_report_pdf,
     now: datetime | None = None,
 ) -> Job | None:
     """Un ciclo del worker: reclama un ``informe.pdf``, genera y almacena el PDF

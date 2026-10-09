@@ -263,6 +263,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/entrepreneurships/{entrepreneurship_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Document */
+        post: operations["post_document_entrepreneurships__entrepreneurship_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entrepreneurships/{entrepreneurship_id}/documents/{document_id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Document Access */
+        get: operations["get_document_access_entrepreneurships__entrepreneurship_id__documents__document_id__access_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cycles/{cycle_id}/seguimiento/summary": {
         parameters: {
             query?: never;
@@ -907,6 +941,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cycles/{cycle_id}/reports/{report_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Report Pdf */
+        get: operations["get_report_pdf_cycles__cycle_id__reports__report_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cycles/{cycle_id}/reports/{report_id}/approval": {
         parameters: {
             query?: never;
@@ -1216,6 +1267,11 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /** Body_post_document_entrepreneurships__entrepreneurship_id__documents_post */
+        Body_post_document_entrepreneurships__entrepreneurship_id__documents_post: {
+            /** File */
+            file: string;
+        };
         /** CanvasOut */
         CanvasOut: {
             /** Id */
@@ -1345,6 +1401,36 @@ export interface components {
             /** Supersedes Id */
             supersedes_id?: string | null;
         };
+        /** DocumentAccessOut */
+        DocumentAccessOut: {
+            /** Url */
+            url: string;
+            /** Expires In */
+            expires_in: number;
+        };
+        /**
+         * DocumentOut
+         * @description Metadatos del archivo. La clave de almacenamiento no se publica.
+         */
+        DocumentOut: {
+            /** Id */
+            id: string;
+            /** Entrepreneurship Id */
+            entrepreneurship_id: string;
+            /** Name */
+            name: string;
+            /** Mime */
+            mime: string;
+            /** Size */
+            size: number;
+            /** Uploaded By */
+            uploaded_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** EntrepreneurshipCreate */
         EntrepreneurshipCreate: {
             /** Name */
@@ -1384,11 +1470,10 @@ export interface components {
              * @enum {string}
              */
             kind: "link" | "file" | "photograph" | "video";
-            /**
-             * Url
-             * Format: uri
-             */
-            url: string;
+            /** Url */
+            url?: string | null;
+            /** Document Id */
+            document_id?: string | null;
         };
         /** EvidenceOut */
         EvidenceOut: {
@@ -1405,7 +1490,9 @@ export interface components {
             /** Kind */
             kind: string;
             /** Url */
-            url: string;
+            url: string | null;
+            /** Document Id */
+            document_id: string | null;
             /** Created By */
             created_by: string;
             /**
@@ -1884,8 +1971,6 @@ export interface components {
             reviewed_by: string | null;
             /** Approved At */
             approved_at: string | null;
-            /** Pdf Storage Key */
-            pdf_storage_key: string | null;
             /** Pdf Generated At */
             pdf_generated_at: string | null;
             /** Created By */
@@ -1897,6 +1982,16 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * ReportPdfAccessOut
+         * @description Enlace temporal. No incluye la clave del objeto.
+         */
+        ReportPdfAccessOut: {
+            /** Url */
+            url: string;
+            /** Expires In */
+            expires_in: number;
         };
         /** ReportUpdate */
         ReportUpdate: {
@@ -2678,6 +2773,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_document_entrepreneurships__entrepreneurship_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                entrepreneurship_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_document_entrepreneurships__entrepreneurship_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_access_entrepreneurships__entrepreneurship_id__documents__document_id__access_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                entrepreneurship_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentAccessOut"];
                 };
             };
             /** @description Validation Error */
@@ -4561,6 +4727,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_pdf_cycles__cycle_id__reports__report_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportPdfAccessOut"];
                 };
             };
             /** @description Validation Error */

@@ -40,6 +40,13 @@ class ReportCorrection(Input):
     narrative: str | None = None
 
 
+class ReportPdfAccessOut(BaseModel):
+    """Enlace temporal. No incluye la clave del objeto."""
+
+    url: str
+    expires_in: int = Field(ge=1)
+
+
 class ReportOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
@@ -55,7 +62,6 @@ class ReportOut(BaseModel):
     supersedes_id: str | None
     reviewed_by: str | None
     approved_at: datetime | None
-    pdf_storage_key: str | None
     pdf_generated_at: datetime | None
     created_by: str
     revision: int

@@ -67,7 +67,20 @@ class ActivityCompletion(Revision):
 class EvidenceCreate(AmbitionCreate):
     activity_id: str
     kind: Literal["link", "file", "photograph", "video"] = "link"
-    url: HttpUrl = Field(max_length=2048)
+    url: HttpUrl | None = Field(default=None, max_length=2048)
+    document_id: str | None = None
+
+    @model_validator(mode="after")
+    def one_source(self) -> Self:
+        has_url = self.url is not None
+        has_document = self.document_id is not None
+        if has_url == has_document:
+            raise ValueError("Indica una URL o un documento privado, no ambos ni ninguno")
+        if self.kind == "link" and has_document:
+            raise ValueError("Un enlace no referencia un archivo privado")
+        if has_document and self.kind not in {"file", "photograph", "video"}:
+            raise ValueError("El archivo privado no puede registrarse como enlace")
+        return self
 
 
 class Assessment(Input):
@@ -161,7 +174,8 @@ class EvidenceOut(Output):
     title: str
     description: str
     kind: str
-    url: str
+    url: str | None
+    document_id: str | None
     created_by: str
     created_at: datetime
 
