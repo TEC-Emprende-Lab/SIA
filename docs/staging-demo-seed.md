@@ -70,6 +70,13 @@ impiden duplicados. Las filas existentes se conservan sin sobrescribir ediciones
 Una asignación demo revocada no se reactiva silenciosamente. No hay opción de
 reset, eliminación ni truncado. El lote registra su procedencia en auditoría.
 
+La opción manual `--repair-demo-dates --apply` ajusta únicamente las cuatro
+actividades intactas del ensayo de seis semanas de Bruma y el de 28 días de
+Circular. Comprueba revisión 1, fechas originales y ausencia de finalización;
+rechaza ediciones de usuario. Audita el cambio e incrementa la revisión del
+objetivo con la misma reapertura que una edición normal. No modifica informes
+ni crea aprobaciones. Repetirla sin cambios no escribe.
+
 ## Verificación
 
 `tests/test_staging_demo.py` comprueba rechazo de producción/otros hosts y bases,
