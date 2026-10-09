@@ -25,7 +25,7 @@ La tabla describe aceptación backend del subconjunto implementado. La UI de ese
 - `GET/POST /ambitions`, `PUT /ambitions/{id}`.
 - `GET/POST /objectives`, `PUT /objectives/{id}`.
 - `GET/POST /activities`, `PUT /activities/{id}` y `POST /activities/{id}/completion`.
-- `GET/POST /evidence`: referencias HTTP(S) inmutables, sin descarga ni subida de binarios.
+- `GET/POST /evidence`: enlace HTTP(S) o archivo privado del mismo emprendimiento (`document_id`). La descarga firmada no vive en esta ruta.
 - `GET/POST /diagnostics`, `PUT /diagnostics/{id}`.
 - `POST /objectives/{id}/submit` y `POST /diagnostics/{id}/submit`.
 - `POST /objectives/{id}/validations` y `POST /diagnostics/{id}/validations`.
@@ -64,8 +64,9 @@ Un objetivo sin actividades no puede aprobarse como tema amplio completado.
   definición oficial ni habilita aprobación independiente de un entregable o hito.
 - Criterios de salida, transiciones entre programas, habilitación automática de bloques,
   condiciones de autocompletado y permisos de configuración de canvas.
-- Binarios privados, límites MIME/tamaño y entrega firmada R2. `kind=file/photograph/video` representa
-  una referencia externa HTTP(S), no un archivo almacenado ni un permiso de descarga de SIA.
+- Límites MIME y tamaño de archivos privados siguen `TBD`. Un archivo, fotografía o video puede
+  ser un enlace HTTP(S) ya registrado o un `document_id` del mismo emprendimiento. La URL firmada
+  la emite el módulo de documentos, no esta ruta.
 
 ## Pruebas
 

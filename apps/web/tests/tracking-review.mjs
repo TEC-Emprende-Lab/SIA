@@ -10,16 +10,17 @@ import ts from 'typescript'
 const require = createRequire(import.meta.url)
 const temporary = await mkdtemp('/tmp/opencode/tracking-review-')
 try {
-  for (const name of ['expediente', 'seguimiento']) {
+  for (const name of ['expediente', 'seguimiento', 'documents']) {
     const source = await readFile(new URL(`../app/lib/${name}.ts`, import.meta.url), 'utf8')
     const result = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext } })
     await writeFile(join(temporary, `${name}.mjs`), result.outputText)
   }
   const source = await readFile(new URL('../app/components/tracking-review.tsx', import.meta.url), 'utf8')
   const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
-    .replace(/from ["'](react\/jsx-runtime|lucide-react)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
+    .replace(/from ["'](react\/jsx-runtime|react|lucide-react)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
     .replaceAll("'../lib/expediente'", "'./expediente.mjs'")
     .replaceAll("'../lib/seguimiento'", "'./seguimiento.mjs'")
+    .replaceAll("'../lib/documents'", "'./documents.mjs'")
     .replace("import styles from './seguimiento.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
   await writeFile(join(temporary, 'tracking-review.mjs'), compiled)
   const { ActivityEvidence, ObjectiveReviewContext } = await import(pathToFileURL(join(temporary, 'tracking-review.mjs')))
@@ -67,6 +68,14 @@ try {
   for (const [kind, label] of [['file', 'Documento'], ['photograph', 'Fotografía'], ['video', 'Video']]) {
     assert(render(ActivityEvidence, { activity, evidence: [{ ...reference, kind }] }).includes(`${label} · referencia externa`))
   }
+  const privateFile = render(ActivityEvidence, { activity, evidence: [{ ...reference, kind: 'file', url: null, document_id: '11111111-1111-1111-1111-111111111111' }] })
+  assert(privateFile.includes('archivo privado'))
+  assert(privateFile.includes('Se entrega solo con autorización del proyecto.'))
+  assert(!privateFile.includes('href='))
+  assert(!privateFile.includes('URL inválida'))
+  const prepared = render(ActivityEvidence, { activity, entrepreneurshipId: '22222222-2222-2222-2222-222222222222', evidence: [{ ...reference, kind: 'file', url: null, document_id: '11111111-1111-1111-1111-111111111111' }] })
+  assert(prepared.includes('Preparar enlace privado'))
+  assert(!prepared.includes('href='))
   console.log('✓ Empty evidence, supported kinds, unsafe URLs and HTML-like content render safely')
 
   // Structural regression checks supplement rendered components; not an authenticated E2E.

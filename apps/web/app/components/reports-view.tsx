@@ -5,10 +5,32 @@ import { ChevronRight, FileText, Plus } from 'lucide-react'
 import { useMe } from './authenticated-shell'
 import { ProjectHeading } from './project-reference-ui'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
-import { parseReport, parseReports, reportRequest, reportSubmission, type Report } from '../lib/reports'
+import { parseReport, parseReports, reportRequest, reportSubmission, requestReportPdf, type Report } from '../lib/reports'
 import { ReportSources } from './report-sources'
 import { ReportForm } from './report-form'
 import styles from './reports.module.css'
+
+function ReportPdfButton({ cycleId, reportId }: { cycleId: string; reportId: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+  async function prepare() {
+    setPending(true)
+    setError('')
+    try {
+      setUrl((await requestReportPdf(cycleId, reportId)).url)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'No se pudo preparar el PDF.')
+    } finally {
+      setPending(false)
+    }
+  }
+  if (url) return <a className="btn secondary" href={url} target="_blank" rel="noopener noreferrer">Abrir PDF</a>
+  return <>
+    <button type="button" className="btn secondary" onClick={() => void prepare()} disabled={pending}>{pending ? 'Preparando enlace…' : 'Preparar enlace privado'}</button>
+    {error ? <p role="alert">{error}</p> : <p className="small muted">El enlace se pide al abrirlo y caduca. No se muestra el archivo aquí.</p>}
+  </>
+}
 
 export function ReportsView({ cycleId, focusId }: { cycleId: string; focusId?: string }) {
   const me = useMe()
@@ -71,7 +93,8 @@ export function ReportsView({ cycleId, focusId }: { cycleId: string; focusId?: s
       <p className={styles.narrative}>{current.narrative || 'Pendiente de completar'}</p>
       <ReportSources composition={current.composition} />
       {manage && <ReportForm key={`${current.id}/${current.revision}`} report={current} busy={busy} error={error} onSubmit={(event) => void save(event, current)} />}
-      <p className="small muted">Las versiones aprobadas son inmutables. La descarga privada del PDF todavía requiere completar su integración.</p>
+      <p className="small muted">Las versiones aprobadas son inmutables. El PDF se genera después de aprobar.</p>
+      {current.status === 'aprobado' && current.pdf_generated_at ? <ReportPdfButton cycleId={cycleId} reportId={current.id} /> : current.status === 'aprobado' ? <p className="small muted">El PDF todavía no está listo.</p> : null}
     </>}</DialogContent></Dialog>
   </>
 }

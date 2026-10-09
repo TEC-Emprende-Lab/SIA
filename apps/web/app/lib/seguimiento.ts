@@ -63,8 +63,8 @@ export function seguimientoUrl(cycleId: string, path: string): string {
   return `/api/sia/cycles/${cycleId}/seguimiento/${path}`
 }
 
-export function httpUrl(value: string): { url: string } | { error: string } {
-  const url = value.trim()
+export function httpUrl(value: string | null | undefined): { url: string } | { error: string } {
+  const url = (value ?? '').trim()
   if (!url) {
     return { error: 'La URL es obligatoria.' }
   }
@@ -289,10 +289,12 @@ export function parseEvidence(value: unknown): Evidence | null {
   const title = requiredText(value.title)
   const description = text(value.description)
   const kind = requiredText(value.kind)
-  const url = requiredText(value.url)
+  const url = value.url === null ? null : requiredText(value.url)
+  const documentId = value.document_id == null ? null : requiredText(value.document_id)
   const createdBy = requiredText(value.created_by)
   const createdAt = requiredText(value.created_at)
-  if (!id || !cycleId || !activityId || !title || description === null || !kind || !url || !createdBy || !createdAt) {
+  const hasReference = (url !== null && documentId === null) || (url === null && documentId !== null)
+  if (!id || !cycleId || !activityId || !title || description === null || !kind || !hasReference || !createdBy || !createdAt) {
     return null
   }
   return {
@@ -303,6 +305,7 @@ export function parseEvidence(value: unknown): Evidence | null {
     description,
     kind,
     url,
+    document_id: documentId,
     created_by: createdBy,
     created_at: createdAt,
   }

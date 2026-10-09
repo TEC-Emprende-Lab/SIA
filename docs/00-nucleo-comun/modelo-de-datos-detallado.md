@@ -251,7 +251,7 @@ Ejecución concreta de un objetivo. Alimenta el cronograma derivado.
 - **Regla:** modificar actividades, finalizar o agregar evidencia **incrementa la revisión del objetivo e invalida su aprobación**. Una escritura sin cambios no invalida ni audita. `before_delete` bloqueado.
 
 ### `evidence_references` (doc: Evidence) 🟢 · *append-only / inmutable*
-Respaldo de una actividad. **Hoy solo referencias HTTP(S)**: sin subida ni descarga de binarios ni `storage_key`.
+Respaldo de una actividad. Un enlace guarda `url`. Un archivo, fotografía o video puede guardar `url` (referencia ya existente) o `document_id` (archivo privado).
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -259,13 +259,14 @@ Respaldo de una actividad. **Hoy solo referencias HTTP(S)**: sin subida ni desca
 | `cycle_id` | FK → `program_cycles.id`, not null, **index** | |
 | `activity_id` | String(36), not null, **index** | |
 | `title` | String(200), not null | |
-| `kind` | String(32), not null | `link` \| `file` \| `photograph` \| `video`. **Todos son enlace externo**, no archivo almacenado (límites MIME/tamaño y R2 `TBD`). |
-| `url` | String(2048), not null | |
+| `kind` | String(32), not null | `link` \| `file` \| `photograph` \| `video`. El enlace exige `url`. Archivo, fotografía y video aceptan `url` histórica o `document_id`. |
+| `url` | String(2048), nullable | Obligatoria si no hay `document_id`. |
+| `document_id` | FK → `documents.id`, nullable | Archivo privado del mismo emprendimiento. Excluyente con `url`. |
 | `description` | Text, default `""` | |
 | `created_by` | FK → `users.id`, not null | |
 
 - **FK compuesta** `(activity_id, cycle_id)`→`activities`. Inmutable (no update/delete).
-- **Nota de evolución (decisión #6):** cuando entren binarios/R2, `kind ∈ {file, photograph, video}` referenciará un `documents.id` en vez de `url`; hoy no.
+- Un archivo privado usa `document_id` y deja `url` vacía. Las referencias HTTP(S) anteriores siguen en `url`.
 
 ### `diagnostics` (doc: Diagnostic / EvolutionSnapshot) 🟢 · *inmutable al aprobar*
 La fotografía comparable del emprendimiento (US-PRO-005). **Resuelve el pendiente #1**: es el `EvolutionSnapshot` del doc, enriquecido con `assessments`.
@@ -476,8 +477,8 @@ Rastro de toda acción sensible. Lo escriben los servicios en la **misma transac
 
 - Registra al menos: aprobaciones, cambios de objetivos aprobados, movimientos de presupuesto, validaciones, cierres, mensajes editados/eliminados y emisión de informes. Sin índice de scope por diseño (es transversal); las consultas van por `entity_type`/`entity_id`/`actor_id`.
 
-### `documents` (transversal — decisión de diseño #6) 🟡 *pendiente (R2, Fase 7)*
-Tabla central de archivos privados en R2. **Decisión de diseño (no está en el doc explícito):** unificar en vez de repetir columnas de archivo en evidencia, factura, adjunto e informe.
+### `documents` (transversal — decisión de diseño #6) 🟢
+Tabla central de archivos privados. La API guarda el objeto y publica metadatos; la clave `storage_key` no sale en el contrato. La descarga es una URL firmada emitida tras autorizar el emprendimiento. Límites MIME y tamaño siguen `TBD`. Chat y facturas aún no la referencian. El PDF del informe aprobado usa el mismo almacén de objetos, pero su clave queda en `technical_reports.pdf_storage_key` y no crea fila aquí.
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -486,11 +487,11 @@ Tabla central de archivos privados en R2. **Decisión de diseño (no está en el
 | `storage_key` | String | Clave del objeto en R2. |
 | `name` | String(200) | |
 | `mime` | String | Límites MIME/tamaño `TBD`. |
-| `size` | int | |
+| `size` | bigint | Bytes recibidos. Sin tope de producto: MIME y tamaño siguen `TBD`. |
 | `uploaded_by` | FK → `users.id` | |
 | `created_at` | timestamptz | |
 
-- **Referenciada por:** `evidence_references` (cuando `kind ∈ {file, photograph, video}` deje de ser URL), `chat_attachments`, `invoices`, `technical_report_documents`. La emisión de **URL firmada** la hace la API. Hoy no existe: la evidencia solo guarda URLs HTTP(S).
+- **Referenciada por:** `evidence_references.document_id` cuando el respaldo es archivo privado. `chat_attachments`, `invoices` y `technical_report_documents` siguen sin implementar. La emisión de **URL firmada** la hace la API en `GET .../documents/{id}/access`. El PDF del informe se pide en `GET /cycles/{cycle_id}/reports/{report_id}/pdf`; esa respuesta tampoco incluye la clave.
 
 ### `job_queue` (infra — worker) 🟡 *pendiente*
 Cola persistente en PostgreSQL (decidido: PostgreSQL como cola, sin Redis en MVP). Aquí viven las tareas del worker (minutas IA, correo Resend, alertas, PDF), **idempotentes**.
@@ -683,7 +684,7 @@ Estado final de los 7 pendientes que dejaste abiertos:
 | 3 | Validation polimórfica/por tipo | ✅ Cerrado | Semi-tipada (`objective_id` XOR `diagnostic_id`). |
 | 4 | schedule_item tabla/vista | ✅ Cerrado | Derivado de `activities`; sin tabla. |
 | 5 | Finanzas | 🔴 Diseño tentativo | Modelado con banderas; **no implementar** hasta que el programa cierre partidas/flujo/estados. |
-| 6 | `documents` unificado | ✅ Decisión: sí | Tabla central R2; pendiente de implementación (Fase 7). |
+| 6 | `documents` unificado | ✅ Decisión: sí | Tabla `documents` y URL firmada implementadas. El PDF del informe usa el mismo almacén, con la clave en `technical_reports`, no una fila de `documents`. Chat y facturas siguen sin referenciarla. Límites MIME/tamaño `TBD`. |
 | 7 | Rol RevisorFinanciero | 🔴 TBD | `role` es texto validado → añadirlo luego sin migración de esquema. |
 
 Extra del borrador ya resuelto en código: **`meeting_action` no existe** (fusionado en `agreements.next_steps`); **participantes** de reunión = JSON descriptivo; **taxonomía de `channels`** sigue `TBD` (sin columna `tipo`).

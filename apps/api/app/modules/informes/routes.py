@@ -9,6 +9,7 @@ from app.models.user import User
 from app.modules.informes import service
 from app.schemas import informes as s
 from app.security.deps import get_current_user
+from app.storage.store import ObjectStore, get_object_store
 
 router = APIRouter(tags=["informes"])
 DB = Annotated[AsyncSession, Depends(get_db)]
@@ -34,6 +35,17 @@ async def create_report(
 @router.get("/cycles/{cycle_id}/reports/{report_id}", response_model=s.ReportOut)
 async def get_report(cycle_id: str, db: DB, user: Actor, report_id: str) -> TechnicalReport:
     return await service.get_report(db, user, cycle_id, report_id)
+
+
+@router.get("/cycles/{cycle_id}/reports/{report_id}/pdf", response_model=s.ReportPdfAccessOut)
+async def get_report_pdf(
+    cycle_id: str,
+    report_id: str,
+    db: DB,
+    user: Actor,
+    store: ObjectStore = Depends(get_object_store),
+) -> s.ReportPdfAccessOut:
+    return await service.issue_pdf_access(db, user, cycle_id, report_id, store)
 
 
 @router.put("/cycles/{cycle_id}/reports/{report_id}", response_model=s.ReportOut)
