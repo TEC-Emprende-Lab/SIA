@@ -8,8 +8,10 @@ from app.domain.staging_demo import (
     HOST,
     ORIGIN,
     PROJECTS,
+    activity_dates,
     ensure_target,
     populate,
+    repair_demo_dates,
     stable_id,
 )
 from app.models.audit import AuditLog
@@ -44,6 +46,14 @@ def test_exact_staging_guard():
     ]:
         with pytest.raises(ValueError, match="bloqueado"):
             ensure_target(environment, destination, origin)
+
+
+def test_experiment_dates_match_the_work_plan():
+    for key, duration in [("bruma", 42), ("circular", 28)]:
+        start, end = activity_dates(key, 4, 2)
+        assert (end - start).days == duration
+        analysis_start, _ = activity_dates(key, 4, 3)
+        assert analysis_start > end
 
 
 async def prepare(db):
@@ -145,6 +155,26 @@ async def test_batch_can_be_rolled_back(db):
     await db.rollback()
     assert await db.scalar(select(func.count()).select_from(Entrepreneurship)) == 0
     assert await db.scalar(select(func.count()).select_from(AuditLog)) == 0
+
+
+async def test_date_repair_is_explicit_and_preserves_edits(db):
+    from datetime import date, timedelta
+
+    actor, readers = await prepare(db)
+    await populate(db, actor, readers)
+    activity = await db.get(Activity, stable_id("bruma/activity/4/2"))
+    activity.starts_on = date(2026, 9, 28)
+    activity.ends_on = activity.starts_on + timedelta(days=10)
+    await db.commit()
+    assert await repair_demo_dates(db, actor) == 1
+    await db.commit()
+    assert await repair_demo_dates(db, actor) == 0
+    activity.ends_on = date(2026, 10, 8)
+    activity.revision = 3
+    await db.commit()
+    with pytest.raises(ValueError, match="modificada"):
+        await repair_demo_dates(db, actor)
+    await db.rollback()
 
 
 async def test_real_postgres_migrations():

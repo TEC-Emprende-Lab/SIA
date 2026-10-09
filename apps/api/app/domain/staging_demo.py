@@ -479,6 +479,61 @@ def at(day: date) -> datetime:
     return datetime.combine(day, datetime.min.time(), tzinfo=UTC) + timedelta(hours=15)
 
 
+def activity_dates(project_key: str, stream: int, task: int) -> tuple[date, date]:
+    start = date(2026, 8, 3) + timedelta(days=stream * 5 + task * 18)
+    duration = 10
+    trial_days = {"bruma": 42, "circular": 28}.get(project_key)
+    if stream == 4 and trial_days is not None:
+        trial_start = date(2026, 8, 3) + timedelta(days=stream * 5 + 36)
+        if task == 2:
+            duration = trial_days
+        elif task == 3:
+            start = trial_start + timedelta(days=trial_days + 1)
+    return start, start + timedelta(days=duration)
+
+
+async def repair_demo_dates(db: AsyncSession, actor: User) -> int:
+    """Explicit repair of untouched v1 demo rows only; never overwrites user edits."""
+    from app.modules.seguimiento.service import reopen, snapshot
+
+    changed = 0
+    for key in ["bruma", "circular"]:
+        for task in [2, 3]:
+            activity = await db.get(Activity, stable_id(f"{key}/activity/4/{task}"))
+            if activity is None:
+                continue
+            start, end = activity_dates(key, 4, task)
+            if (activity.starts_on, activity.ends_on) == (start, end):
+                continue
+            old_start = date(2026, 8, 3) + timedelta(days=20 + task * 18)
+            if (
+                activity.revision != 1
+                or activity.completed_at is not None
+                or (activity.starts_on, activity.ends_on)
+                != (old_start, old_start + timedelta(days=10))
+            ):
+                raise ValueError("Actividad demo modificada por usuario: corrección bloqueada")
+            before = snapshot(activity)
+            activity.starts_on, activity.ends_on = start, end
+            activity.revision += 1
+            objective = await db.get(Objective, activity.objective_id)
+            if objective is None:
+                raise ValueError("Falta objetivo del ensayo")
+            await reopen(db, actor, objective)
+            await db.flush()
+            await write_audit(
+                db,
+                actor.id,
+                "staging.demo_dates",
+                "Activity",
+                activity.id,
+                before,
+                snapshot(activity),
+            )
+            changed += 1
+    return changed
+
+
 async def populate(db: AsyncSession, actor: User, readers: list[User]) -> dict[str, Any]:
     """Additive atomic batch. Caller owns transaction and staging verification."""
     if actor.role != "Coordinadora":
@@ -591,8 +646,7 @@ async def populate(db: AsyncSession, actor: User, readers: list[User]) -> dict[s
                 created_at=created,
             )
             for task_index, task in enumerate(tasks):
-                start = date(2026, 8, 3) + timedelta(days=index * 5 + task_index * 18)
-                end = start + timedelta(days=10)
+                start, end = activity_dates(key, index, task_index)
                 completed = task_index < (1 + index % 2) and end <= ANCHOR
                 activity = await add(
                     db,
@@ -783,6 +837,8 @@ async def run(args: argparse.Namespace) -> None:
             raise ValueError("Los roles existentes no coinciden con el operador y lectores")
         if args.apply:
             result = await populate(db, actor, readers)
+            if args.repair_demo_dates:
+                result["dates_repaired"] = await repair_demo_dates(db, actor)
         else:
             result = {
                 "dry_run": True,
@@ -801,6 +857,11 @@ def main() -> None:
     parser.add_argument("--operator-email", required=True)
     parser.add_argument("--reader-email", action="append", required=True)
     parser.add_argument("--apply", action="store_true", help="Sin este argumento no escribe")
+    parser.add_argument(
+        "--repair-demo-dates",
+        action="store_true",
+        help="Corregir solo fechas intactas de los ensayos demo v1",
+    )
     args = parser.parse_args()
     try:
         asyncio.run(run(args))
