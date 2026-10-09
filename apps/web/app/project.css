@@ -27,3 +27,18 @@
 .area-card p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .activity-list .record-row { width: 100%; }
 .project-dialog { width: min(650px, calc(100vw - 40px)); max-width: 650px; max-height: 88dvh; overflow-y: auto; background: white; padding: 25px; }
+
+/* US-PRO-005: interaction only. Assessments remain descriptive, without scores. */
+.cube-scene { touch-action: none; cursor: grab; background: radial-gradient(circle at 50% 62%, #eef0df 0 16%, transparent 52%); border-radius: 1rem; }
+.cube-scene:active { cursor: grabbing; }
+.cube { will-change: transform; }
+.cube-face { cursor: pointer; }
+.cube-face:hover { box-shadow: inset 0 0 0 2px #ffffff9a, inset 0 0 45px rgb(0 0 0 / var(--face-shade)), 0 16px 28px rgb(61 57 30 / .16); }
+.cube-panel { background: linear-gradient(145deg, #fff, #fafbf6); }
+.summary-hero { position: relative; overflow: hidden; background: linear-gradient(135deg, #747940, #525d36); box-shadow: 0 18px 38px rgb(62 69 38 / .17); }
+.summary-hero::after { position: absolute; width: 19rem; height: 19rem; right: -6rem; top: -9rem; border: 1px solid rgb(255 255 255 / .22); border-radius: 50%; box-shadow: 0 0 0 2.5rem rgb(255 255 255 / .05); content: ''; }
+.summary-hero > * { position: relative; z-index: 1; }
+.summary-grid .panel { transition: transform .18s ease, box-shadow .18s ease; }
+.summary-grid .panel:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgb(57 65 35 / .08); }
+
+@media (prefers-reduced-motion: reduce) { .summary-grid .panel { transition: none; } }
