@@ -6,21 +6,21 @@ SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividad
 
 ## Estado actual
 
-**Corte: 2026-09-29, `main` en `919dff5`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
+**Corte: 2026-10-06, `develop` en `7e0947e` y `main` en `1725260`. MVP en curso.** Esta es la matriz canónica de implementación; los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
 
 | Componente | Estado real en el repositorio | Límite / pendiente |
 |---|---|---|
-| Fundaciones y contratos | Monorepo pnpm/uv, Dockerfiles por app, Compose con migrador, PostgreSQL/Redis/MinIO, OpenAPI y tipos TS generados con control de drift. | Stack completo y operación remota sin verificación en este corte. |
+| Fundaciones y contratos | Monorepo pnpm/uv, Dockerfiles por app, Compose con migrador, PostgreSQL/Redis/MinIO, OpenAPI y tipos TS generados con control de drift. | Stack completo; el smoke remoto de 2026-10-06 cubre la salud HTTP, no el ciclo operativo completo. |
 | Identidad y autorización | API de usuarios/invitaciones, JWT Clerk, bootstrap por invitación, auditoría y rate limiting Redis en creación de invitaciones. Web: Clerk en `apps/web` (`/sign-in`, `/sign-up`, BFF `GET /api/sia/me`). | Google OAuth real y operación remota por rol siguen pendientes de validar; Revisor financiero `TBD`. |
 | Expediente | Persistencia de emprendimientos, inscripciones/ciclos, asignaciones y revocación lógica auditada por alcance exacto; listados filtrados y paginados. | Alta de Puesta en marcha bloqueada con 409 por requisitos de entrada aún sin fuente verificable; Pre-incubación no habilitada. |
-| Seguimiento | Canvas v1 de ambos programas, ambiciones, objetivos, actividades, evidencias por URL, validaciones, cronograma y fotografías aprobadas inmutables con comparación descriptiva. | Entregables oficiales, escalas numéricas y automatizaciones `TBD`; soporte de canvas de Puesta en marcha no habilita su admisión. |
-| Web real (`apps/web`) | Next.js con Clerk (Google), shell autenticado por rol, BFF server-only con JWT `sia`, expediente, seguimiento, comunicación, alertas, invitaciones y usuarios conectados a FastAPI. | Recorrido autenticado remoto, menciones, asignación por Gestor y alcance de Equipo/búsqueda global pendientes; Finanzas no tiene backend. |
+| Seguimiento | Canvas v1 de ambos programas, ambiciones, objetivos, actividades, evidencias por URL, validaciones, cronograma, fotografías aprobadas inmutables con comparación descriptiva y avance por objetivo y por ciclo calculado en FastAPI. | Entregables oficiales, escalas numéricas y automatizaciones `TBD`; soporte de canvas de Puesta en marcha no habilita su admisión. |
+| Web real (`apps/web`) | Next.js con Clerk (Google), shell autenticado por rol, BFF server-only con JWT `sia`, expediente, seguimiento, comunicación, alertas, invitaciones y usuarios conectados a FastAPI. En seguimiento: panel de avance del ciclo, revisión de objetivos y evidencias con contexto, Resumen conectado (reuniones, acuerdos y alertas personales) y tablero Kanban de objetivos y actividades cuyos arrastres ejecutan los endpoints existentes. | Recorrido autenticado remoto por rol —incluidas la revisión, el Resumen y el Kanban sobre la publicación—, menciones, asignación por Gestor y alcance de Equipo/búsqueda global pendientes; Finanzas no tiene backend. |
 | Prototipo (`visual/prototype`) | Demo React/Vite, navegación y reglas locales, Cubo 360/Kanban, finanzas e informes ficticios; HTML autónomo y Docker/Nginx. | Datos en memoria; sus puntuaciones y estados visuales no son reglas confirmadas de la API. |
 | Archivos privados | Tabla `documents`, carga autorizada y URL firmada. La evidencia de archivo, fotografía o video puede apuntar a ese documento; el enlace externo se conserva. | Límites MIME y tamaño `TBD`. Adjuntos de chat, facturas y PDF del informe aún no usan la tabla. Sin almacenamiento configurado la carga responde 503. |
 | Comunicación y alertas | API integrada para reuniones, minutas, acuerdos, canales, mensajes, menciones, recibos de lectura, alertas y notificaciones internas; las minutas aprobadas son inmutables. | Socket.IO/Redis, Resend, adjuntos privados, grabaciones y proveedor IA/worker reales siguen pendientes o `TBD`. |
 | Informes técnicos (Fase 5) | API por período que compone fuentes trazables, aprobación humana, versión inmutable y PDF privado de esa instantánea. El worker lo guarda en el almacén de objetos; la descarga es una URL firmada. | Plantilla mensual, IA real y fuente de finanzas (Fase 6) siguen `TBD` o pendientes. |
 | Finanzas | Solo representaciones de prototipo. | Sin backend (Fase 6); partidas, flujo, integración administrativa y Revisor financiero `TBD`. |
-| Calidad y despliegue | Dockerfiles de Web/API, Compose y guía Coolify para recursos separados; lint, tipos, build y contratos de la Web conectada pasan localmente. | CI no equivale a staging: OAuth real, servicios externos y recorrido operativo por roles continúan sin certificación. |
+| Calidad y despliegue | Dockerfiles de Web/API, Compose y guía Coolify para recursos separados; las dos workflows de CI verdes sobre `develop` `7e0947e` (2026-10-06). Staging público en `https://sia.dev.neuroboard.app`: Web `/` y `/api/health` en 200 sin sesión. | La CI no ejecuta la suite de `apps/web` (23 grupos, solo local). El recorrido autenticado por roles no se certificó en este corte: la credencial local de Coordinadora fue rechazada por Clerk. No se infieren migraciones, API, Redis, R2, backups ni rollback a partir del smoke de Web. |
 
 La [guía operativa de la API](docs/operacion-api.md) conserva evidencia local/CI, enlaces a runs, arranque y restricciones. El [plan de escalabilidad](tasks/plan-escalabilidad.md) describe arquitectura objetivo y siguientes fases; [tasks/todo.md](tasks/todo.md) conserva la historia. Trazabilidad backend: US-PRO-001/002/005/006 y US-PM-001/002; detalle y límites de aceptación en el [módulo de seguimiento](apps/api/app/modules/seguimiento/README.md).
 
@@ -71,7 +71,8 @@ pnpm build
 ## Despliegue en Coolify
 
 La aplicación operativa usa dos recursos: Web desde `apps/web/Dockerfile`, puerto `3000`, y
-API desde `apps/api/Dockerfile`, puerto `8000`, además de PostgreSQL y Redis. La
+API desde `apps/api/Dockerfile`, puerto `8000`, además de PostgreSQL y Redis. El entorno de
+integración de `develop` está publicado en `https://sia.dev.neuroboard.app`. La
 [guía de Coolify](deploy/coolify/README.md) contiene la configuración, variables runtime,
 migraciones y validación. El Dockerfile raíz mantiene solo la demo del prototipo en `8080`.
 
@@ -86,7 +87,7 @@ migraciones y validación. El Dockerfile raíz mantiene solo la demo del prototi
 
 ## Colaboración
 
-- `develop` es la rama de integración destinada a staging.
+- `develop` es la rama de integración desplegada a staging (`https://sia.dev.neuroboard.app`).
 - `main` es la rama destinada a producción; su CI verde no certifica un despliegue remoto.
 - Toda funcionalidad nace desde `develop` en una rama corta.
 - No se hace push directo a ramas protegidas.

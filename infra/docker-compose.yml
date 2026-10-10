@@ -49,8 +49,8 @@ services:
 
   migrate:
     build:
-      context: ..
-      dockerfile: apps/api/Dockerfile
+      context: ../apps/api
+      dockerfile: Dockerfile
     environment:
       SIA_DATABASE_URL: postgresql+asyncpg://sia:local-development-only@postgres:5432/sia
     command: ["uv", "run", "--no-sync", "alembic", "upgrade", "head"]
@@ -59,8 +59,8 @@ services:
 
   api:
     build:
-      context: ..
-      dockerfile: apps/api/Dockerfile
+      context: ../apps/api
+      dockerfile: Dockerfile
     environment:
       SIA_ENVIRONMENT: development
       SIA_DATABASE_URL: postgresql+asyncpg://sia:local-development-only@postgres:5432/sia

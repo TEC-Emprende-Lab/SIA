@@ -6,8 +6,10 @@ debe publicar como la aplicación operativa.
 
 ## Recursos requeridos
 
-El despliegue remoto y el dominio siguen sin verificarse en este corte. La evidencia de
-arranque y migraciones de la API está en [operación API](../../docs/operacion-api.md).
+El staging público está disponible en `https://sia.dev.neuroboard.app`: el 2026-10-06
+la Web `/` y `/api/health` respondieron 200 sin sesión. Esta comprobación no acredita por
+sí sola las migraciones, la API interna, Redis, R2, backups ni rollback; la evidencia y
+los límites vigentes están en [operación API](../../docs/operacion-api.md#verificación-de-staging--2026-10-06).
 
 1. Crear PostgreSQL 16 y Redis 7 en el mismo proyecto/entorno de Coolify.
 2. Crear la aplicación API desde el repositorio `TEC-Emprende-Lab/SIA`.
@@ -17,13 +19,62 @@ arranque y migraciones de la API está en [operación API](../../docs/operacion-
 Coolify construye desde Git. No usa archivos locales sin commit y no deben añadirse secretos
 al repositorio.
 
+## Staging para validación de interfaz
+
+Staging es el entorno de integración para comprobar la aplicación conectada antes de
+producción. Debe ser independiente de producción: su propio PostgreSQL, Redis, instancia
+de Clerk, dominio HTTPS y datos de prueba. No reutilizar bases, usuarios, claves ni datos
+personales de producción.
+
+El archivo [`staging.env.example`](staging.env.example) enumera las
+variables necesarias sin valores reales. Cargarlas en Coolify como variables de cada recurso:
+no subir una copia completa ni pegar secretos en tickets, chat o Git.
+
+### Recursos y ramas
+
+El staging existente debe conservar recursos separados con esta configuración de referencia:
+
+1. PostgreSQL 16 y Redis 7 internos, con volúmenes propios de staging.
+2. API desde `develop`, usando `apps/api/Dockerfile`.
+3. Web desde `develop`, usando `apps/web/Dockerfile`.
+
+Activar *Auto Deploy* según el flujo de ramas, pero no asumir que despliega migraciones: el
+Dockerfile de API no ejecuta Alembic al arrancar. Para el primer despliegue, publicar API,
+ejecutar la migración indicada más abajo, comprobar `/readyz` y luego publicar Web. Repetir
+esa secuencia cuando un cambio de API incluya una migración. El worker no forma parte del
+recorrido de staging de UI mientras no procese trabajos reales.
+
+### Clerk y cuentas de prueba
+
+Crear una instancia de Clerk exclusiva para staging y configurar allí el dominio de staging
+como origen, URLs de redirección y callback permitido. Crear el template JWT `sia` con la
+audiencia `sia`. En la API, configurar el issuer y JWKS de **esa** instancia, y mantener
+`SIA_ENVIRONMENT=staging`; HS256 solo está permitido para desarrollo/pruebas locales.
+
+Preparar usuarios de prueba invitados y revocables, con correos no personales, para los tres
+roles: `Coordinadora`, `Gestor` y `Emprendedor`. Asignarlos solo a emprendimientos ficticios
+de staging. La IA o automatización de navegador debe iniciar sesión con esas cuentas; no
+necesita ni debe recibir credenciales de infraestructura, Clerk admin, PostgreSQL, Redis o
+producción.
+
+### Acceso de IA y pruebas
+
+Una vez publicado, una sesión de navegador autorizada puede revisar staging usando una cuenta
+de prueba por rol. Las credenciales se entregan mediante un mecanismo de secretos o sesión
+efímera controlada, nunca como texto en el repositorio o la conversación. Cada prueba debe
+limitarse a los datos de prueba y registrar qué rol y flujo validó.
+
+Staging permite validar UI y autorizaciones reales, pero no sustituye la revisión humana ni
+autoriza cambios de reglas de negocio. Antes de producción se deben completar las puertas de
+validación operativa descritas en `tasks/plan-escalabilidad.md`.
+
 ## API SIA
 
 | Campo | Valor |
 |---|---|
 | Build Pack | `Dockerfile` |
-| Base Directory | `/` |
-| Dockerfile Location | `apps/api/Dockerfile` |
+| Base Directory | `/apps/api` |
+| Dockerfile Location | `/Dockerfile` |
 | Docker Build Stage / Target | Vacío |
 | Ports Exposes | `8000` |
 | Port Mappings | Vacío |
@@ -34,7 +85,7 @@ Configurar solo como variables de runtime:
 
 | Variable | Valor |
 |---|---|
-| `SIA_ENVIRONMENT` | `production` |
+| `SIA_ENVIRONMENT` | `staging` para staging; `production` para producción |
 | `SIA_DATABASE_URL` | URL interna de PostgreSQL con prefijo `postgresql+asyncpg://` |
 | `SIA_REDIS_URL` | URL interna de Redis, terminada en `/0` |
 | `SIA_STORAGE_ENDPOINT` | Opcional. Endpoint S3 de R2 o MinIO, el que usa la API para subir. Vacío: la carga responde 503. |
@@ -64,16 +115,17 @@ La API queda lista solo cuando `GET /readyz` devuelve `200`.
 | Campo | Valor |
 |---|---|
 | Build Pack | `Dockerfile` |
-| Base Directory | `/` |
-| Dockerfile Location | `apps/web/Dockerfile` |
-| Docker Build Stage / Target | Vacío |
+| Base Directory | `/.` |
+| Dockerfile Location | `/Dockerfile` |
+| Docker Build Stage / Target | `web-runtime` |
 | Ports Exposes | `3000` |
 | Port Mappings | Vacío |
 | Health check | `/api/health` |
 | Dominio público | Dominio HTTPS de SIA |
 
 Configurar `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` para build y runtime. Configurar solo en
-runtime `CLERK_SECRET_KEY`, `CLERK_JWT_TEMPLATE=sia` y `SIA_API_URL`.
+runtime `CLERK_SECRET_KEY`, `CLERK_JWT_TEMPLATE=sia` y `SIA_API_URL`. En staging usar
+exclusivamente las claves de la instancia Clerk de staging.
 
 `SIA_API_URL` debe ser la URL interna que Coolify asigna a la aplicación API, con puerto
 `8000`. No usar `localhost`, un puerto local de desarrollo ni el dominio público de Web.
@@ -81,8 +133,10 @@ Desactivar Basic Authentication de Coolify si Clerk es el único flujo de acceso
 
 ## Prototipo visual
 
-Para publicar únicamente la demo visual, usar el Dockerfile raíz, puerto `8080` y la guía
-histórica del prototipo. Esa aplicación no tiene Clerk, FastAPI, PostgreSQL ni persistencia.
+Para publicar únicamente la demo visual, usar el Dockerfile raíz sin target, puerto `8080` y
+la guía histórica del prototipo. Esa aplicación no tiene Clerk, FastAPI, PostgreSQL ni
+persistencia. El target `web-runtime` del mismo Dockerfile se reserva para la Web conectada,
+que necesita el contexto raíz del monorepo.
 
 ## Operación
 

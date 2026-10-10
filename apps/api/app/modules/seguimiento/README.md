@@ -75,4 +75,4 @@ con upgrade/downgrade. SQLite habilita FK. `SEGUIMIENTO_TEST_DATABASE_URL` permi
 misma batería en PostgreSQL desechable, incluyendo carreras de escritura y triggers SQL.
 **La base de pruebas debe ser vacía y desechable**: las fixtures crean y eliminan sus tablas.
 
-El log de CI del 2026-09-16 confirma **26 casos de seguimiento** dentro de la suite de 94 aprobados con los grupos PostgreSQL habilitados. Los 22 casos registrados anteriormente son históricos; ver [evidencia vigente](../../../../../docs/operacion-api.md#evidencia-vigente--2026-09-16). Esta actualización documental no reejecuta la batería.
+El log de CI del 2026-09-16 confirma **26 casos de seguimiento** dentro de la suite de 94 aprobados con los grupos PostgreSQL habilitados. Los 22 casos registrados anteriormente son históricos; ver [evidencia histórica](../../../../../docs/operacion-api.md#evidencia-histórica--2026-09-16). Esta actualización documental no reejecuta la batería.

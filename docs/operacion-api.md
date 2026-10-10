@@ -2,8 +2,10 @@
 
 ## Alcance y trazabilidad
 
-Estado revisado el **2026-09-16**, sobre `35775c0`: identidad/invitaciones, expediente y seguimiento persistente para
+Estado revisado el **2026-10-06**, sobre `develop` `7e0947e`: identidad/invitaciones, expediente y seguimiento persistente para
 US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002.
+Última verificación operativa: **2026-10-06**, sobre `1725260` (sección «Verificación operativa — 2026-10-06»).
+Última verificación de staging: **2026-10-06**, sobre `develop` `7e0947e` (sección «Verificación de staging — 2026-10-06»).
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
 [`apps/api/app/modules/seguimiento/README.md`](../apps/api/app/modules/seguimiento/README.md).
@@ -50,7 +52,7 @@ La API expone `/cycles/{cycle_id}/meetings`, sus subrecursos `/minutes` y
 con revisión esperada y observación conservan auditoría. La autorización se
 revalida en cada petición, incluidas lecturas personales y menciones.
 
-## Evidencia vigente — 2026-09-16
+## Evidencia histórica — 2026-09-16
 
 Inspección del código y consulta de GitHub Actions con `gh run view`; no se repitieron suites por esta actualización documental.
 
@@ -62,7 +64,7 @@ Inspección del código y consulta de GitHub Actions con `gh run view`; no se re
 | Job web/contratos del mismo run | Instalación frozen, lint, typecheck, comprobación de OpenAPI y drift TypeScript correctos. No incluye build ni E2E de la web real. |
 | [Prototype quality, run 35107005272](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/35107005272), mismo SHA | Instalación independiente, lint, pruebas de dominio, build, imagen Docker y prueba HTTP correctos. No verifica un servidor Coolify remoto ni ejecuta el recorrido Playwright. |
 | Último local comunicado por el usuario | **87 passed, 7 skipped** sin variables PostgreSQL. Registro recibido para este corte, no reejecutado ni confirmado mediante log local en esta revisión. |
-| Staging / producción | **NO verificados**: los runs anteriores son controles en runners de CI, no evidencia de despliegue, Clerk/Google OAuth real ni servicios externos operativos. |
+| Staging / producción | **No verificados en ese corte histórico**: los runs anteriores son controles en runners de CI, no evidencia de despliegue, Clerk/Google OAuth real ni servicios externos operativos. Consultar la verificación posterior de staging. |
 
 El conteo de 94 está confirmado por el log, no inferido de 90 + 4. Los cuatro casos adicionales están en seguimiento (26 frente a los 22 históricos). Activar los grupos PostgreSQL no convierte las fixtures restantes de SQLite en PostgreSQL.
 
@@ -256,15 +258,81 @@ Las suites emiten dos advertencias de deprecación de Starlette/TestClient (http
 BlockingPortal de AnyIO); no son fallos de pruebas. La primera pasada TypeScript usó Node 20
 del host y avisó de engine no soportado; los controles finales se repitieron con Node 24.21.0.
 
+## Verificación operativa — 2026-10-06
+
+Corte del [estado actual del README](../README.md#estado-actual): `main` en `1725260`
+(fusión del PR #20, 2026-10-05), que integra `develop` (`2ebfca0`, PR #19). Ese corte
+incluye la revisión de evidencias y el Resumen conectado (PR #17) y el tablero Kanban
+(PR #19).
+
+Cambios del núcleo desde el corte anterior del README (`919dff5`, 2026-09-29):
+
+- `e16c2a4` añade el avance de ciclo en `apps/api/app/modules/seguimiento/` (`routes.py`,
+  `service.py`, `schemas/seguimiento.py`) con 63 líneas nuevas de pruebas y los contratos
+  regenerados, sin migraciones nuevas. La regla está documentada en
+  `00-nucleo-comun/objetivos-actividades-evidencias.md` («Avance del ciclo»).
+- El resto de ese intervalo no toca `apps/api` ni `apps/api/alembic`: frontend,
+  documentación y el `exports` de `packages/contracts/package.json` (`ba01636`). El
+  tablero Kanban no añade contratos: reutiliza `submit`, `validations` y `completion`.
+
+Evidencia remota: `Application quality` y `Prototype quality` verdes sobre `main`
+`1725260` ([run 37354456543](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456543),
+[run 37354456484](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456484)) y sobre
+`develop` `2ebfca0`. El job `web-and-contracts` ejecuta `pnpm install --frozen-lockfile`,
+`pnpm lint`, `pnpm typecheck`, `export_openapi.py --check` y `pnpm contract:check`; **no**
+ejecuta la suite de `apps/web`, que se corrió localmente (23 grupos, 2026-10-06).
+
+Smoke HTTP del despliegue público, 2026-10-06, sin sesión:
+
+| Recurso | Ruta | Resultado |
+|---|---|---|
+| Web (`eo08w8k8oocksksw0ok4s8gk.157.151.134.169.sslip.io`) | `GET /` y `GET /api/health` | 200 |
+| API (`sgc4www0cw84okgwcwggs4wo.157.151.134.169.sslip.io`) | `GET /healthz` (liveness) y `GET /readyz` (readiness) | 200 |
+| Bundle publicado | marcadores de Resumen («Qué se busca lograr») y de Kanban («estados intermedios de actividad») | presentes en los chunks servidos |
+
+Limitaciones: es un smoke sin autenticación ni roles, no un recorrido por rol. Este
+registro corresponde a la URL histórica de producción; el staging actual se documenta
+en la sección siguiente. Las URLs `sslip.io` pueden cambiar al recrearse. La suite de
+`apps/web` sigue fuera de CI.
+
+## Verificación de staging — 2026-10-06
+
+Staging existe y está publicado desde `develop` en `https://sia.dev.neuroboard.app`.
+La evidencia siguiente es un smoke remoto reproducido en este corte; no sustituye una
+validación funcional ni autoriza un cambio de reglas de negocio.
+
+| Recurso | Ruta o acción | Resultado |
+|---|---|---|
+| Web | `GET /` | 200; título `Catalitec · Espacio del proyecto` y carga de sesión de Clerk visibles. |
+| Web | `GET /api/health` | 200; `{"status":"ok","service":"web"}`. |
+| Navegador sin sesión | Abrir `/sign-in` | Formulario de Clerk disponible; sin errores de consola de la aplicación. |
+| Navegador con cuenta de prueba de Coordinadora | Inicio de sesión con la credencial guardada fuera del repositorio | Clerk respondió 422 (`Password is incorrect`); no se validaron flujos autenticados ni permisos. |
+| CI de la rama desplegada | [Application quality](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37523769184) y [Prototype quality](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37523769182), SHA `7e0947e` | Success. |
+
+Reconsulta de la publicación histórica (`sslip.io`) el mismo día, para contrastar con la
+tabla del apartado anterior:
+
+| Recurso | Ruta | Resultado |
+|---|---|---|
+| Web histórica (`eo08w8k8oocksksw0ok4s8gk.157.151.134.169.sslip.io`) | `GET /` | **404** (`404 page not found`), aunque el mismo día constaba 200. Incidencia de despliegue o ruteo de esa Web. |
+| API histórica (`sgc4www0cw84okgwcwggs4wo.157.151.134.169.sslip.io`) | `GET /healthz` | 200, `environment: production`. |
+
+Esas URLs `sslip.io` no representan el staging actual y pueden cambiar al recrearse.
+No usarlas como evidencia de disponibilidad de staging; el entorno vigente es
+`https://sia.dev.neuroboard.app`.
+
 ## Pendientes
 
-- Validación real en staging con Clerk/Google OAuth, Redis y servicios externos configurados.
+- Renovar o sincronizar las credenciales de prueba y ejecutar los recorridos autenticados por rol en staging (Coordinadora, Gestor y Emprendedor). Confirmar explícitamente Clerk/Google OAuth, permisos y los servicios externos aplicables.
 - Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
   actual documentado del prototipo no equivale a desplegar esta API.
-- Binarios privados R2, informes/PDF y finanzas. La UI de expediente, seguimiento, reuniones, canales y bandeja está conectada en local (Fase 7, 2026-09-29). Menciones y elegir a otra persona del ciclo siguen `TBD`: no hay listado de personas del ámbito.
+- Binarios privados R2, informes/PDF y finanzas. La UI de expediente, seguimiento, reuniones, canales y bandeja está conectada y publicada en `main` (Fase 7, 2026-09-29; smoke de despliegue 2026-10-06). Menciones y elegir a otra persona del ciclo siguen `TBD`: no hay listado de personas del ámbito.
 - Escalas de diagnóstico, catálogo oficial de entregables, evidencia mínima, transiciones y
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
+- Recorrido autenticado por rol sobre la publicación (Coordinadora, Emprendedor y Gestor),
+  añadir `pnpm --filter @sia/web test` a CI y verificar migración, observabilidad, backups
+  y rollback del entorno de staging: pendientes.
 
-En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. Esta revisión documental tampoco realiza commit, push ni migraciones.
+En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. La revisión documental del 2026-09-16 no hizo commit ni push; la actualización del 2026-10-06 entra por pull request de documentación, sin migraciones ni cambios de código.

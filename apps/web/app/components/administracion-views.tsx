@@ -316,8 +316,7 @@ export function AssignmentPanel({ scope }: { scope: AssignmentScope }) {
         <AssignmentForm scope={scope} roles={roles} />
       ) : (
         <p className={styles.meta}>
-          Para asignar hay que elegir a la persona en el listado de usuarios, que la API entrega solo a Coordinadora.
-          TBD: cómo elige Gestor a la persona que asigna.
+          La consulta de integrantes y la asignación de emprendedores desde esta pantalla aún no están disponibles para Gestores.
         </p>
       )}
     </section>
@@ -424,8 +423,8 @@ function AssignmentForm({ scope, roles }: { scope: AssignmentScope; roles: reado
   return (
     <>
       <p className={styles.meta}>
-        La API todavía no lista las asignaciones vigentes. Aquí aparecen las que registres en esta visita, y solo esas se
-        pueden revocar desde esta pantalla.
+        Aquí aparecen únicamente las asignaciones que registres durante esta visita, y solo esas se pueden revocar desde
+        esta pantalla. La consulta del equipo completo aún no está disponible.
       </p>
       {users.items.length === 0 ? (
         <p className={styles.meta}>No hay Gestores ni Emprendedores con sesión iniciada para asignar.</p>
