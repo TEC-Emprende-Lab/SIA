@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, FileText, History, LayoutGrid, List, Plus, Sparkles } from 'lucide-react'
+import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, FileText, History, LayoutGrid, List, Plus } from 'lucide-react'
 import { DiagnosticExplorer } from './diagnostic-explorer'
+import { AmbitionExplorer } from './ambition-explorer'
 import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
 import { ActivityEvidence, ObjectiveReviewContext, PrivateDocumentButton } from './tracking-review'
 import { SummaryCommunication } from './summary-communication'
@@ -271,7 +272,7 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
   }
 
   if (view === 'diagnostics' || view === 'evolution') return <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} validations={bundle.validations} evolution={view === 'evolution'} focusId={focusId} />
-  if (view === 'ambitions') return <AmbitionSection {...shared} ambitions={bundle.ambitions} objectives={bundle.objectives} navigate={navigate} />
+  if (view === 'ambitions') return <AmbitionSection {...shared} ambitions={bundle.ambitions} objectives={bundle.objectives} activities={bundle.activities} areas={bundle.canvas.areas} navigate={navigate} />
   if (view === 'evidence') return <EvidenceSection {...shared} evidence={bundle.evidence} activities={bundle.activities} focusId={focusId} navigate={navigate} />
 
   return (
@@ -335,27 +336,11 @@ function ErrorLine({ id, error }: { id: string; message?: never; error: ActionEr
   )
 }
 
-function AmbitionSection({ cycleId, ambitions, objectives, navigate, pendingId, actionError, run }: Actions & { ambitions: Ambition[]; objectives: Objective[]; navigate?: TrackingProps['navigate'] }) {
-  const [query, setQuery] = useState('')
-  const visible = ambitions.filter((item) => `${item.title} ${item.description}`.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es')))
-  return (
-    <div className={styles.ambitionWorkspace}>
-      <ProjectHeading title="Ambiciones" description="El propósito que orienta los objetivos del proyecto." action={<FormDialog title="Nueva ambición" primary trigger={<><Plus size={17} /> Nueva ambición</>} pending={pendingId === 'ambition-new'} error={actionError} actionId="ambition-new"><TextForm id="ambition-new" title="Nueva ambición" submitLabel="Crear ambición" pending={pendingId === 'ambition-new'} error={actionError} onSubmit={(title, description) => run('ambition-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'ambitions'), parseAmbition, { method: 'POST', body: { title, description } }).then(asVoid))} /></FormDialog>} />
-      <div className={styles.strategyNote}><Sparkles size={22} aria-hidden="true" /><p>Una ambición expresa lo que quieres lograr a largo plazo. Puede existir sin objetivos; vincularla al plan ayuda a dar sentido al trabajo cotidiano.</p></div>
-      {ambitions.length > 0 && <div className={styles.collectionToolbar}><p role="status">{visible.length} de {ambitions.length} ambiciones</p><label className={styles.searchField}><Search size={17} aria-hidden="true" /><input type="search" aria-label="Buscar ambiciones" placeholder="Buscar por título o descripción" value={query} onChange={(event) => setQuery(event.target.value)} /></label></div>}
-      {ambitions.length === 0 ? <div className={styles.emptyWorkspace}><Sparkles size={28} aria-hidden="true" /><h2>¿Hacia dónde quieres llevar tu proyecto?</h2><p>Crea tu primera ambición con el botón «Nueva ambición». Después podrás vincularla a uno o varios objetivos.</p></div> : null}
-      <div className={styles.ambitionCollection}>
-      {visible.map((ambition) => (
-        <article key={ambition.id} className={styles.ambitionItem}>
-          <div className={styles.ambitionCopy}>
-          <h3>{ambition.title}</h3>
-          <p>{ambition.description || 'Sin descripción registrada.'}</p>
-          <div className={styles.ambitionConnections}>
-            <span><Target size={15} aria-hidden="true" /> Objetivos vinculados en este ciclo</span>
-            {objectives.filter((item) => item.ambition_id === ambition.id).length === 0 ? <p>Esta ambición aún no tiene objetivos vinculados en el ciclo.</p> : objectives.filter((item) => item.ambition_id === ambition.id).map((objective) => <button type="button" key={objective.id} onClick={() => navigate?.('Objetivos y actividades', objective.id)}>{objective.title}<ArrowRight size={15} aria-hidden="true" /></button>)}
-          </div>
-          </div>
-          <FormDialog title="Editar ambición" pending={pendingId === `ambition-${ambition.id}`} error={actionError} actionId={`ambition-${ambition.id}`}>
+function AmbitionSection({ cycleId, ambitions, objectives, activities, areas, navigate, pendingId, actionError, run }: Actions & { ambitions: Ambition[]; objectives: Objective[]; activities: Activity[]; areas: Area[]; navigate?: TrackingProps['navigate'] }) {
+  return <AmbitionExplorer ambitions={ambitions} objectives={objectives} activities={activities} areas={areas}
+    onObjective={navigate ? (id) => navigate('Objetivos y actividades', id) : undefined}
+    createAction={<FormDialog title="Nueva ambición" primary trigger={<><Plus size={17} /> Nueva ambición</>} pending={pendingId === 'ambition-new'} error={actionError} actionId="ambition-new"><TextForm id="ambition-new" title="Nueva ambición" submitLabel="Crear ambición" pending={pendingId === 'ambition-new'} error={actionError} onSubmit={(title, description) => run('ambition-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'ambitions'), parseAmbition, { method: 'POST', body: { title, description } }).then(asVoid))} /></FormDialog>}
+    editAction={(ambition) => <FormDialog key={ambition.id} title="Editar ambición" pending={pendingId === `ambition-${ambition.id}`} error={actionError} actionId={`ambition-${ambition.id}`}>
           <TextForm
             id={`ambition-${ambition.id}`}
             title="Editar ambición"
@@ -372,13 +357,8 @@ function AmbitionSection({ cycleId, ambitions, objectives, navigate, pendingId, 
               )
             }
           />
-          </FormDialog>
-        </article>
-      ))}
-      </div>
-      {ambitions.length > 0 && visible.length === 0 && <div className={styles.emptyWorkspace}><Search size={26} aria-hidden="true" /><h2>No encontramos esa ambición</h2><p>Prueba con otro título o una palabra de la descripción.</p><button type="button" className="btn secondary" onClick={() => setQuery('')}>Limpiar búsqueda</button></div>}
-    </div>
-  )
+    </FormDialog>}
+  />
 }
 
 function asVoid(result: { ok: boolean; message?: string }): { ok: true } | { ok: false; message: string } {
