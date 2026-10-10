@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "oxlint app",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/project-workspace.mjs && node tests/tracking-review.mjs && node tests/project-summary.mjs && node tests/tracking-kanban.mjs && node tests/reports.mjs"
+    "test": "node tests/project-workspace.mjs && node tests/tracking-review.mjs && node tests/project-summary.mjs && node tests/tracking-kanban.mjs && node tests/reports.mjs && node tests/diagnostic-explorer.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.4",

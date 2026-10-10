@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, FileText, History, LayoutGrid, List, Plus, Box, Sparkles } from 'lucide-react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, FileText, History, LayoutGrid, List, Plus, Sparkles } from 'lucide-react'
+import { DiagnosticExplorer } from './diagnostic-explorer'
 import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
 import { ActivityEvidence, ObjectiveReviewContext, PrivateDocumentButton } from './tracking-review'
 import { SummaryCommunication } from './summary-communication'
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useMe } from './authenticated-shell'
 import shell from './expediente.module.css'
 import styles from './seguimiento.module.css'
+import diagnosticStyles from './diagnostic-explorer.module.css'
 import { formatDateTime, trimmedName } from '../lib/expediente'
 import { uploadPrivateDocument } from '../lib/documents'
 import {
@@ -1238,42 +1240,19 @@ function DiagnosticSection({
   const ordered = [...diagnostics].sort((a, b) => b.assessed_on.localeCompare(a.assessed_on))
   const [selected, setSelected] = useState(focusId ?? ordered.find((item) => item.status === 'approved')?.id ?? ordered[0]?.id ?? '')
   const current = diagnostics.find((item) => item.id === selected) ?? ordered[0]
-  const [rotation, setRotation] = useState({ x: -18, y: -28 })
-  const [activeArea, setActiveArea] = useState('')
-  const drag = useRef<{ pointerId: number; x: number; y: number } | null>(null)
-  const faces = ['top', 'right', 'back', 'left', 'front', 'bottom']
-  const colors = ['olive', 'sand', 'blue', 'clay', 'orange', 'blue']
-
-  function beginCubeDrag(event: React.PointerEvent<HTMLDivElement>) {
-    drag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
-    event.currentTarget.setPointerCapture(event.pointerId)
-  }
-
-  function moveCube(event: React.PointerEvent<HTMLDivElement>) {
-    if (!drag.current || drag.current.pointerId !== event.pointerId) return
-    const deltaX = event.clientX - drag.current.x
-    const deltaY = event.clientY - drag.current.y
-    drag.current = { ...drag.current, x: event.clientX, y: event.clientY }
-    setRotation((value) => ({ x: Math.max(-75, Math.min(75, value.x - deltaY * 0.45)), y: value.y + deltaX * 0.45 }))
-  }
-
-  function endCubeDrag(event: React.PointerEvent<HTMLDivElement>) {
-    if (drag.current?.pointerId === event.pointerId) drag.current = null
-  }
   return (
     <>
-      <ProjectHeading eyebrow="Comprender para avanzar" title={evolution ? 'Evolución' : 'Diagnóstico 360°'} description={evolution ? 'Compara fotografías aprobadas para observar la evolución del proyecto.' : 'El Cubo 360 reúne seis áreas de negocio para orientar los objetivos del proyecto.'} action={<>
+      <ProjectHeading title={evolution ? 'Evolución' : 'Diagnóstico 360°'} description={evolution ? 'Compara fotografías aprobadas para observar la evolución del proyecto.' : 'Explora las seis áreas de tu proyecto y encuentra dónde enfocar el siguiente paso.'} action={<>
         <FormDialog title="Historial" trigger={<><History size={16} /> Historial</>} pending={false} error={null} actionId="history"><div className="stack">{ordered.map((item) => <button className="record-row" key={item.id} onClick={() => setSelected(item.id)}><CalendarDays size={18} /><div><strong>{formatDay(item.assessed_on)}</strong><p>{STATUS_LABEL[item.status]}</p></div></button>)}<p className="small muted">Selecciona una fotografía; cierra el historial para explorar sus áreas.</p></div></FormDialog>
         {!evolution && <FormDialog title="Nuevo diagnóstico" primary trigger={<><Plus size={17} /> Nuevo diagnóstico</>} pending={pendingId === 'diagnostic-new'} error={actionError} actionId="diagnostic-new"><DiagnosticForm id="diagnostic-new" areas={areas} approved={approved} pending={pendingId === 'diagnostic-new'} error={actionError} onSubmit={(body) => run('diagnostic-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'diagnostics'), parseDiagnostic, { method: 'POST', body }).then(asVoid))} /></FormDialog>}
       </>} />
       {!evolution && current && <>
-        <div className="diagnostic-toolbar"><div className="inline"><span className="eyebrow">Fotografía del proyecto</span><select aria-label="Seleccionar diagnóstico" value={current.id} onChange={(event) => setSelected(event.target.value)}>{ordered.map((item) => <option key={item.id} value={item.id}>{formatDay(item.assessed_on)} · {STATUS_LABEL[item.status]}</option>)}</select><span className={`badge ${current.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[current.status]}</span></div></div>
-        <div className="diagnostic-overview"><ProjectPanel className="cube-panel"><div className="panel-heading"><h2>El Cubo 360</h2><span className="small muted">Evaluación descriptiva</span></div><div className="cube360"><div className="cube-scene" role="group" aria-label="Cubo 360 interactivo" onPointerDown={beginCubeDrag} onPointerMove={moveCube} onPointerUp={endCubeDrag} onPointerCancel={endCubeDrag}><div className="cube" style={{ transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)` }}>{areas.map((area, index) => <button type="button" key={area.id} className={`cube-face cube-face--${faces[index]} ${colors[index]}${activeArea === area.id ? ' active' : ''}`} onClick={() => setActiveArea(area.id)}><span className={`area-icon ${colors[index]}`}><Box size={21} strokeWidth={1.6} /></span><span className="cube-face-name">{area.name}</span><span className="small">{current.assessments.some((item) => item.area_id === area.id) ? 'Observación registrada' : 'Pendiente'}</span></button>)}</div></div><p className="cube-instructions">Arrastra el cubo o usa los controles. Selecciona una cara para ver el detalle.</p><div className="cube-controls" role="group" aria-label="Controles de giro"><button className="btn secondary" onClick={() => setRotation({ x: 0, y: rotation.y + 90 })}>Girar a la izquierda</button><button className="btn secondary" onClick={() => setRotation({ x: 0, y: rotation.y - 90 })}>Girar a la derecha</button><button className="btn secondary" onClick={() => setRotation({ x: -75, y: rotation.y })}>Ver cara superior</button><button className="btn secondary" onClick={() => setRotation({ x: -18, y: -28 })}>Restablecer vista</button></div></div><div className="chart-legend"><span>Evaluación: {formatDay(current.assessed_on)}</span><span>6 áreas del programa</span></div></ProjectPanel><div className="diagnostic-story"><p className="eyebrow">Una fotografía, nuevas posibilidades</p><div className="score"><strong>{current.assessments.length}</strong><span>/ {areas.length}<br /><small>áreas registradas</small></span></div><h2>{current.status === 'approved' ? 'Cada avance cuenta.' : 'Tu próxima fotografía está en camino.'}</h2><p>Explora las observaciones para orientar los objetivos del proyecto.</p><div className="evolution-counts"><div><strong>{approved.length}</strong><span>fotografías aprobadas</span></div><div><strong>{diagnostics.length}</strong><span>fotografías registradas</span></div></div><p className="small muted">Las escalas numéricas y sus indicadores comparativos están pendientes de definición. No se calculan puntajes.</p></div></div>
-        <div className="section-heading"><div><h2>Seis caras, un mismo proyecto</h2><p className="muted">Explora cada cara del Cubo 360 para orientar los objetivos del plan.</p></div><span className="small muted">{current.assessments.length} áreas evaluadas</span></div><div className="area-grid">{areas.map((area, index) => <button className="area-card" key={area.id} onClick={() => setActiveArea(area.id)}><span className={`area-icon ${colors[index]}`}><Box size={21} strokeWidth={1.6} /></span><h3>{area.name}</h3><p>{current.assessments.find((item) => item.area_id === area.id)?.observation ?? 'Pendiente de completar'}</p></button>)}</div>
-        <Dialog open={Boolean(activeArea)} onOpenChange={(open) => { if (!open) setActiveArea('') }}><DialogContent><DialogHeader><DialogTitle>{areaName(areas, activeArea)}</DialogTitle><DialogDescription>Observación de la fotografía seleccionada.</DialogDescription></DialogHeader><p>{current.assessments.find((item) => item.area_id === activeArea)?.observation ?? 'Pendiente de completar'}</p></DialogContent></Dialog>
+        <div className={diagnosticStyles.toolbar}><label>Fotografía del proyecto<select aria-label="Seleccionar diagnóstico" value={current.id} onChange={(event) => setSelected(event.target.value)}>{ordered.map((item) => <option key={item.id} value={item.id}>{formatDay(item.assessed_on)} · {STATUS_LABEL[item.status]}</option>)}</select></label><span className={`badge ${current.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[current.status]}</span><span className={diagnosticStyles.historyCount}>{diagnostics.length} fotografías · {approved.length} aprobadas</span></div>
+        <DiagnosticExplorer key={current.id} areas={areas} diagnostic={current} />
       </>}
-      <section className="panel mt-6" aria-label={evolution ? 'Comparación de fotografías' : 'Acciones del diagnóstico'}>
-      {diagnostics.length === 0 ? <p className={shell.meta}>No hay fotografías en este ciclo.</p> : null}
+      <section className={evolution ? 'panel mt-6' : diagnosticStyles.actions} aria-label={evolution ? 'Comparación de fotografías' : 'Acciones del diagnóstico'}>
+      {!evolution && current ? <div className={diagnosticStyles.actionsHeading}><h2>Seguimiento de esta fotografía</h2><p>{current.status === 'approved' ? 'Esta fotografía está aprobada y se conserva sin cambios.' : 'Continúa el registro o envíalo a revisión cuando esté listo.'}</p></div> : null}
+      {diagnostics.length === 0 ? <div className={diagnosticStyles.empty}><h2>El primer diagnóstico empieza aquí</h2><p>Registra una fotografía de las seis áreas para conversar sobre las necesidades del proyecto. Usa Nuevo diagnóstico para comenzar.</p></div> : null}
       {(!evolution && current ? [current] : []).map((diagnostic) => {
         const decision = latest(validations, 'diagnostic_id', diagnostic.id)
         return (
