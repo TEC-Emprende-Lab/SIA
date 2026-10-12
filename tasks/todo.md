@@ -108,11 +108,10 @@ Pendientes abiertos:
 - [ ] Revisión autenticada por rol sobre la publicación: Coordinadora y Emprendedor en el
   Kanban, la revisión de evidencias y el Resumen. El recorrido del Gestor sigue aplazado
   por indicación del usuario.
-- [ ] Añadir `pnpm --filter @sia/web test` a CI: `web-and-contracts` termina en
-  `pnpm contract:check` y hoy no ejecuta esa suite.
+- [x] `pnpm --filter @sia/web test` está en el workflow `web-and-contracts`.
 - [x] Entorno de staging separado de `main` y HTTPS del despliegue: disponible en
   `https://sia.dev.neuroboard.app`; falta certificar sus recorridos autenticados,
-  migraciones, observabilidad, backups y rollback.
+  el release en el host, los logs de request-id, backups y rollback.
 
 ## Kanban de objetivos y actividades, 2026-10-05
 
