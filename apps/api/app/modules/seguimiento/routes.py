@@ -4,9 +4,17 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+from app.models.evidence_folder import EvidenceFolder, EvidencePlacement
 from app.models.seguimiento import Activity, Diagnostic, Objective, Validation
 from app.models.user import User
-from app.modules.seguimiento import service
+from app.modules.seguimiento import folders, service
+from app.schemas.evidence_folder import (
+    FolderCreate,
+    FolderOut,
+    FolderUpdate,
+    PlacementOut,
+    PlacementUpdate,
+)
 from app.schemas.seguimiento import (
     ActivityCompletion,
     ActivityCreate,
@@ -36,6 +44,41 @@ from app.security.deps import get_current_user
 router = APIRouter(prefix="/cycles/{cycle_id}/seguimiento", tags=["seguimiento"])
 DB = Annotated[AsyncSession, Depends(get_db)]
 Actor = Annotated[User, Depends(get_current_user)]
+
+
+@router.get("/folders", response_model=list[FolderOut])
+async def get_folders(cycle_id: str, db: DB, user: Actor) -> list[EvidenceFolder]:
+    return await folders.list_folders(db, user, cycle_id)
+
+
+@router.post("/folders", response_model=FolderOut, status_code=201)
+async def create_folder(
+    cycle_id: str, payload: FolderCreate, db: DB, user: Actor
+) -> EvidenceFolder:
+    return await folders.save_folder(db, user, cycle_id, payload)
+
+
+@router.put("/folders/{folder_id}", response_model=FolderOut)
+async def update_folder(
+    cycle_id: str, folder_id: str, payload: FolderUpdate, db: DB, user: Actor
+) -> EvidenceFolder:
+    return await folders.save_folder(db, user, cycle_id, payload, folder_id)
+
+
+@router.get("/evidence-placements", response_model=list[PlacementOut])
+async def get_placements(cycle_id: str, db: DB, user: Actor) -> list[EvidencePlacement]:
+    return await folders.list_placements(db, user, cycle_id)
+
+
+@router.put("/evidence/{evidence_id}/folder", response_model=PlacementOut)
+async def move_evidence(
+    cycle_id: str,
+    evidence_id: str,
+    payload: PlacementUpdate,
+    db: DB,
+    user: Actor,
+) -> EvidencePlacement:
+    return await folders.move_evidence(db, user, cycle_id, evidence_id, payload)
 
 
 @router.get("/summary", response_model=TrackingSummary)

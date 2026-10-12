@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, FileText, History, LayoutGrid, List, Plus } from 'lucide-react'
+import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, History, LayoutGrid, List, Plus } from 'lucide-react'
 import { DiagnosticExplorer } from './diagnostic-explorer'
 import { AmbitionExplorer } from './ambition-explorer'
+import { EvidenceBrowser } from './evidence-browser'
 import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
-import { ActivityEvidence, ObjectiveReviewContext, PrivateDocumentButton } from './tracking-review'
+import { ActivityEvidence, ObjectiveReviewContext } from './tracking-review'
+import type { EvidenceFolder } from '../lib/evidence-folders'
 import { SummaryCommunication } from './summary-communication'
 import { TrackingKanban, type ObjectiveDropAction, type ObjectiveDecision } from './tracking-kanban'
 import type { ProjectSection } from '../lib/project-workspace'
@@ -273,7 +275,7 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
 
   if (view === 'diagnostics' || view === 'evolution') return <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} validations={bundle.validations} evolution={view === 'evolution'} focusId={focusId} />
   if (view === 'ambitions') return <AmbitionSection {...shared} ambitions={bundle.ambitions} objectives={bundle.objectives} activities={bundle.activities} areas={bundle.canvas.areas} navigate={navigate} />
-  if (view === 'evidence') return <EvidenceSection {...shared} evidence={bundle.evidence} activities={bundle.activities} focusId={focusId} navigate={navigate} />
+  if (view === 'evidence') return <EvidenceSection {...shared} evidence={bundle.evidence} activities={bundle.activities} objectives={bundle.objectives} focusId={focusId} navigate={navigate} />
 
   return (
     <>
@@ -982,18 +984,20 @@ function ActivityForm({
   )
 }
 
-function EvidenceSection({ cycleId, entrepreneurshipId, evidence, activities, focusId, navigate, pendingId, actionError, run }: Actions & { evidence: Evidence[]; activities: Activity[]; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }) {
-  const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(focusId ?? '')
+function EvidenceSection({ cycleId, entrepreneurshipId, evidence, activities, objectives, focusId, navigate, pendingId, actionError, run }: Actions & { evidence: Evidence[]; activities: Activity[]; objectives: Objective[]; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }) {
   const [activityId, setActivityId] = useState(activities[0]?.id ?? '')
-  const current = evidence.find((item) => item.id === selected)
-  const visible = evidence.filter((item) => item.title.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es')))
+  const [folderOptions, setFolderOptions] = useState<EvidenceFolder[]>([])
+  const [uploadFolder, setUploadFolder] = useState('')
   return <>
-    <ProjectHeading eyebrow="El respaldo de cada paso" title="Evidencias" description="El trabajo del proyecto, documentado y conectado con sus actividades." action={<FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new"><label className={styles.field}>Actividad<select value={activityId} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>{activityId ? <EvidenceForm id="evidence-new" entrepreneurshipId={entrepreneurshipId} pending={pendingId === 'evidence-new'} error={actionError} onSubmit={(body) => run('evidence-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidence, { method: 'POST', body: { ...body, activity_id: activityId } }).then(asVoid))} /> : <p>Registra primero una actividad.</p>}<p className="small muted">Un enlace sigue siendo una URL. Un archivo queda privado y solo se abre con autorización.</p></FormDialog>} />
-    <div className="filters"><span className="muted">{evidence.length} evidencias en el proyecto</span><label className="search-box"><Search size={16} /><input aria-label="Buscar evidencias" placeholder="Buscar evidencia…" value={query} onChange={(event) => setQuery(event.target.value)} /></label></div>
-    <div className="evidence-grid">{visible.map((item) => <button className="evidence-card" key={item.id} onClick={() => setSelected(item.id)}><div className={`evidence-cover ${item.kind === 'link' ? 'blue' : 'sand'}`}><FileText size={38} strokeWidth={1} /><span>{item.kind === 'link' ? 'ENLACE' : item.kind === 'file' ? 'DOCUMENTO' : item.kind === 'photograph' ? 'FOTOGRAFÍA' : 'VIDEO'}</span></div><div><h3>{item.title}</h3><p>{activities.find((activity) => activity.id === item.activity_id)?.title}</p><footer>{formatDateTime(item.created_at)}</footer></div></button>)}</div>
-    {visible.length === 0 && <div className="empty"><h3>Sin evidencias para mostrar</h3><p>Agrega un respaldo o cambia el texto de búsqueda.</p></div>}
-    <Dialog open={Boolean(current)} onOpenChange={(open) => { if (!open) setSelected('') }}><DialogContent><DialogHeader><DialogTitle>{current?.title}</DialogTitle><DialogDescription>Evidencia vinculada a una actividad del proyecto.</DialogDescription></DialogHeader>{current && <><p className="muted small">{formatDateTime(current.created_at)}</p><div className="document-preview"><FileText size={28} /><h3>Contenido de referencia</h3><p>{current.description || 'Sin descripción registrada.'}</p></div>{current.document_id && entrepreneurshipId ? <PrivateDocumentButton entrepreneurshipId={entrepreneurshipId} documentId={current.document_id} title={current.title} /> : current.url ? <a className="text-link" href={current.url} target="_blank" rel="noopener noreferrer">Abrir referencia</a> : <p className="small muted">Archivo privado. Se entrega solo con autorización del proyecto.</p>}<ProjectLink onClick={() => navigate?.('Objetivos y actividades', current.activity_id)}>Ver actividad de origen</ProjectLink></>}</DialogContent></Dialog>
+    <ProjectHeading eyebrow="El respaldo de cada paso" title="Evidencias" description="Organiza archivos y enlaces sin perder su relación con el trabajo del proyecto." action={
+      <FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new">
+        <label className={styles.field}>Actividad<select value={activityId} disabled={pendingId === 'evidence-new'} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>
+        <label className={styles.field}>Carpeta personalizada<select value={uploadFolder} disabled={pendingId === 'evidence-new'} onChange={(event) => setUploadFolder(event.target.value)}><option value="">Sin carpeta personalizada</option>{folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
+        {activityId ? <EvidenceForm id="evidence-new" entrepreneurshipId={entrepreneurshipId} pending={pendingId === 'evidence-new'} error={actionError} onSubmit={(body) => run('evidence-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidence, { method: 'POST', body: { ...body, activity_id: activityId, folder_id: uploadFolder || null } }).then(asVoid))} /> : <p>Registra primero una actividad.</p>}
+        <p className="small muted">Agregar evidencia reabre la validación del objetivo aprobado. Elegir o mover una carpeta no cambia la aprobación.</p>
+      </FormDialog>
+    } />
+    <EvidenceBrowser cycleId={cycleId} entrepreneurshipId={entrepreneurshipId} evidence={evidence} activities={activities} objectives={objectives} focusId={focusId} onActivity={(id) => navigate?.('Objetivos y actividades', id)} onFoldersChange={setFolderOptions} onFolderChange={setUploadFolder}>{null}</EvidenceBrowser>
   </>
 }
 
