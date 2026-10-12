@@ -1,5 +1,18 @@
 # Consolidacion de decisiones
 
+## Recorrido autenticado de staging — 2026-10-12
+
+Evidencia de la Fase 8, sin cerrarla. Referencias: US-PRO-001/002 y US-PM-001/002 para el seguimiento visto; roles en `actores-roles-y-permisos.md`. No cambia reglas, permisos, API ni contratos. No se escribieron datos en staging.
+
+- Coordinadora y Emprendedor entraron en `https://sia.dev.neuroboard.app`. La contraseña de prueba de Coordinadora fue rechazada; el acceso usado fue el código de correo de las cuentas de Clerk Development. `GET /api/sia/me` confirmó cada rol. Google OAuth no se probó. Clerk muestra Development mode.
+- En Aula Viva, ambos roles vieron el Resumen (avance 0 %, siguientes pasos, plan, acuerdos sin estado de cumplimiento y alertas personales), la revisión de evidencias y el Kanban. Coordinadora ve el formulario de validación y no lo envió. Emprendedor no ve «Validar objetivo» ni el formulario de decisión.
+- El Kanban de objetivos mostró 3 borradores y 3 pendientes de validación. El de actividades, 5 pendientes, 10 vencidas y 9 completadas. No se arrastró ninguna tarjeta.
+- QA Staging - Flujo completo abre el Resumen vacío. Finanzas sigue como aviso de pendiente. Equipo de Coordinadora solo asigna en la visita; el de Emprendedor informa que la consulta de integrantes no está disponible.
+- [x] Resumen, revisión de evidencias y Kanban visto para Coordinadora y Emprendedor.
+- [ ] Arrastre del Kanban en sesión autenticada.
+- [ ] Recorrido del Gestor. Sigue aplazado.
+- [ ] Migraciones `008–010`, observabilidad, backups y rollback de staging.
+
 ## Carpetas de evidencias — implementación local 2026-10-12
 
 - Decisión del usuario: administración = Coordinadora, organización automática y
