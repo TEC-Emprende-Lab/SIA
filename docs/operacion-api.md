@@ -5,7 +5,7 @@
 Estado revisado el **2026-10-06**, sobre `develop` `7e0947e`: identidad/invitaciones, expediente y seguimiento persistente para
 US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002.
 Última verificación operativa: **2026-10-06**, sobre `1725260` (sección «Verificación operativa — 2026-10-06»).
-Última verificación de staging: **2026-10-06**, sobre `develop` `7e0947e` (sección «Verificación de staging — 2026-10-06»).
+Última verificación de staging: **2026-10-12**, recorrido autenticado parcial en `https://sia.dev.neuroboard.app` (sección «Verificación de staging — 2026-10-12»). El smoke del 2026-10-06 permanece en la sección anterior.
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
 [`apps/api/app/modules/seguimiento/README.md`](../apps/api/app/modules/seguimiento/README.md).
@@ -321,9 +321,27 @@ Esas URLs `sslip.io` no representan el staging actual y pueden cambiar al recrea
 No usarlas como evidencia de disponibilidad de staging; el entorno vigente es
 `https://sia.dev.neuroboard.app`.
 
+## Verificación de staging — 2026-10-12
+
+Recorrido autenticado en el navegador sobre `https://sia.dev.neuroboard.app`. No modifica reglas, permisos, API ni datos de staging: no se registró ninguna decisión de validación ni se soltó ninguna tarjeta del Kanban. No certifica la Fase 8 ni la Fase 9. No se identificó el SHA desplegado.
+
+El inicio de sesión de la cuenta de prueba de Coordinadora con contraseña fue rechazado por Clerk (`Password is incorrect`; quedaban dos intentos). No se reintentó la contraseña. Coordinadora y Emprendedor entraron con el código de correo de sus cuentas de prueba de Clerk Development. `GET /api/sia/me` confirmó los roles. Google OAuth no se ejerció. El widget de Clerk del sitio público muestra **Development mode**.
+
+| Rol | Proyecto | Qué se vio |
+|---|---|---|
+| Coordinadora | QA Staging - Flujo completo | Resumen en vacío: 0 objetivos, sin reuniones próximas, sin acuerdos y sin alertas sin resolver. |
+| Coordinadora y Emprendedor | Aula Viva · Ciencias accesibles [DEMO] | Resumen con avance de ciclo 0 % (0 de 6 objetivos aprobados), «Lo que sigue», plan compartido, acuerdos con fecha de compromiso y aviso de que el cumplimiento no está definido, y panel de alertas personales. No hay reuniones próximas. |
+| Coordinadora | Aula Viva | Lista de objetivos con «Validar objetivo». Diálogo de evidencias del kit con contexto, actividades y enlace de bitácora. Formulario de decisión (aprobar, solicitar corrección o rechazar) con observación obligatoria. No se envió. |
+| Emprendedor | Aula Viva | La lista no ofrece «Validar objetivo». El mismo diálogo muestra evidencias y acciones de actividad, sin formulario de decisión. |
+| Coordinadora y Emprendedor | Aula Viva, Kanban | Objetivos: 3 en Borrador, 3 en Pendiente de validación; Corrección solicitada, Rechazado y Aprobado vacíos. Actividades: 5 pendientes, 10 vencidas y 9 completadas. El arrastre no se ejecutó. |
+| Coordinadora | Finanzas y Equipo | Finanzas muestra el aviso de reglas y backend pendientes, sin datos de demostración. Equipo solo permite asignar durante la visita; no lista el equipo completo. |
+| Emprendedor | Equipo | Aviso de que la consulta de integrantes aún no está disponible. |
+
+El Gestor no se recorrió. Siguen sin evidencia las migraciones del despliegue, la observabilidad, los backups y el rollback.
+
 ## Pendientes
 
-- Renovar o sincronizar las credenciales de prueba y ejecutar los recorridos autenticados por rol en staging (Coordinadora, Gestor y Emprendedor). Confirmar explícitamente Clerk/Google OAuth, permisos y los servicios externos aplicables.
+- Recorrer el rol Gestor en staging y el arrastre del Kanban en sesión autenticada. Google OAuth real sigue sin ejercerse. La contraseña de la cuenta de prueba de Coordinadora no coincide con Clerk; no reintentarla.
 - Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
   actual documentado del prototipo no equivale a desplegar esta API.
 - Binarios privados R2, informes/PDF y finanzas. La UI de expediente, seguimiento, reuniones, canales y bandeja está conectada y publicada en `main` (Fase 7, 2026-09-29; smoke de despliegue 2026-10-06). Menciones y elegir a otra persona del ciclo siguen `TBD`: no hay listado de personas del ámbito.
@@ -331,8 +349,6 @@ No usarlas como evidencia de disponibilidad de staging; el entorno vigente es
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
-- Recorrido autenticado por rol sobre la publicación (Coordinadora, Emprendedor y Gestor),
-  añadir `pnpm --filter @sia/web test` a CI y verificar migración, observabilidad, backups
-  y rollback del entorno de staging: pendientes.
+- Añadir `pnpm --filter @sia/web test` a CI y verificar migración, observabilidad, backups y rollback del entorno de staging. El recorrido de Coordinadora y Emprendedor en Resumen, revisión de evidencias y Kanban visto quedó registrado el 2026-10-12.
 
 En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. La revisión documental del 2026-09-16 no hizo commit ni push; la actualización del 2026-10-06 entra por pull request de documentación, sin migraciones ni cambios de código.
