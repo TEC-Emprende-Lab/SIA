@@ -102,11 +102,13 @@ No marcar secretos como variables de build. No usar `localhost`, una URL `sslip.
 URL `http` en `SIA_DATABASE_URL`. La contraseña debe estar codificada para URL si contiene
 caracteres reservados.
 
-En una base nueva, ejecutar una sola vez en el terminal de la API:
+En una base nueva, ejecutar una sola vez el comando de pre-despliegue de la imagen API, con la misma red y `SIA_DATABASE_URL`, antes de habilitar tráfico:
 
 ```bash
-uv run --no-sync alembic upgrade head
+./scripts/release.sh
 ```
+
+Ese script aplica `alembic upgrade head` y comprueba `current` y `check`. No forma parte del CMD de la API: cada réplica no migra al arrancar.
 
 La API queda lista solo cuando `GET /readyz` devuelve `200`.
 

@@ -53,7 +53,7 @@ services:
       dockerfile: Dockerfile
     environment:
       SIA_DATABASE_URL: postgresql+asyncpg://sia:local-development-only@postgres:5432/sia
-    command: ["uv", "run", "--no-sync", "alembic", "upgrade", "head"]
+    command: ["./scripts/release.sh"]
     depends_on:
       postgres: { condition: service_healthy }
 
