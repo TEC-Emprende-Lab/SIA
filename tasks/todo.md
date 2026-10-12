@@ -1,5 +1,20 @@
 # Consolidacion de decisiones
 
+## Recorrido autenticado de staging — 2026-10-12
+
+Evidencia de la Fase 8, sin cerrarla. Referencias: US-PRO-001/002 y US-PM-001/002 para el seguimiento visto; roles en `actores-roles-y-permisos.md`. No cambia reglas, permisos, API ni contratos. No se escribieron datos en staging.
+
+- Coordinadora y Emprendedor entraron en `https://sia.dev.neuroboard.app`. La contraseña de prueba de Coordinadora fue rechazada; el acceso usado fue el código de correo de las cuentas de Clerk Development. `GET /api/sia/me` confirmó cada rol. Google OAuth no se probó. Clerk muestra Development mode.
+- En Aula Viva, ambos roles vieron el Resumen (avance 0 %, siguientes pasos, plan, acuerdos sin estado de cumplimiento y alertas personales), la revisión de evidencias y el Kanban. Coordinadora ve el formulario de validación y no lo envió. Emprendedor no ve «Validar objetivo» ni el formulario de decisión.
+- El Kanban de objetivos mostró 3 borradores y 3 pendientes de validación. El de actividades, 5 pendientes, 10 vencidas y 9 completadas. No se arrastró ninguna tarjeta.
+- QA Staging - Flujo completo abre el Resumen vacío. Finanzas sigue como aviso de pendiente. Equipo de Coordinadora solo asigna en la visita; el de Emprendedor informa que la consulta de integrantes no está disponible.
+- [x] Resumen, revisión de evidencias y Kanban visto para Coordinadora y Emprendedor.
+- [ ] Arrastre del Kanban en sesión autenticada.
+- [ ] Recorrido del Gestor. Sigue aplazado.
+- [ ] Migraciones, observabilidad, backups y rollback de staging.
+
+Detalle en [operación API](../docs/operacion-api.md#verificación-de-staging--2026-10-12).
+
 ## Estado informativo de Equipo — 2026-10-07
 
 - Corrección de presentación del alcance actual; sin nueva capacidad funcional.
@@ -89,14 +104,14 @@ Estado histórico verificado antes de la corrección de staging, 2026-10-06:
 
 Pendientes abiertos:
 
-- [ ] Revisión autenticada por rol sobre la publicación: Coordinadora y Emprendedor en el
-  Kanban, la revisión de evidencias y el Resumen. El recorrido del Gestor sigue aplazado
-  por indicación del usuario.
+- [x] Revisión autenticada por rol sobre la publicación: Coordinadora y Emprendedor vieron
+  el Kanban, la revisión de evidencias y el Resumen el 2026-10-12. El arrastre no se
+  ejecutó. El recorrido del Gestor sigue aplazado.
 - [ ] Añadir `pnpm --filter @sia/web test` a CI: `web-and-contracts` termina en
   `pnpm contract:check` y hoy no ejecuta esa suite.
 - [x] Entorno de staging separado de `main` y HTTPS del despliegue: disponible en
-  `https://sia.dev.neuroboard.app`; falta certificar sus recorridos autenticados,
-  migraciones, observabilidad, backups y rollback.
+  `https://sia.dev.neuroboard.app`. El recorrido parcial del 2026-10-12 está en la
+  sección superior; siguen abiertos migraciones, observabilidad, backups y rollback.
 
 ## Kanban de objetivos y actividades, 2026-10-05
 
