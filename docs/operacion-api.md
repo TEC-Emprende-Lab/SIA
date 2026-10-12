@@ -82,7 +82,7 @@ Evidencia: [rutas](../apps/api/app/modules/expediente/routes.py), [servicio](../
 
 Desde la raíz, `docker compose -f infra/docker-compose.yml up --build -d` utiliza los valores locales
 de Compose. PostgreSQL debe estar saludable; el servicio de una sola ejecución `migrate` aplica
-`uv run --no-sync alembic upgrade head` antes de permitir que arranque la API.
+`./scripts/release.sh` antes de permitir que arranque la API.
 API y migrador deben apuntar a la misma `SIA_DATABASE_URL` si se personaliza Compose.
 
 Comprobar `docker compose -f infra/docker-compose.yml logs migrate api` y
@@ -278,9 +278,11 @@ Cambios del núcleo desde el corte anterior del README (`919dff5`, 2026-09-29):
 Evidencia remota: `Application quality` y `Prototype quality` verdes sobre `main`
 `1725260` ([run 37354456543](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456543),
 [run 37354456484](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456484)) y sobre
-`develop` `2ebfca0`. El job `web-and-contracts` ejecuta `pnpm install --frozen-lockfile`,
+`develop` `2ebfca0`. El job `web-and-contracts` de esos runs ejecuta `pnpm install --frozen-lockfile`,
 `pnpm lint`, `pnpm typecheck`, `export_openapi.py --check` y `pnpm contract:check`; **no**
-ejecuta la suite de `apps/web`, que se corrió localmente (23 grupos, 2026-10-06).
+ejecuta la suite de `apps/web`, que se corrió localmente (23 grupos, 2026-10-06). El workflow
+actual añade `mkdir -p /tmp/opencode` y `pnpm --filter @sia/web test` antes de lint; esos runs
+citados no la incluyen.
 
 Smoke HTTP del despliegue público, 2026-10-06, sin sesión:
 
@@ -292,8 +294,8 @@ Smoke HTTP del despliegue público, 2026-10-06, sin sesión:
 
 Limitaciones: es un smoke sin autenticación ni roles, no un recorrido por rol. Este
 registro corresponde a la URL histórica de producción; el staging actual se documenta
-en la sección siguiente. Las URLs `sslip.io` pueden cambiar al recrearse. La suite de
-`apps/web` sigue fuera de CI.
+en la sección siguiente. Las URLs `sslip.io` pueden cambiar al recrearse. El workflow
+actual ejecuta la suite de `apps/web`; los runs citados arriba no la incluyen.
 
 ## Verificación de staging — 2026-10-06
 
@@ -332,7 +334,8 @@ No usarlas como evidencia de disponibilidad de staging; el entorno vigente es
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
 - Recorrido autenticado por rol sobre la publicación (Coordinadora, Emprendedor y Gestor),
-  añadir `pnpm --filter @sia/web test` a CI y verificar migración, observabilidad, backups
-  y rollback del entorno de staging: pendientes.
+  y verificar en el host de staging el pre-despliegue `./scripts/release.sh`, los logs JSON
+  de request-id, los backups y el rollback: pendientes. El workflow `web-and-contracts`
+  ya ejecuta `pnpm --filter @sia/web test`.
 
 En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. La revisión documental del 2026-09-16 no hizo commit ni push; la actualización del 2026-10-06 entra por pull request de documentación, sin migraciones ni cambios de código.
