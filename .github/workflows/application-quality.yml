@@ -61,6 +61,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: mkdir -p /tmp/opencode
+      - run: pnpm --filter @sia/web test
       - run: pnpm lint
       - run: pnpm typecheck
       - uses: astral-sh/setup-uv@v5
