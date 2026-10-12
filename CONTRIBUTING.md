@@ -62,7 +62,7 @@ El prototipo usa Node 24, pnpm 9.15.9 y lockfile propio fuera del workspace raí
 
 Para API y contratos, seguir [Reproducir validaciones](docs/operacion-api.md#reproducir-validaciones): ya existen pruebas de API, dominio, autorización, integración y concurrencia PostgreSQL, Ruff, mypy y controles de drift OpenAPI/TypeScript. La raíz ejecuta lint/typecheck de web y contratos; no incluye el prototipo. Ejecutar solo controles aplicables al cambio; una actualización documental verifica enlaces y `git diff --check` sin repetir suites de aplicación innecesariamente.
 
-Estado revisado al 2026-10-06: ambos workflows están verdes sobre `develop` `7e0947e`; la Web de staging responde en `https://sia.dev.neuroboard.app`. Alcance y límites en la [guía operativa](docs/operacion-api.md#verificación-de-staging--2026-10-06). La validación de staging exigida para liberar sigue siendo un paso independiente: un merge, CI verde o smoke sin sesión no demuestra un recorrido autenticado por roles.
+Estado revisado al 2026-10-06: ambos workflows están verdes sobre `develop` `7e0947e`; la Web de staging responde en `https://sia.dev.neuroboard.app`. El recorrido parcial de Coordinadora y Emprendedor del 2026-10-12 está en la [guía operativa](docs/operacion-api.md#verificación-de-staging--2026-10-12). La validación de staging exigida para liberar sigue siendo un paso independiente: un merge, CI verde o ese recorrido parcial no cierran la Fase 8 ni la Fase 9.
 
 ## Reglas de datos y seguridad
 
