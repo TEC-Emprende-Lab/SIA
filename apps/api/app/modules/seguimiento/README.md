@@ -2,6 +2,10 @@
 
 ## Integración
 
+Ampliación local 2026-10-12: [carpetas de evidencias](../../../../../docs/evidencias-carpetas.md),
+migración `008`. Organización auditada separada del contenido inmutable; creación,
+renombrado y ubicación inicial/movimiento con autorización de ciclo y revisión optimista.
+
 Router: `app.modules.seguimiento.routes.router`, prefijo `/cycles/{cycle_id}/seguimiento`.
 Aplicar migración `003` después de `002`; contiene el seed fijo de ambos canvas v1.
 Los modelos se registran explícitamente mediante `app.models`, también desde Alembic.

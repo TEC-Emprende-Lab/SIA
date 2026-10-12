@@ -37,6 +37,12 @@ Al aprobar la ejecución por fases del dashboard basado en el mockup, se confirm
 
 Una evidencia puede ser archivo, fotografia, video o enlace. Los archivos son privados y solo se entregan tras autorizacion backend; sus limites de tamano y MIME estan `TBD`.
 
+Decisión confirmada 2026-10-12: se organizan mediante vistas automáticas por objetivo y
+actividad y carpetas personalizadas por ciclo. Coordinadora, Gestor y Emprendedor
+autorizados pueden crear/renombrar carpetas y mover evidencias en su alcance. La ubicación
+es independiente del contenido inmutable; reorganizar no cambia sus vínculos ni
+aprobaciones. Detalle y criterios en [carpetas de evidencias](../evidencias-carpetas.md).
+
 ## Evolucion
 
 Los programas pueden registrar versiones o momentos de evaluacion para comparar la evolucion del emprendimiento. Areas, escalas, entregables obligatorios y criterios comparativos pertenecen a cada programa; no se infieren automaticamente.

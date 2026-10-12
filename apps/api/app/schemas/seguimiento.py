@@ -65,6 +65,7 @@ class ActivityCompletion(Revision):
 
 
 class EvidenceCreate(AmbitionCreate):
+    folder_id: str | None = None
     activity_id: str
     kind: Literal["link", "file", "photograph", "video"] = "link"
     url: HttpUrl | None = Field(default=None, max_length=2048)

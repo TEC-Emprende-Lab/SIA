@@ -11,6 +11,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     String,
     Text,
     UniqueConstraint,
@@ -145,6 +146,7 @@ class Evidence(Record, Base):
 
     __tablename__ = "evidence_references"
     __table_args__ = (
+        Index("uq_evidence_cycle", "id", "cycle_id", unique=True),
         ForeignKeyConstraint(["activity_id", "cycle_id"], ["activities.id", "activities.cycle_id"]),
         CheckConstraint("kind IN ('link', 'file', 'photograph', 'video')"),
         CheckConstraint(

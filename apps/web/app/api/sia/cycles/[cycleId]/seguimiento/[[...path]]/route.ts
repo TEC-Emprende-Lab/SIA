@@ -7,8 +7,8 @@ import { trackingSummary } from '../../../../../../lib/tracking-summary'
 export const dynamic = 'force-dynamic'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const COLLECTIONS = new Set(['ambitions', 'objectives', 'activities', 'evidence', 'diagnostics'])
-const UPDATABLE = new Set(['ambitions', 'objectives', 'activities', 'diagnostics'])
+const COLLECTIONS = new Set(['ambitions', 'objectives', 'activities', 'evidence', 'diagnostics', 'folders'])
+const UPDATABLE = new Set(['ambitions', 'objectives', 'activities', 'diagnostics', 'folders'])
 
 type RouteContext = { params: Promise<{ cycleId: string; path?: string[] }> }
 
@@ -21,6 +21,8 @@ function allows(method: string, path: readonly string[]): boolean {
   if (extra !== undefined || !resource) {
     return false
   }
+  if (path.length === 1 && resource === 'evidence-placements') return method === 'GET'
+  if (path.length === 3 && resource === 'evidence' && isUuid(second) && third === 'folder') return method === 'PUT'
   if (path.length === 1 && (resource === 'canvas' || resource === 'schedule' || resource === 'validations' || resource === 'summary')) {
     return method === 'GET'
   }

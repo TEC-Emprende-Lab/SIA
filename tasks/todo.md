@@ -1,5 +1,21 @@
 # Consolidacion de decisiones
 
+## Carpetas de evidencias — implementación local 2026-10-12
+
+- Decisión del usuario: administración = Coordinadora, organización automática y
+  personalizada, Emprendedores también pueden crear carpetas dentro de su alcance.
+- Trazabilidad: US-PRO-001 y US-PM-001, preservando US-PRO-002/US-PM-002.
+- Backend: migración `008`, carpetas por ciclo, ubicación separada, carga con carpeta
+  atómica, renombrado/movimiento auditados y revisión optimista. No hay borrado histórico.
+- UI: objetivos/actividades como carpetas automáticas, personalizadas, búsqueda por
+  título/descripción/actividad, filtro de tipo, ruta visible, selección en carga y
+  movimiento desde detalle. Ver `docs/evidencias-carpetas.md`.
+- Verificación local: API **135 passed, 10 skipped** (dos advertencias preexistentes);
+  suite Web incluida la nueva cobertura de carpetas, typecheck, lint, build y mypy correctos.
+- Pendiente: aplicar `008` al entorno objetivo y recorrido autenticado/visual de UI.
+  Publicación por rama `feature/carpetas-evidencias` y PR hacia `develop`; no integrar
+  ni desplegar sin autorización. No se modificó una base persistente del usuario.
+
 ## Estado informativo de Equipo — 2026-10-07
 
 - Corrección de presentación del alcance actual; sin nueva capacidad funcional.
