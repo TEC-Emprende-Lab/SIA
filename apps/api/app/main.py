@@ -9,6 +9,7 @@ from fastapi import FastAPI, Response
 from sqlalchemy import text
 
 from app.core.config import settings
+from app.core.request_log import RequestLogMiddleware
 from app.db.session import engine
 from app.modules.comunicacion.routes import router as comunicacion_router
 from app.modules.documents.routes import router as documents_router
@@ -29,6 +30,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, version="0.0.0", lifespan=lifespan)
+    app.add_middleware(RequestLogMiddleware)
 
     @app.get("/healthz", tags=["system"])
     async def healthcheck() -> dict[str, str]:
