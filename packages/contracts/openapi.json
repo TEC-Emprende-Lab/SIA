@@ -4818,6 +4818,87 @@
         }
       }
     },
+    "/cycles/{cycle_id}/chat-references/{kind}/{target_id}": {
+      "get": {
+        "tags": [
+          "comunicacion"
+        ],
+        "summary": "Get Target References",
+        "operationId": "get_target_references_cycles__cycle_id__chat_references__kind___target_id__get",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(objective|activity)$",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "target_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Target Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessageReferenceOut"
+                  },
+                  "title": "Response Get Target References Cycles  Cycle Id  Chat References  Kind   Target Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/channels/{channel_id}/read-receipt": {
       "put": {
         "tags": [
@@ -7314,6 +7395,14 @@
             },
             "type": "array",
             "title": "Mentioned User Ids"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/MessageReferenceCreate"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "References"
           }
         },
         "additionalProperties": false,
@@ -7375,6 +7464,13 @@
             },
             "type": "array",
             "title": "Mentioned User Ids"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/MessageReferenceOut"
+            },
+            "type": "array",
+            "title": "References"
           }
         },
         "type": "object",
@@ -7386,9 +7482,109 @@
           "revoked_at",
           "channel_id",
           "content",
-          "mentioned_user_ids"
+          "mentioned_user_ids",
+          "references"
         ],
         "title": "MessageOut"
+      },
+      "MessageReferenceCreate": {
+        "properties": {
+          "cycle_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Cycle Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "objective",
+              "activity"
+            ],
+            "title": "Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Target Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cycle_id",
+          "kind",
+          "target_id"
+        ],
+        "title": "MessageReferenceCreate"
+      },
+      "MessageReferenceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "cycle_id": {
+            "type": "string",
+            "title": "Cycle Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "objective",
+              "activity"
+            ],
+            "title": "Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "title": "Target Id"
+          },
+          "target_title": {
+            "type": "string",
+            "title": "Target Title"
+          },
+          "channel_id": {
+            "type": "string",
+            "title": "Channel Id"
+          },
+          "channel_name": {
+            "type": "string",
+            "title": "Channel Name"
+          },
+          "message_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "message_id",
+          "cycle_id",
+          "kind",
+          "target_id",
+          "target_title",
+          "channel_id",
+          "channel_name"
+        ],
+        "title": "MessageReferenceOut"
       },
       "MessageUpdate": {
         "properties": {

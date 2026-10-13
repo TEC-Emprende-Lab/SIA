@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -172,6 +172,16 @@ async def revoke_message(
     channel_id: str, db: DB, user: Actor, message_id: str, payload: s.CommunicationRevision
 ) -> s.MessageOut:
     return await service.update_message(db, user, channel_id, message_id, payload)
+
+
+@router.get(
+    "/cycles/{cycle_id}/chat-references/{kind}/{target_id}",
+    response_model=list[s.MessageReferenceOut],
+)
+async def get_target_references(
+    cycle_id: str, kind: Annotated[str, Path(pattern="^(objective|activity)$")], target_id: str, db: DB, user: Actor
+) -> list[s.MessageReferenceOut]:
+    return await service.references_for_target(db, user, cycle_id, kind, target_id)
 
 
 @router.put("/channels/{channel_id}/read-receipt", response_model=s.ReadReceiptOut)

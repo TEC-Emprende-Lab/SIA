@@ -1,4 +1,5 @@
 .stack { display: flex; flex-direction: column; gap: 1.15rem; }
+.chatReferences { padding: .8rem; border: 1px solid #dce5d0; border-radius: .6rem; background: #fafcf7; }.chatReferences h4 { margin: 0 0 .55rem; color: #536241; font-size: .72rem; }.chatReferences ul { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; }.chatReferences li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .45rem; align-items: baseline; color: #68745c; font-size: .67rem; }.chatReferences li strong { color: #5e733f; }.chatReferences li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.chatReferences time { color: #929b88; font-size: .6rem; }
 /* US-PRO-001/006, US-PM-001: task-focused views of the existing work plan. */
 .ambitionWorkspace { min-width: 0; }
 .workWorkspace { min-width: 0; }

@@ -889,6 +889,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cycles/{cycle_id}/chat-references/{kind}/{target_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Target References */
+        get: operations["get_target_references_cycles__cycle_id__chat_references__kind___target_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/channels/{channel_id}/read-receipt": {
         parameters: {
             query?: never;
@@ -1718,6 +1735,8 @@ export interface components {
             content: string;
             /** Mentioned User Ids */
             mentioned_user_ids?: string[];
+            /** References */
+            references?: components["schemas"]["MessageReferenceCreate"][];
         };
         /** MessageOut */
         MessageOut: {
@@ -1740,6 +1759,49 @@ export interface components {
             content: string | null;
             /** Mentioned User Ids */
             mentioned_user_ids: string[];
+            /** References */
+            references: components["schemas"]["MessageReferenceOut"][];
+        };
+        /** MessageReferenceCreate */
+        MessageReferenceCreate: {
+            /** Cycle Id */
+            cycle_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "objective" | "activity";
+            /** Target Id */
+            target_id: string;
+        };
+        /** MessageReferenceOut */
+        MessageReferenceOut: {
+            /** Id */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Message Id */
+            message_id: string;
+            /** Cycle Id */
+            cycle_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "objective" | "activity";
+            /** Target Id */
+            target_id: string;
+            /** Target Title */
+            target_title: string;
+            /** Channel Id */
+            channel_id: string;
+            /** Channel Name */
+            channel_name: string;
+            /** Message Content */
+            message_content?: string | null;
         };
         /** MessageUpdate */
         MessageUpdate: {
@@ -4704,6 +4766,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_target_references_cycles__cycle_id__chat_references__kind___target_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                kind: string;
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageReferenceOut"][];
                 };
             };
             /** @description Validation Error */

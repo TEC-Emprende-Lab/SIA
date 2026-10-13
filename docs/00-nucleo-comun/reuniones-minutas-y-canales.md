@@ -33,3 +33,16 @@ Gestión de proyecto, Finanzas y Reuniones para separar las conversaciones del e
 **Aceptación:** la API entrega una sola terna compartida por emprendimiento; no crea
 canales por ciclo ni admite canales nuevos fuera de esa terna; el acceso se valida en
 backend y los canales históricos no se eliminan.
+
+### US-COM-002 — Referenciar trabajo del ciclo desde un mensaje
+
+Como participante autorizado de un emprendimiento, quiero referenciar un objetivo o
+actividad del ciclo que estoy consultando desde un mensaje para dar contexto al equipo
+sin duplicar la conversación.
+
+**Aceptación:** el selector presenta solo objetivos y actividades del ciclo actual; la
+API valida en backend el acceso al canal, al ciclo y al recurso antes de guardar una
+referencia; el mensaje y el detalle del objetivo o actividad muestran la relación. Las
+referencias históricas conservan su ciclo original y los mensajes revocados no exponen
+su contenido mediante esta consulta. Notificaciones nuevas, referencias a otros tipos
+de recurso y tiempo real están `OUT OF SCOPE`.

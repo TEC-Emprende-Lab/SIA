@@ -14,10 +14,12 @@ from app.models.comunicacion import (
     Meeting,
     Mention,
     Message,
+    MessageReference,
     Minutes,
     Notification,
     ReadReceipt,
 )
+from app.models.seguimiento import Activity, Objective
 from app.models.user import User
 from app.modules.comunicacion import policy
 from app.modules.comunicacion.interfaces import MinutesGenerator, TranscriptDraftStub
@@ -382,19 +384,108 @@ async def create_channel(db: AsyncSession, actor: User, payload: s.ChannelCreate
     )
 
 
-async def message_out(db: AsyncSession, item: Message) -> s.MessageOut:
+async def message_out(db: AsyncSession, item: Message, actor: User | None = None) -> s.MessageOut:
     mentions = list(
         await db.scalars(
             select(Mention.user_id).where(Mention.message_id == item.id).order_by(Mention.user_id)
         )
     )
+    references = [] if item.revoked_at else await message_references(db, item.id, actor)
     return s.MessageOut(
         **{
             **snapshot(item),
             "content": None if item.revoked_at else item.content,
             "mentioned_user_ids": mentions if not item.revoked_at else [],
+            "references": references,
         }
     )
+
+
+async def message_references(db: AsyncSession, message_id: str, actor: User | None = None) -> list[s.MessageReferenceOut]:
+    """Resolve reference titles at read time; titles are never duplicated in chat."""
+    rows = await db.execute(
+        select(MessageReference, Message, Channel)
+        .join(Message, Message.id == MessageReference.message_id)
+        .join(Channel, Channel.id == Message.channel_id)
+        .where(MessageReference.message_id == message_id)
+        .order_by(MessageReference.created_at, MessageReference.id)
+    )
+    result: list[s.MessageReferenceOut] = []
+    for reference, message, channel_item in rows:
+        if actor is not None:
+            try:
+                await policy.cycle_scope(db, actor, reference.cycle_id)
+            except HTTPException:
+                # Shared chat must not expose a title from a cycle the reader cannot access.
+                continue
+        model = Objective if reference.kind == "objective" else Activity
+        target = await db.scalar(
+            select(model).where(model.id == reference.target_id, model.cycle_id == reference.cycle_id)
+        )
+        if target is None:
+            continue
+        result.append(
+            s.MessageReferenceOut(
+                **snapshot(reference),
+                target_title=str(getattr(target, "title")),
+                channel_id=channel_item.id,
+                channel_name=channel_item.name,
+                message_content=None if message.revoked_at else message.content,
+            )
+        )
+    return result
+
+
+async def validate_references(
+    db: AsyncSession, actor: User, channel_item: Channel, references: list[s.MessageReferenceCreate]
+) -> None:
+    seen: set[tuple[str, str]] = set()
+    for reference in references:
+        identity = (reference.kind, reference.target_id)
+        if identity in seen:
+            raise HTTPException(422, "No repitas una referencia en el mismo mensaje")
+        seen.add(identity)
+        entrepreneurship_id = await policy.cycle_scope(db, actor, reference.cycle_id)
+        if entrepreneurship_id != channel_item.entrepreneurship_id:
+            raise HTTPException(422, "La referencia pertenece a otro emprendimiento")
+        model = Objective if reference.kind == "objective" else Activity
+        target = await db.scalar(
+            select(model).where(model.id == reference.target_id, model.cycle_id == reference.cycle_id)
+        )
+        if target is None:
+            raise HTTPException(422, "La referencia no existe en el ciclo indicado")
+
+
+async def references_for_target(
+    db: AsyncSession, actor: User, cycle_id: str, kind: str, target_id: str
+) -> list[s.MessageReferenceOut]:
+    entrepreneurship_id = await policy.cycle_scope(db, actor, cycle_id)
+    model = Objective if kind == "objective" else Activity
+    target = await db.scalar(select(model).where(model.id == target_id, model.cycle_id == cycle_id))
+    if target is None:
+        raise HTTPException(404, "Registro no encontrado en este ámbito")
+    refs = list(
+        await db.scalars(
+            select(MessageReference)
+            .where(MessageReference.cycle_id == cycle_id, MessageReference.kind == kind, MessageReference.target_id == target_id)
+            .order_by(MessageReference.created_at, MessageReference.id)
+        )
+    )
+    result: list[s.MessageReferenceOut] = []
+    for reference in refs:
+        message = await db.get(Message, reference.message_id)
+        assert message is not None
+        channel_item = await db.get(Channel, message.channel_id)
+        assert channel_item is not None
+        if channel_item.entrepreneurship_id != entrepreneurship_id:
+            continue
+        await policy.scope(db, actor, channel_item.entrepreneurship_id, channel_item.cycle_id)
+        result.extend(
+            reference_out
+            for reference_out in await message_references(db, message.id, actor)
+            if reference_out.kind == kind and reference_out.target_id == target_id
+        )
+    return result
 
 
 async def list_messages(
@@ -408,7 +499,7 @@ async def list_messages(
         .offset(offset)
         .limit(limit)
     )
-    return [await message_out(db, item) for item in items]
+    return [await message_out(db, item, actor) for item in items]
 
 
 async def emit_alert(
@@ -477,6 +568,7 @@ async def create_message(
     parent = await channel(db, actor, channel_id, lock=True)
     if parent.revoked_at:
         raise HTTPException(409, "Canal revocado")
+    await validate_references(db, actor, parent, payload.references)
     users = sorted(set(payload.mentioned_user_ids))
     for user_id in users:
         await policy.recipient(db, user_id, parent.entrepreneurship_id, parent.cycle_id)
@@ -484,6 +576,15 @@ async def create_message(
         item = Message(channel_id=channel_id, created_by=actor.id, content=payload.content)
         db.add(item)
         await db.flush()
+        for reference in payload.references:
+            db.add(
+                MessageReference(
+                    message_id=item.id,
+                    cycle_id=reference.cycle_id,
+                    kind=reference.kind,
+                    target_id=reference.target_id,
+                )
+            )
         for user_id in users:
             db.add(Mention(message_id=item.id, user_id=user_id))
             await emit_alert(
@@ -500,7 +601,7 @@ async def create_message(
     except Exception:
         await db.rollback()
         raise
-    return await message_out(db, item)
+    return await message_out(db, item, actor)
 
 
 async def update_message(
@@ -533,7 +634,7 @@ async def update_message(
         before=before,
         observation=payload.observation,
     )
-    return await message_out(db, item)
+    return await message_out(db, item, actor)
 
 
 async def mark_read(

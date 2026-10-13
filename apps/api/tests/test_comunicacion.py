@@ -32,7 +32,7 @@ from app.security.deps import get_current_user
 
 
 def migrate(connection, direction):
-    files = sorted((Path(__file__).resolve().parents[1] / "alembic/versions").glob("00*.py"))
+    files = sorted((Path(__file__).resolve().parents[1] / "alembic/versions").glob("*.py"))
     if direction == "downgrade":
         files.reverse()
     with Operations.context(MigrationContext.configure(connection)):

@@ -17,6 +17,8 @@ export type Alert = components['schemas']['AlertOut']
 export type Notification = components['schemas']['NotificationOut']
 export type Channel = components['schemas']['ChannelOut']
 export type Message = components['schemas']['MessageOut']
+export type MessageReference = components['schemas']['MessageReferenceOut']
+export type MessageReferenceCreate = components['schemas']['MessageReferenceCreate']
 
 export const MESSAGE_PAGE_SIZE = 50
 
@@ -55,6 +57,10 @@ export function channelsUrl(query: {
 
 export function channelUrl(channelId: string, path: string, query?: { limit?: number; offset?: number }): string {
   return withQuery(`/api/sia/channels/${channelId}/${path}`, query)
+}
+
+export function targetReferencesUrl(cycleId: string, kind: 'objective' | 'activity', targetId: string): string {
+  return `/api/sia/cycles/${cycleId}/chat-references/${kind}/${targetId}`
 }
 
 export function bandejaUrl(path: string, query?: { limit?: number; offset?: number }): string {
@@ -381,11 +387,26 @@ export function parseMessage(value: unknown): Message | null {
   const channelId = requiredString(value.channel_id)
   const content = value.content === null ? null : text(value.content)
   const mentions = parseList(value.mentioned_user_ids, (item) => (typeof item === 'string' && item ? item : null))
-  if (!base || !channelId || (content === null && value.content !== null) || !mentions) {
+  const references = parseList(value.references, parseMessageReference)
+  if (!base || !channelId || (content === null && value.content !== null) || !mentions || !references) {
     return null
   }
-  return { ...base, channel_id: channelId, content, mentioned_user_ids: mentions }
+  return { ...base, channel_id: channelId, content, mentioned_user_ids: mentions, references }
 }
+
+export function parseMessageReference(value: unknown): MessageReference | null {
+  if (!isRecord(value)) return null
+  const id = requiredString(value.id); const createdAt = requiredString(value.created_at)
+  const messageId = requiredString(value.message_id); const cycleId = requiredString(value.cycle_id)
+  const kind = value.kind === 'objective' || value.kind === 'activity' ? value.kind : null
+  const targetId = requiredString(value.target_id); const targetTitle = requiredString(value.target_title)
+  const channelId = requiredString(value.channel_id); const channelName = requiredString(value.channel_name)
+  const content = value.message_content === null ? null : text(value.message_content)
+  if (!id || !createdAt || !messageId || !cycleId || !kind || !targetId || !targetTitle || !channelId || !channelName || (content === null && value.message_content !== null)) return null
+  return { id, created_at: createdAt, message_id: messageId, cycle_id: cycleId, kind, target_id: targetId, target_title: targetTitle, channel_id: channelId, channel_name: channelName, message_content: content }
+}
+
+export function parseMessageReferenceList(value: unknown): MessageReference[] | null { return parseList(value, parseMessageReference) }
 
 export function parseMessageList(value: unknown): Message[] | null {
   return parseList(value, parseMessage)

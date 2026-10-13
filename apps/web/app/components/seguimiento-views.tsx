@@ -18,6 +18,7 @@ import shell from './expediente.module.css'
 import styles from './seguimiento.module.css'
 import diagnosticStyles from './diagnostic-explorer.module.css'
 import { formatDateTime, trimmedName } from '../lib/expediente'
+import { parseMessageReferenceList, requestComunicacion, targetReferencesUrl, type MessageReference } from '../lib/comunicacion'
 import { uploadPrivateDocument } from '../lib/documents'
 import {
   canSubmit,
@@ -610,6 +611,7 @@ function ObjectiveCard({
     <article className={styles.reviewLayout} id={`objective-${objective.id}`}>
       <div className={styles.reviewMain}>
         <ObjectiveReviewContext objective={objective} area={areaName(areas, objective.area_id)} ambition={ambition?.title} activities={activities} evidence={evidence} />
+        <ChatReferences cycleId={cycleId} kind="objective" targetId={objective.id} />
         <section className={styles.reviewWork} aria-label="Trabajo registrado">
           <h3>Qué se ha trabajado</h3>
           <p className={styles.evidenceHelp}>Todas las actividades de este objetivo y las evidencias que las respaldan, sin los filtros de la lista.</p>
@@ -806,6 +808,13 @@ function ObjectiveForm({
   )
 }
 
+function ChatReferences({ cycleId, kind, targetId }: { cycleId: string; kind: 'objective' | 'activity'; targetId: string }) {
+  const [references, setReferences] = useState<MessageReference[] | null>(null)
+  useEffect(() => { let active = true; void requestComunicacion(targetReferencesUrl(cycleId, kind, targetId), parseMessageReferenceList).then((result) => { if (active) setReferences(result.ok ? result.data : []) }); return () => { active = false } }, [cycleId, kind, targetId])
+  if (!references || references.length === 0) return null
+  return <section className={styles.chatReferences} aria-label="Referencias en el chat"><h4>Conversaciones relacionadas</h4><ul>{references.map((reference) => <li key={reference.id}><strong>#{reference.channel_name}</strong><span>{reference.message_content ?? 'Mensaje revocado.'}</span><time dateTime={reference.created_at}>{formatDateTime(reference.created_at)}</time></li>)}</ul></section>
+}
+
 function ActivityCard({
   cycleId,
   entrepreneurshipId,
@@ -834,6 +843,7 @@ function ActivityCard({
         {formatDay(activity.starts_on)} – {formatDay(activity.ends_on)}
       </p>
       <p className={styles.reviewDescription}>{activity.description || 'Sin descripción de la actividad registrada.'}</p>
+      <ChatReferences cycleId={cycleId} kind="activity" targetId={activity.id} />
       {activity.completed_at && <p className={styles.evidenceHelp}>Marcada como completada: {formatDateTime(activity.completed_at)}</p>}
       <ActivityEvidence activity={activity} evidence={evidence} entrepreneurshipId={entrepreneurshipId} />
       <div className={shell.actions}>

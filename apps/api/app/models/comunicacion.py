@@ -90,6 +90,27 @@ class Message(Editable, Base):
     content: Mapped[str] = mapped_column(Text)
 
 
+class MessageReference(Record, Base):
+    """A durable, scoped pointer from a chat message to work in a program cycle.
+
+    ``target_id`` is polymorphic, so the service validates its model and cycle before
+    persisting. The cycle is stored to preserve the original reference even if the
+    shared entrepreneurship chat later displays another cycle.
+    """
+
+    __tablename__ = "chat_message_references"
+    __table_args__ = (
+        UniqueConstraint("message_id", "kind", "target_id", name="uq_chat_message_reference"),
+        CheckConstraint("kind IN ('objective', 'activity')", name="ck_chat_reference_kind"),
+    )
+    message_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("channel_messages.id"), index=True
+    )
+    cycle_id: Mapped[str] = mapped_column(String(36), ForeignKey("program_cycles.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    target_id: Mapped[str] = mapped_column(String(36), index=True)
+
+
 class Mention(Record, Base):
     __tablename__ = "chat_mentions"
     __table_args__ = (UniqueConstraint("message_id", "user_id", name="uq_mention_user"),)

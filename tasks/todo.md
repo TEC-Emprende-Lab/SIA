@@ -504,6 +504,8 @@ Referencias: US-PRO-004 / US-PM-003 (fuentes trazables del informe futuro),
 - [x] Implementar modelos, schemas, policy, service y rutas REST con autorización backend reutilizada, auditoría y revisiones.
 - [x] Reuniones, minutas manuales/borrador asistido, aprobación humana inmutable y acuerdos con responsable autorizado.
 - [x] Canales sin taxonomía inventada, mensajes, menciones, no leídos y notificaciones internas por ámbito exacto.
+- [x] **US-COM-001:** rediseñar la experiencia visual de canales como conversación y barra de canales responsiva; se preservan la terna compartida, los históricos, los estados de lectura, la edición/revocación auditada y el refresco manual (sin simular tiempo real).
+- [x] **US-COM-002:** referencias bidireccionales y trazables entre mensajes y objetivos/actividades del ciclo; la API valida el ámbito de canal, emprendimiento y ciclo, y no expone el texto de mensajes revocados.
 - [x] Interfaces/stubs explícitos y `TODO(TBD)` para integraciones y decisiones pendientes; documentar límites de IA y alertas.
 - [x] Regenerar OpenAPI/TypeScript; verificar `check.mjs`, lint y tipos; habilitar pruebas de comunicación PostgreSQL en CI.
 - [x] Verificar pytest completo, `test_comunicacion.py`, Ruff, mypy y `alembic check` en base desechable.
