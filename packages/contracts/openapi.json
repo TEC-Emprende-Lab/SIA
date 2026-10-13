@@ -6409,6 +6409,17 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
           }
         },
         "type": "object",
@@ -6420,7 +6431,8 @@
           "revoked_at",
           "entrepreneurship_id",
           "cycle_id",
-          "name"
+          "name",
+          "kind"
         ],
         "title": "ChannelOut"
       },

@@ -25,6 +25,14 @@ from app.schemas import comunicacion as s
 
 Entity = Meeting | Minutes | Agreement | Channel | Message | ReadReceipt | Alert | Notification
 
+# US-COM-001. Los canales compartidos son una terna cerrada por emprendimiento.
+# ``kind=None`` se conserva exclusivamente para canales históricos libres.
+STANDARD_CHANNELS = (
+    ("gestion_proyecto", "Gestión de proyecto"),
+    ("finanzas", "Finanzas"),
+    ("reuniones", "Reuniones"),
+)
+
 
 def snapshot(entity: Entity) -> dict[str, Any]:
     return {
@@ -285,6 +293,8 @@ async def list_channels(
     limit: int,
 ) -> list[Channel]:
     await policy.scope(db, actor, entrepreneurship_id, cycle_id)
+    if cycle_id is None:
+        await ensure_standard_channels(db, actor, entrepreneurship_id)
     return list(
         await db.scalars(
             select(Channel)
@@ -296,10 +306,79 @@ async def list_channels(
     )
 
 
+async def ensure_standard_channels(
+    db: AsyncSession, actor: User, entrepreneurship_id: str
+) -> None:
+    """Create the approved shared channels once, without touching historical ones."""
+    existing = set(
+        await db.scalars(
+            select(Channel.kind).where(
+                Channel.entrepreneurship_id == entrepreneurship_id,
+                Channel.cycle_id.is_(None),
+                Channel.kind.is_not(None),
+            )
+        )
+    )
+    missing = [(kind, name) for kind, name in STANDARD_CHANNELS if kind not in existing]
+    if not missing:
+        return
+    for kind, name in missing:
+        db.add(
+            Channel(
+                entrepreneurship_id=entrepreneurship_id,
+                cycle_id=None,
+                kind=kind,
+                name=name,
+                created_by=actor.id,
+            )
+        )
+    try:
+        await db.flush()
+        for kind, _ in missing:
+            item = await db.scalar(
+                select(Channel).where(
+                    Channel.entrepreneurship_id == entrepreneurship_id,
+                    Channel.cycle_id.is_(None),
+                    Channel.kind == kind,
+                )
+            )
+            assert item is not None
+            await write_audit(
+                db,
+                actor.id,
+                "channel.seeded",
+                "Channel",
+                item.id,
+                after={**snapshot(item), "observation": "Canal estándar creado automáticamente"},
+            )
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+
+
 async def create_channel(db: AsyncSession, actor: User, payload: s.ChannelCreate) -> Channel:
     await policy.scope(db, actor, payload.entrepreneurship_id, payload.cycle_id, manage=True)
+    if payload.cycle_id is not None:
+        raise HTTPException(409, "Los canales estándar pertenecen al emprendimiento")
+    standard = {name: kind for kind, name in STANDARD_CHANNELS}
+    kind = standard.get(payload.name)
+    if kind is None:
+        raise HTTPException(422, "El canal debe ser Gestión de proyecto, Finanzas o Reuniones")
+    existing = await db.scalar(
+        select(Channel).where(
+            Channel.entrepreneurship_id == payload.entrepreneurship_id,
+            Channel.cycle_id.is_(None),
+            Channel.kind == kind,
+        )
+    )
+    if existing:
+        return existing
     return await persist(
-        db, actor, Channel(created_by=actor.id, **payload.model_dump()), "channel.created"
+        db,
+        actor,
+        Channel(created_by=actor.id, kind=kind, **payload.model_dump()),
+        "channel.created",
     )
 
 

@@ -1382,6 +1382,8 @@ export interface components {
             cycle_id: string | null;
             /** Name */
             name: string;
+            /** Kind */
+            kind: string | null;
         };
         /** CommunicationRevision */
         CommunicationRevision: {

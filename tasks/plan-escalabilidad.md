@@ -1,12 +1,19 @@
 # Plan: SIA escalable, limpio y extensible
 
-Estado: plan de arquitectura y evolución, actualizado el **2026-10-06**. La base de arquitectura sigue la revisión del 2026-09-16 sobre `35775c0`. La [matriz canónica del README](../README.md#estado-actual) registra lo implementado; la [guía operativa](../docs/operacion-api.md) conserva evidencia local/CI y restricciones. El staging público existe y su smoke de Web está documentado; este plan no certifica escalamiento horizontal ni validación funcional por roles.
+Estado: plan de arquitectura y evolución, actualizado el **2026-10-12**. El
+[estado verificable](../docs/estado-actual.md) registra commits, CI y controles locales;
+la [guía operativa](../docs/operacion-api.md) conserva arranque y restricciones. El
+staging público existe y su smoke de Web está documentado; este plan no certifica
+escalamiento horizontal ni validación funcional por roles.
 
 ## 1. Contexto
 
 - La documentación funcional y de arquitectura está organizada en `docs/`; conserva decisiones de programa `TBD` y Pre-incubación fuera del primer alcance.
 - Existe un prototipo visual (`visual/prototype/`) con `applyCommand` y pruebas de dominio. Es referencia de UX y paridad, no fuente de aprobación de escalas, estados o reglas aún no confirmadas.
-- Ya existe backend persistente de identidad, expediente, seguimiento y comunicación, con autorización, auditoría, migraciones y contratos. `apps/web` está conectada en local a esa API (Fase 7, 2026-09-29). `apps/worker` permanece activo. La cola persistente existe como primitiva y todavía no procesa informes, correo ni borradores de IA.
+- Ya existe backend persistente de identidad, expediente, seguimiento, comunicación,
+cola, informes y documentos privados, con autorización, auditoría, migraciones y
+contratos. `apps/web` está conectada a esa API. La cola y el worker procesan PDF de
+informes; correo, IA y alertas programadas no tienen consumidor real.
 
 Antecedente histórico: el borrador original de este plan se redactó antes de implementar la aplicación real y decía «aún no está implementado». Esa premisa quedó superada por `d9b8cf2` y `fe6cf80`. Se conserva la arquitectura propuesta a continuación, con sus diferencias respecto al código actual explícitas.
 
@@ -29,7 +36,10 @@ Estos principios expresan la dirección de diseño, no una descripción literal 
 
 ## 3. Estructura del repositorio (monorepo)
 
-Estructura **objetivo** del plan original. En el árbol actual no existe `packages/tsconfig`; los contratos entregan OpenAPI y tipos TS, sin generación separada de JSON Schema ni cliente HTTP. Los Dockerfiles actuales están en cada app y la configuración Nginx de la demo está en `deploy/coolify/nginx.conf`. Compose incorpora además el servicio `migrate`. El prototipo queda fuera del workspace pnpm y conserva su lockfile independiente.
+Estructura **objetivo** del plan original. En el árbol actual no existe
+`packages/tsconfig`; los contratos entregan OpenAPI y tipos TS, sin generación separada
+de JSON Schema ni cliente HTTP. Los Dockerfiles están en cada app, Compose incorpora
+`migrate` y MinIO, y el prototipo queda fuera del workspace pnpm con lockfile propio.
 
 ```text
 / (raíz)
@@ -54,7 +64,12 @@ Se conserva `visual/prototype/` como referencia; la reutilización visual en la 
 
 ## 4. Backend — FastAPI (diseño por capas)
 
-El árbol siguiente conserva la **propuesta objetivo**, no rutas que deban existir hoy. Actualmente hay `modules/identity`, `modules/expediente` y `modules/seguimiento`, cada uno con rutas, servicio y política; modelos en `app/models`, esquemas en `app/schemas`, sesión en `app/db`, pruebas en `tests` y migraciones en `alembic/`. Los servicios usan SQLAlchemy directamente; no están implementadas las abstracciones repository/ports ni la cola del diagrama. Adoptarlas requerirá necesidad concreta, no una reestructuración automática por cumplir este dibujo.
+El árbol siguiente conserva la **propuesta objetivo**, no rutas que deban existir hoy.
+Actualmente hay módulos de identidad, expediente, seguimiento, comunicación, informes y
+documentos; modelos en `app/models`, esquemas en `app/schemas`, sesión en `app/db`,
+pruebas en `tests` y migraciones en `alembic/`. Los servicios usan SQLAlchemy
+directamente; no están implementadas las abstracciones repository/ports. Adoptarlas
+requerirá necesidad concreta, no una reestructuración automática por cumplir este dibujo.
 
 ```text
 apps/api/
@@ -97,7 +112,9 @@ Reglas propuestas para evolucionar esta capa:
 
 ## 5. Frontend — Next.js (diseño por features)
 
-Diseño **pendiente**: la web actual usa `apps/web/app/` (sin `src/`), página de construcción, layout y health check. No hay shell autenticado, features conectadas, cliente HTTP generado ni Socket.IO.
+El árbol es diseño objetivo. La web actual usa `apps/web/app/` (sin `src/`), shell
+autenticado, BFF server-only y vistas conectadas para expediente, seguimiento,
+comunicación, alertas, informes y documentos. No hay Socket.IO ni cliente HTTP generado.
 
 ```text
 apps/web/src/
@@ -135,9 +152,13 @@ Beneficio: renombrar un campo, cambiar un estado o agregar una ruta se refleja e
 - Modelo conceptual en `docs/00-nucleo-comun/modelo-de-datos-compartido.md`; **modelo ER detallado** (con estado de implementación por tabla) en `docs/00-nucleo-comun/modelo-de-datos-detallado.md`.
 - Cada tabla de negocio incluye el scope (`entrepreneurship_id` y/o `cycle_id`, `user` donde aplique); los índices empiezan por la columna de scope.
 - Alembic con migraciones versionadas; cada módulo entrega su migración con su feature.
-- La cola persistente propuesta será una tabla de jobs con claim atómico (`FOR UPDATE SKIP LOCKED`), reintentos e idempotencia; aún no hay tabla ni worker consumidor.
+- La cola persistente `job_queue` usa claim atómico (`FOR UPDATE SKIP LOCKED`),
+  reintentos e idempotencia. El worker consume PDF de informes; otros consumidores siguen pendientes.
 
-Persistencia actual: 001 identidad/auditoría, 002 expediente/asignaciones, 003 seguimiento con canvas v1. La revocación de asignaciones es lógica, auditada y autorizada por scope exacto; la corrección integrada permite al Gestor de ciclo remover Emprendedores de ese ciclo sin administrar hermanos. Detalle y prueba en [operación](../docs/operacion-api.md#revocación-y-alcance-de-asignaciones).
+Persistencia actual: 001 identidad/auditoría, 002 expediente/asignaciones, 003
+seguimiento, 004 comunicación, 005 cola, 006 informes y 007 documentos. La revocación
+de asignaciones es lógica, auditada y autorizada por scope exacto. Detalle y prueba en
+[operación](../docs/operacion-api.md#revocación-y-alcance-de-asignaciones).
 
 ## 8. Escalamiento horizontal (cómo se logra)
 
@@ -190,17 +211,17 @@ Las fases son una secuencia técnica, no una redefinición del MVP. **Nota hist�
 - **Fase 2 — Núcleo común, backend integrado**: expediente, canvas, ambiciones, objetivos, actividades, referencias HTTP(S), validaciones y cronograma. Binarios pendientes; la UI conectada está en la Fase 7. No automatizar decisiones `TBD`.
 - **Fase 3 — Diagnóstico y evolución, backend descriptivo integrado**: fotografías de seis áreas, aprobación inmutable y comparación entre aprobadas. La UI descriptiva está en la Fase 7; escalas y deltas numéricos del prototipo no confirmados.
 - **Fase 4 — Comunicación, backend integrado**: reuniones, minutas con aprobación humana inmutable, acuerdos, canales, mensajes, menciones, no leídos, alertas y notificaciones internas. La taxonomía y permisos particulares de canales, Socket.IO/Redis, Resend, adjuntos, grabaciones y proveedor IA real permanecen `TBD` o pendientes de integración.
-- **Fase 5 — Informes técnicos, backend integrado**: informe por período que compone fuentes trazables (objetivos, actividades, evidencias, minutas, acuerdos), edición de borrador, aprobación humana con revisión explícita, versión inmutable, corrección vinculada y encolado del PDF; consumidor del worker sobre la cola persistente (`005`). Render de PDF/R2, proveedor IA real, fuente de finanzas y el cableado del deployable `apps/worker` siguen `TBD` o pendientes. Detalle en el [módulo de informes](../apps/api/app/modules/informes/README.md).
+- **Fase 5 — Informes técnicos, backend integrado**: informe por período que compone fuentes trazables (objetivos, actividades, evidencias, minutas y acuerdos), edición de borrador, aprobación humana con revisión explícita, versión inmutable, corrección vinculada y PDF generado por el worker sobre la cola persistente (`005`). La salida requiere almacenamiento configurado; proveedor IA real y fuente de finanzas siguen `TBD` o pendientes. Detalle en el [módulo de informes](../apps/api/app/modules/informes/README.md).
 - **Fase 6 — Finanzas por programa, pendiente**: implementar solo definiciones confirmadas; partidas, flujo exacto, integración administrativa, rol Revisor financiero y habilitación en Puesta en marcha siguen `TBD`.
-- **Fase 7 — UI conectada en local, 2026-09-29; smoke público de staging, 2026-10-06**: `apps/web` usa la API real de identidad, expediente, seguimiento y comunicación, con carga, errores, paginación y permisos. Lint y typecheck de `apps/web` pasan. El recorrido local de navegador a API cubrió expediente, edición de actividad con reapertura de un objetivo aprobado, evidencia, corrección y reenvío de fotografía, reunión, canal, bandeja y 403 de un rol sin asignación. El staging público responde en `/` y `/api/health`; no reemplaza el recorrido autenticado. Finanzas espera a la Fase 6. Menciones, otro responsable y la asignación hecha por el gestor siguen `TBD`: no hay listado de personas del ciclo.
-- **Fase 8 — Staging, en verificación**: `develop` está publicado y la salud pública de la Web fue comprobada el 2026-10-06. Faltan evidencia de migraciones y API, recorridos autenticados por rol, observabilidad, backups y rollback. La imagen del prototipo y el CI verde no acreditan esos controles.
+- **Fase 7 — UI conectada**: `apps/web` usa la API real de identidad, expediente, seguimiento, diagnóstico descriptivo, ambiciones, comunicación, alertas, informes y documentos, con carga, errores, paginación y permisos. El staging público responde en `/` y `/api/health`; no reemplaza el recorrido autenticado. Finanzas espera a la Fase 6. Menciones seleccionables, otro responsable y la asignación hecha por el gestor siguen `TBD`: no hay listado de personas del ciclo.
+- **Fase 8 — Staging, en verificación**: `develop` está publicado y la salud pública de la Web fue comprobada el 2026-10-12. Faltan evidencia de migraciones y API, recorridos autenticados por rol, observabilidad, backups y rollback. La imagen del prototipo y el CI verde no acreditan esos controles.
 - **Fase 9 — Validación operativa, pendiente**: ejecutar los flujos priorizados con Coordinadora, Gestores y Emprendedores autorizados en staging; confirmar alcance, permisos, comunicación, seguimiento y registro de incidencias antes de liberar.
 - **Fase 10 — Producción, pendiente**: desplegar desde `main` después de superar la validación operativa, con dominio, secretos, migraciones, monitoreo, backups y un plan de reversión verificado.
 
 ## 12. Trazabilidad y decisiones abiertas
 
 - Rieles `TBD` ya conocidos: rol `Revisor financiero`, programa/cambios formales de alcance en informes, flujo de compras que habilita el programa.
-- Restricciones efectivas y demás `TBD`: [pendientes operativos](../docs/operacion-api.md#pendientes) y [decisiones de seguimiento](../apps/api/app/modules/seguimiento/README.md#decisiones-pendientes-tbd). Las escalas son pendientes; lo implementado es comparación descriptiva. Los tipos archivo/fotografía/video son enlaces sin binarios.
+- Restricciones efectivas y demás `TBD`: [pendientes operativos](../docs/operacion-api.md#pendientes-vigentes) y [decisiones de seguimiento](../apps/api/app/modules/seguimiento/README.md#decisiones-pendientes-tbd). Las escalas son pendientes; lo implementado es comparación descriptiva. Archivo/fotografía/video pueden ser enlaces o documentos privados autorizados.
 - Cada módulo implementa las User Stories y criterios de aceptación de `docs/<programa>/historias-de-usuario.md`; ninguna implementación inventa requisitos (regla de `AGENTS.md`).
 - El historial del prototipo se conserva; la app real no reemplaza ni elimina datos de demostración ni documentación.
 

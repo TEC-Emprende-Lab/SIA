@@ -115,6 +115,7 @@ class ChannelOut(EditableOut):
     entrepreneurship_id: str
     cycle_id: str | None
     name: str
+    kind: str | None
 
 
 class MessageOut(EditableOut):

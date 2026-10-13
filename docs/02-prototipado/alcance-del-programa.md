@@ -13,3 +13,10 @@ Construir y validar una solucion o prototipo con usuarios o clientes.
 - minutas, acuerdos, alertas e informe tecnico mensual.
 
 La salida esperada es un prototipo validado, con evidencia de pruebas y aprendizaje.
+
+## Estado de implementación
+
+Canvas v1, seguimiento, diagnósticos descriptivos, ambiciones, comunicación, informes
+y documentos privados están implementados bajo las reglas comunes. Presupuesto, compras
+y facturas siguen siendo requisitos de programa sin backend. La evidencia verificable y
+los límites operativos están en el [estado actual](../estado-actual.md).

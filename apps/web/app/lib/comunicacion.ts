@@ -5,7 +5,7 @@ import type { components } from '@sia/contracts'
  * Reuniones, minutas y acuerdos: docs/00-nucleo-comun/reuniones-minutas-y-canales.md.
  * Publicar minutas: Coordinadora y Gestor asignado. Emprendedor consulta las publicadas.
  * Bandeja propia: docs/00-nucleo-comun/notificaciones-y-alertas.md. Sin tiempo real ni correo.
- * Canales: solo nombre, sin categorías ni permisos por tipo mientras su taxonomía siga TBD.
+ * US-COM-001: tres canales estándar por emprendimiento; los históricos sin tipo se conservan.
  * Mensajes sin tiempo real: se consultan al abrir o actualizar el canal. Solo el autor edita o revoca.
  * La autorización de cada operación sigue en la API.
  */
@@ -40,14 +40,10 @@ export function meetingsUrl(
 
 export function channelsUrl(query: {
   entrepreneurshipId: string
-  cycleId?: string
   limit?: number
   offset?: number
 }): string {
   const params = new URLSearchParams({ entrepreneurship_id: query.entrepreneurshipId })
-  if (query.cycleId) {
-    params.set('cycle_id', query.cycleId)
-  }
   if (query.limit !== undefined) {
     params.set('limit', String(query.limit))
   }
@@ -366,10 +362,11 @@ export function parseChannel(value: unknown): Channel | null {
   const entrepreneurshipId = requiredString(value.entrepreneurship_id)
   const cycleId = nullableString(value.cycle_id)
   const name = requiredString(value.name)
-  if (!base || !entrepreneurshipId || cycleId === undefined || !name) {
+  const kind = nullableString(value.kind)
+  if (!base || !entrepreneurshipId || cycleId === undefined || !name || kind === undefined) {
     return null
   }
-  return { ...base, entrepreneurship_id: entrepreneurshipId, cycle_id: cycleId, name }
+  return { ...base, entrepreneurship_id: entrepreneurshipId, cycle_id: cycleId, name, kind }
 }
 
 export function parseChannelList(value: unknown): Channel[] | null {

@@ -16,6 +16,21 @@
   Publicación por rama `feature/carpetas-evidencias` y PR hacia `develop`; no integrar
   ni desplegar sin autorización. No se modificó una base persistente del usuario.
 
+## Corte de estado del repositorio — 2026-10-12
+
+- Remoto sincronizado: `develop` `44a492e`; `main` `289c731` (promoción del mismo
+  producto). No había cambios locales ni pull requests abiertos al realizar el corte.
+- Se corrigió la documentación de estado: `docs/estado-actual.md` concentra evidencia
+  verificable; README, operación, modelo ER y plan ya reflejan migraciones `005` (cola),
+  `006` (informes) y `007` (documentos privados).
+- Validación local del corte: lint, typecheck, suite Web, contratos y build Web correctos;
+  API **130 passed, 10 skipped**, Ruff/formato/mypy correctos. CI verde en ambas ramas.
+- Staging `https://sia.dev.neuroboard.app` respondió 200 en `/` y `/api/health` sin sesión.
+  No se certifican todavía flujos autenticados por rol, API/migraciones del despliegue,
+  observabilidad, backups o rollback.
+- No cambia requisitos, User Stories, permisos ni reglas de negocio. Finanzas, IA/correo,
+  Socket.IO, adjuntos de chat y los `TBD` funcionales se mantienen pendientes.
+
 ## Estado informativo de Equipo — 2026-10-07
 
 - Corrección de presentación del alcance actual; sin nueva capacidad funcional.

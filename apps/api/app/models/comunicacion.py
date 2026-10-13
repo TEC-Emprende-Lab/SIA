@@ -80,6 +80,7 @@ class Channel(Editable, Base):
         String(36), ForeignKey("program_cycles.id"), index=True
     )
     name: Mapped[str] = mapped_column(String(200))
+    kind: Mapped[str | None] = mapped_column(String(32))
 
 
 class Message(Editable, Base):

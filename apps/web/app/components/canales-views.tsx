@@ -9,11 +9,9 @@ import { LoadMore } from './load-more'
 import { formatDateTime } from '../lib/expediente'
 import { usePagedList } from '../lib/use-paged-list'
 import {
-  canManageMeetings,
   channelUrl,
   channelsUrl,
   MESSAGE_PAGE_SIZE,
-  parseChannel,
   parseChannelList,
   parseMessage,
   parseMessageList,
@@ -32,52 +30,19 @@ function field(data: FormData, name: string): string {
   return typeof value === 'string' ? value : ''
 }
 
-export function ChannelsPanel({ entrepreneurshipId, cycleId }: { entrepreneurshipId: string; cycleId?: string }) {
+export function ChannelsPanel({ entrepreneurshipId }: { entrepreneurshipId: string }) {
   const me = useMe()
   const channels = usePagedList(
-    (limit, offset) => channelsUrl({ entrepreneurshipId, cycleId, limit, offset }),
+    (limit, offset) => channelsUrl({ entrepreneurshipId, limit, offset }),
     fetchChannels,
   )
   const state = channels.state
   const [openId, setOpenId] = useState<string | null>(null)
-  const [pending, setPending] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-  const [formKey, setFormKey] = useState(0)
-  const headingId = `canales-${cycleId ?? entrepreneurshipId}`
-
-  async function createChannel(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (pending) {
-      return
-    }
-    const name = requiredText(field(new FormData(event.currentTarget), 'name'), 'El nombre es obligatorio.')
-    if ('error' in name) {
-      setFormError(name.error)
-      return
-    }
-    if (name.text.length > 200) {
-      setFormError('El nombre admite hasta 200 caracteres.')
-      return
-    }
-    setPending(true)
-    setFormError(null)
-    const result = await requestComunicacion('/api/sia/channels', parseChannel, {
-      method: 'POST',
-      body: { entrepreneurship_id: entrepreneurshipId, cycle_id: cycleId ?? null, name: name.text },
-    })
-    setPending(false)
-    if (!result.ok) {
-      setFormError(result.message)
-      return
-    }
-    setFormKey((value) => value + 1)
-    setOpenId(result.data.id)
-    channels.reload()
-  }
+  const headingId = `canales-${entrepreneurshipId}`
 
   return (
     <section className={shell.section} aria-labelledby={headingId}>
-      <h2 id={headingId}>{cycleId ? 'Canales del ciclo' : 'Canales del emprendimiento'}</h2>
+      <h2 id={headingId}>Canales del emprendimiento</h2>
       <p className={shell.meta}>Los mensajes se consultan al abrir el canal o con Actualizar. No llegan en tiempo real.</p>
       {state.status === 'loading' ? <p className={shell.meta}>Cargando canales…</p> : null}
       {state.status === 'forbidden' || state.status === 'missing' || state.status === 'error' ? (
@@ -113,25 +78,6 @@ export function ChannelsPanel({ entrepreneurshipId, cycleId }: { entrepreneurshi
             onLoad={() => void channels.loadMore()}
             label="Cargar más canales"
           />
-          {canManageMeetings(me.role) ? (
-            <form key={formKey} className={shell.form} onSubmit={(event) => void createChannel(event)}>
-              <h3>Nuevo canal</h3>
-              <label className={styles.field}>
-                Nombre
-                <input name="name" required maxLength={200} disabled={pending} />
-              </label>
-              {formError ? (
-                <p className={shell.formError} role="alert">
-                  {formError}
-                </p>
-              ) : null}
-              <div className={shell.actions}>
-                <button className={shell.button} type="submit" disabled={pending}>
-                  {pending ? 'Guardando…' : 'Crear canal'}
-                </button>
-              </div>
-            </form>
-          ) : null}
         </>
       ) : null}
     </section>

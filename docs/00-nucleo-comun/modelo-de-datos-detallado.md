@@ -1,10 +1,10 @@
 # Modelo de datos detallado (ER)
 
-> **Estado — 2026-09-16.** Este documento cierra el [borrador de análisis](borrador-modelo-bd.md) (que quedó al 75 %) y lo lleva a un modelo entidad-relación completo y verificable. Complementa —no reemplaza— al [modelo conceptual compartido](modelo-de-datos-compartido.md) (vista de alto nivel) y conserva el borrador como notas históricas.
+> **Estado — 2026-10-12.** Este documento cierra el [borrador de análisis](borrador-modelo-bd.md) (que quedó al 75 %) y lo lleva a un modelo entidad-relación verificable. Complementa —no reemplaza— al [modelo conceptual compartido](modelo-de-datos-compartido.md) y conserva el borrador como notas históricas.
 >
-> **Regla de lectura:** para las áreas ya implementadas (identidad, expediente, seguimiento, comunicación, notificaciones/alertas, auditoría) la **fuente de verdad es el código** (`apps/api/app/models/*` + migraciones `001–004`); aquí se documenta lo que realmente existe y se señala qué campos del borrador **no** se implementaron. Para las áreas pendientes (finanzas, informes, archivos privados/R2, cola del worker) esto es **diseño propuesto** sujeto a los `TBD` de los documentos funcionales; no autoriza a implementar reglas que los programas aún no confirman.
+> **Regla de lectura:** la **fuente de verdad** es el código (`apps/api/app/models/*` y migraciones `001–007`). Identidad, expediente, seguimiento, comunicación, notificaciones/alertas, auditoría, cola, informes y documentos privados están implementados en distinta medida; este documento señala sus límites. Finanzas, adjuntos de chat y los `TBD` funcionales siguen siendo diseño, no autorización para inventar reglas.
 >
-> **Base:** rama `develop` (incluye la migración `004_comunicacion`, PR #6). `main` todavía no la tiene.
+> **Base:** `develop` `44a492e` y `main` `289c731`; ambos incluyen la migración `007_documents`.
 >
 > Orden de autoridad en caso de conflicto (según `AGENTS.md`): decisiones del programa aplicable → [actores, roles y permisos](actores-roles-y-permisos.md) → [visión y alcance](vision-y-alcance.md) → historias de usuario.
 
@@ -45,7 +45,7 @@ El borrador terminó con siete decisiones abiertas. Aquí se cierran; las que ya
 | 3 | **Validation polimórfica o por tipo** | **RESUELTO EN CÓDIGO.** Semi-tipada: una tabla `tracking_validations` con FK tipadas `objective_id` **XOR** `diagnostic_id` (`CheckConstraint("(objective_id IS NULL) <> (diagnostic_id IS NULL)")`), más `snapshot` (JSON) y `entity_revision`. **No** es polimórfica pura `(entity_type, entity_id)`. Para validables futuros: se añade una FK tipada y se amplía el XOR, o el dominio lleva su propia traza de aprobación (finanzas e informes ya embeben `aprobado_por`). |
 | 4 | **schedule_item tabla o vista** | **RESUELTO EN CÓDIGO.** **No es tabla.** El cronograma se **deriva** de `Activity` (`starts_on`, `ends_on`, `completed_at`). Si en el futuro se requieren hitos distintos de actividades, será una decisión nueva → `TBD`. |
 | 5 | **Finanzas** | **TBD (se modela tentativo 🔴).** El documento financiero está lleno de `TBD` y solo Prototipado la habilita; la relación de Puesta en marcha con presupuesto sigue sin definir. Se propone estructura (§Finanzas) pero **no se implementa** hasta que el programa cierre partidas, flujo y estados. |
-| 6 | **`document` unificado** | **DECISIÓN DE DISEÑO: sí, unificar.** Una tabla `documents` central para archivos privados en R2, referenciada por evidencia (binarios futuros), factura, adjunto de chat y PDF de informe. Evita repetir columnas de archivo y centraliza `storage_key` + emisión de URL firmada + auditoría. **Aún no implementada**: hoy la evidencia solo guarda URLs HTTP(S); `documents` entra con R2 (Fase 7). |
+| 6 | **`document` unificado** | **RESUELTO EN CÓDIGO.** `documents` centraliza archivos privados y emisión de URL firmada tras autorización. Evidencia puede referenciarlo. Facturas y adjuntos de chat siguen pendientes; el PDF de informes comparte almacén, pero mantiene su clave en `technical_reports` y no crea fila en `documents`. |
 | 7 | **Rol RevisorFinanciero** | **TBD.** No está en `VALID_ROLES` (`Coordinadora`, `Gestor`, `Emprendedor`). Su alcance y separación respecto a Coordinadora/Gestor siguen sin definir en [roles](actores-roles-y-permisos.md). Como el rol es texto validado, añadirlo después **no** requiere migración de esquema, solo ampliar el conjunto/`CheckConstraint`. |
 
 > Pendiente adicional heredado: **Pre-incubación** se dejó fuera del primer alcance; sus canvas, entregables y reglas se modelarán cuando el programa entre en juego. Todo lo `TBD` de programa permanece en sus documentos funcionales.
@@ -383,9 +383,14 @@ Canal del emprendimiento y, opcionalmente, de un ciclo exacto.
 | `entrepreneurship_id` | FK → `entrepreneurships.id`, not null, **index** | |
 | `cycle_id` | FK → `program_cycles.id`, nullable, **index** | `null` = canal compartido del emprendimiento. |
 | `name` | String(200) | |
+| `kind` | String(32), nullable | `gestion_proyecto` \| `finanzas` \| `reuniones` para los canales estándar; `null` únicamente en canales históricos. |
 | `created_by`, `revision`, `revoked_at`, `created_at` | (de `Editable`) | |
 
-- **Divergencia con el borrador:** **no** hay columna `tipo` (`reuniones`/`finanzas`/`general`). La **taxonomía y permisos por tipo siguen `TBD`**; hoy el canal es solo `name`, sin categorías predefinidas ni siembra automática. Aplica la regla #2 (ancla emprendimiento + ciclo opcional).
+- **US-COM-001 (migración `009`):** cada emprendimiento tiene una sola terna de
+  canales compartidos: `gestion_proyecto` (Gestión de proyecto), `finanzas` y
+  `reuniones`. Se crea al consultar los canales del emprendimiento; un índice único
+  parcial impide duplicarla. Los canales históricos libres conservan `kind = null` y
+  no se eliminan. No hay canales nuevos por ciclo.
 
 ### `channel_messages` (doc: ChannelMessage) 🟢 · `Editable` · *borrado visual*
 Mensaje de chat.
@@ -424,7 +429,10 @@ Acuse de lectura por usuario/canal; base de los "no leídos".
 - **Unique** `(channel_id, user_id)`. **FK compuesta** `(last_read_message_id, channel_id)` → `channel_messages`: impide marcar como leído un mensaje de **otro** canal. "No leídos" excluye mensajes propios y revocados.
 
 ### `chat_attachments` (doc: ChatAttachment) 🟡 *pendiente*
-**No implementada.** Los adjuntos privados (MIME/tamaño, subida) están declarados como integración **no configurada** (stub que falla explícito). Entrará junto con `documents`/R2 (decisión #6, Fase 7): `chat_attachments(id, message_id → channel_messages, document_id → documents, ...)`. Hoy no hay subida de archivos en chat.
+**No implementada.** Los adjuntos privados de chat (MIME/tamaño, subida) siguen sin
+superficie funcional. Reutilizarán `documents` ya implementada:
+`chat_attachments(id, message_id → channel_messages, document_id → documents, ...)`.
+Hoy no hay subida de archivos en chat.
 
 ---
 
@@ -491,23 +499,25 @@ Tabla central de archivos privados. La API guarda el objeto y publica metadatos;
 | `uploaded_by` | FK → `users.id` | |
 | `created_at` | timestamptz | |
 
-- **Referenciada por:** `evidence_references.document_id` cuando el respaldo es archivo privado. `chat_attachments`, `invoices` y `technical_report_documents` siguen sin implementar. La emisión de **URL firmada** la hace la API en `GET .../documents/{id}/access`. El PDF del informe se pide en `GET /cycles/{cycle_id}/reports/{report_id}/pdf`; esa respuesta tampoco incluye la clave.
+- **Referenciada por:** `evidence_references.document_id` cuando el respaldo es archivo privado. `chat_attachments` e `invoices` siguen sin implementar. La emisión de **URL firmada** la hace la API en `GET .../documents/{id}/access`. El PDF del informe se pide en `GET /cycles/{cycle_id}/reports/{report_id}/pdf`; usa su propia clave privada y esa respuesta tampoco la expone.
 
-### `job_queue` (infra — worker) 🟡 *pendiente*
-Cola persistente en PostgreSQL (decidido: PostgreSQL como cola, sin Redis en MVP). Aquí viven las tareas del worker (minutas IA, correo Resend, alertas, PDF), **idempotentes**.
+### `job_queue` (infra — worker) 🟢
+Cola persistente en PostgreSQL. Es infraestructura sin superficie HTTP ni columnas de
+alcance; el `payload` de cada tarea conserva los datos de su consumidor.
 
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | UUID PK | |
 | `kind` | String | Tipo de tarea. |
 | `payload` | JSON | |
-| `status` | String | |
-| `attempts` | int | |
+| `status` | String | `pending` \| `claimed` \| `done` \| `failed`. |
+| `attempts` / `max_attempts` | int | Reintentos controlados. |
 | `run_at` | timestamptz | Programación. |
-| `locked_at` | timestamptz, nullable | |
-| `idempotency_key` | String, **único** | Evita ejecutar dos veces. |
+| `locked_at` / `locked_by` / `last_error` | timestamp/string/text, nullable | Reclamo y diagnóstico. |
+| `idempotency_key` | String, **único**, nullable | Evita ejecutar dos veces cuando se usa clave. |
 
-- Reclamo atómico con `FOR UPDATE SKIP LOCKED` → N workers horizontales. **No implementada** (el worker es esqueleto). Costuras ya existentes donde conectará: `emit_alert` (idempotente por `source_key`) y la interfaz `MinutesGenerator` del módulo de comunicación. Vive idealmente en su propio esquema (infra, no dominio).
+- La migración `005` crea el índice `(status, run_at)` y el reclamo atómico usa `FOR UPDATE SKIP LOCKED`.
+- `python -m app.worker` consume hoy trabajos `informe.pdf`. Correo, IA, alertas programadas y otros consumidores siguen pendientes.
 
 ---
 
@@ -529,67 +539,41 @@ Regla de cálculo (decisión sostenida del borrador): **`ejecutado`, `disponible
 
 ---
 
-## 10. Informes técnicos 🟡 *estructura clara, plantilla TBD*
+## 10. Informes técnicos 🟢 *plantilla TBD*
 
 Informe periódico (arranca mensual) que **reutiliza datos del periodo** (objetivos, actividades completadas, evidencias, minutas, acuerdos, avances financieros). Clave: **la versión aprobada es una instantánea inmutable**; una corrección crea una versión nueva vinculada sin tocar la aprobada. Solo **Gestor asignado o Coordinadora** envía/revisa/aprueba. El PDF se genera **después** de aprobar (por el worker) y se guarda privado. Plantilla y campos obligatorios `TBD` ([ia-e-informes](ia-e-informes.md)).
 
-### `technical_reports` (doc: TechnicalReport) 🟡
-Contenedor del informe.
+### `technical_reports` (doc: TechnicalReport) 🟢
+Cada fila es una versión del informe `(cycle_id, period_start, period_end, kind)`;
+no existe un contenedor separado ni tablas de versiones/fuentes auxiliares. La
+composición es una instantánea JSON trazable que se captura al crear y se recompone al
+aprobar. Una corrección crea otra fila con `supersedes_id`.
 
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | UUID PK | |
 | `entrepreneurship_id` | FK → `entrepreneurships.id`, not null, **index** | |
-| `program_cycle_id` | FK → `program_cycles.id`, nullable | "Ciclo cuando aplique". |
+| `cycle_id` | FK → `program_cycles.id`, not null, **index** | |
 | `period_start` / `period_end` | Date | |
-| `type` | String | `seguimiento` \| `cierre`. |
+| `kind` / `version` / `status` | String/int/String | `status`: `borrador` \| `aprobado`. |
+| `narrative` | Text | Texto humano; plantilla y obligatoriedad `TBD`. |
+| `composition` | JSON | Fuentes congeladas y trazables. |
+| `supersedes_id` | FK → `technical_reports.id`, nullable | Corrección vinculada. |
+| `reviewed_by` / `approved_at` | FK/timestamp, nullable | Obligatorios al aprobar. |
+| `pdf_storage_key` / `pdf_generated_at` | String/timestamp, nullable | Solo campos mutables del aprobado; los escribe el worker. |
+| `created_by`, `revision`, `created_at` | FK/int/timestamp | |
 
-### `technical_report_versions` (doc: TechnicalReportVersion) 🟡 · *aprobada = inmutable*
-| Columna | Tipo | Notas |
-|---|---|---|
-| `id` | UUID PK | |
-| `technical_report_id` | FK → `technical_reports.id` | |
-| `version` | int | |
-| `status` | String | `borrador` \| `aprobado`. |
-| `author` | FK → `users.id` | |
-| `approved_by` | FK → `users.id`, nullable | |
-| `approved_at` | timestamptz, nullable | |
-| `supersedes_version_id` | FK → self, nullable | Corrección → versión nueva vinculada. |
-
-### `technical_report_source_references` (doc: TechnicalReportSourceReference) 🟡
-Trazabilidad obligatoria: cada contenido apunta a su fuente real (regla de IA: no inventar; faltante = "Pendiente de completar").
-
-| Columna | Tipo | Notas |
-|---|---|---|
-| `id` | UUID PK | |
-| `version_id` | FK → `technical_report_versions.id` | |
-| `entity_type` | String | objetivo \| actividad \| evidencia \| minuta \| acuerdo \| dato financiero. |
-| `entity_id` | String(36) | |
-| `description` | Text | |
-
-### `technical_report_manual_entries` (doc: TechnicalReportManualEntry) 🟡
-| Columna | Tipo | Notas |
-|---|---|---|
-| `id` | UUID PK | |
-| `version_id` | FK → `technical_report_versions.id` | |
-| `section` | String | Campos por plantilla `TBD`. |
-| `content` | Text | Faltante → "Pendiente de completar". |
-| `author` | FK → `users.id` | |
-
-### `technical_report_documents` (doc: TechnicalReportDocument) 🟡
-| Columna | Tipo | Notas |
-|---|---|---|
-| `id` | UUID PK | |
-| `version_id` | FK → `technical_report_versions.id` | |
-| `document_id` | FK → `documents.id` | PDF privado. |
-| `generated_at` | timestamptz | Posterior a la aprobación. |
+- La migración `006` impide períodos inválidos y un aprobado sin revisión humana.
+  El evento ORM bloquea actualización o borrado de una versión aprobada, salvo el
+  puntero al PDF. El PDF se entrega por URL firmada tras autorizar el ciclo; su clave
+  no se expone ni crea una fila en `documents`.
 
 ---
 ## 11. Diagrama ER
 
 Dos vistas para separar lo real de lo propuesto. Cardinalidad Mermaid: `||` = uno, `o{` = cero-o-muchos, `|o` = cero-o-uno.
 
-### 11.1 Implementado 🟢 (migraciones 001–004)
+### 11.1 Implementado 🟢 (migraciones 001–007)
 
 ```mermaid
 erDiagram
@@ -631,18 +615,20 @@ erDiagram
     entrepreneurships ||--o{ alerts : ""
     users ||--o{ alerts : "recipient"
     alerts ||--|| notifications : "1:1"
+    entrepreneurships ||--o{ documents : ""
+    documents |o--o{ evidence_references : "0..1"
+    program_cycles ||--o{ technical_reports : ""
+    technical_reports |o--o{ technical_reports : "supersedes"
 ```
 
 > `audit_logs` es transversal y **no** lleva FK duras (`entity_type`/`entity_id`/`actor_id` sueltos), por eso va fuera del grafo.
 
-### 11.2 Propuesto 🟡🔴 (sin migración)
+### 11.2 Propuesto 🔴 (sin migración)
 
 ```mermaid
 erDiagram
-    entrepreneurships ||--o{ documents : "pend"
     channel_messages ||--o{ chat_attachments : "pend"
     chat_attachments }o--|| documents : ""
-    evidence_references }o--o| documents : "futuro"
 
     program_cycles ||--o{ budgets : "TBD"
     budgets ||--o{ budget_items : ""
@@ -651,15 +637,10 @@ erDiagram
     budgets ||--o{ budget_changes : ""
     invoices }o--|| documents : ""
 
-    entrepreneurships ||--o{ technical_reports : "pend"
-    technical_reports ||--o{ technical_report_versions : ""
-    technical_report_versions ||--o{ technical_report_source_references : ""
-    technical_report_versions ||--o{ technical_report_manual_entries : ""
-    technical_report_versions ||--o{ technical_report_documents : ""
-    technical_report_documents }o--|| documents : ""
 ```
 
-> `job_queue` es infraestructura (esquema propio), sin FK de dominio; alimenta minutas IA, correo, alertas y PDF.
+> `job_queue` es infraestructura (sin FK de dominio) e incluye el consumidor de PDF;
+> minutas IA, correo y alertas programadas siguen sin consumidor real.
 
 ---
 
@@ -699,7 +680,10 @@ Estos `TBD` los deben cerrar los documentos de programa, no el modelo:
 6. Campos de perfil/estado de `entrepreneurships`, y estados/fechas de `program_enrollments`/`program_cycles`.
 7. **Pre-incubación** completa (fuera del primer alcance).
 
-### Pendiente de implementación (modelo listo, falta migración)
-`documents` + `chat_attachments`, `job_queue`, e informes (`technical_reports` y familia) — dependen de R2/worker (Fases 5 y 7). Finanzas espera además el cierre funcional.
+### Pendiente de implementación
+`chat_attachments`, finanzas y los consumidores de correo, IA y alertas programadas.
+`documents`, `job_queue` e informes ya tienen migraciones; su operación depende de la
+configuración del almacenamiento y del worker desplegado. Finanzas espera además el
+cierre funcional.
 
 > Con esto el borrador queda cerrado al 100 % en lo que depende de modelado. Lo que sigue `TBD` está explícitamente delegado a los documentos funcionales, conforme a `AGENTS.md` (no inventar requerimientos).

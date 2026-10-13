@@ -13,3 +13,9 @@ Este programa se documenta para conservar la arquitectura completa, pero su impl
 El perfil de entrada, condiciones de admision, estados y reglas de vinculacion con el expediente estan `TBD`. La salida esperada es un emprendimiento preparado para prototipar o aplicar a fondos.
 
 Convocatoria, evaluacion y seleccion de emprendimientos tambien estan fuera del primer alcance.
+
+## Estado de implementación
+
+No hay admisión, canvas ni flujo específico de Pre-incubación implementados. El
+expediente común reconoce el programa como valor de inscripción, pero no habilita este
+programa sin sus decisiones `TBD`. Consultar el [estado actual](../estado-actual.md).

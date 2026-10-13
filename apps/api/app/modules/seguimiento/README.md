@@ -10,7 +10,9 @@ Router: `app.modules.seguimiento.routes.router`, prefijo `/cycles/{cycle_id}/seg
 Aplicar migración `003` después de `002`; contiene el seed fijo de ambos canvas v1.
 Los modelos se registran explícitamente mediante `app.models`, también desde Alembic.
 El router está integrado en `main.py` y los contratos OpenAPI/TypeScript están regenerados.
-Estado revisado: **2026-09-16**, commit `35775c0`. El arranque y la evidencia local/CI están en la [guía operativa](../../../../../docs/operacion-api.md); el inventario global está en la [matriz canónica](../../../../../README.md#estado-actual).
+Estado revisado: **2026-10-12**, `develop` `44a492e` y `main` `289c731`. El
+arranque y la evidencia local/CI están en la [guía operativa](../../../../../docs/operacion-api.md);
+el corte global está en [estado actual](../../../../../docs/estado-actual.md).
 
 ## Trazabilidad y aceptación
 
@@ -79,4 +81,7 @@ con upgrade/downgrade. SQLite habilita FK. `SEGUIMIENTO_TEST_DATABASE_URL` permi
 misma batería en PostgreSQL desechable, incluyendo carreras de escritura y triggers SQL.
 **La base de pruebas debe ser vacía y desechable**: las fixtures crean y eliminan sus tablas.
 
-El log de CI del 2026-09-16 confirma **26 casos de seguimiento** dentro de la suite de 94 aprobados con los grupos PostgreSQL habilitados. Los 22 casos registrados anteriormente son históricos; ver [evidencia histórica](../../../../../docs/operacion-api.md#evidencia-histórica--2026-09-16). Esta actualización documental no reejecuta la batería.
+En el corte local del 2026-10-12 la suite completa de API reportó **130 passed, 10 skipped**;
+el conteo por módulo no se infiere de ese total. La cobertura PostgreSQL de seguimiento
+continúa requiriendo una base vacía y desechable. Los conteos de 2026-09 son históricos;
+ver [evidencia histórica](../../../../../docs/operacion-api.md#evidencia-histórica--2026-09-16).
