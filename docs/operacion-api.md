@@ -113,10 +113,11 @@ La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra tam
 
 1. Construir la imagen con `docker build -f apps/api/Dockerfile -t <imagen-api> .` desde la raíz.
 2. Ejecutar **un único paso de release**, con esa misma imagen, red y `SIA_DATABASE_URL`, usando
-   `uv run --no-sync alembic upgrade head`. No ejecutar una migración por réplica/worker.
+   `sh scripts/release.sh`. El script ejecuta `alembic upgrade head`, `alembic current` y
+   `alembic check`. No ejecutar una migración por réplica/worker.
 3. Si el comando falla, detener el despliegue y revisar los logs; no continuar con `stamp head`.
-4. Verificar `uv run --no-sync alembic current` (actualmente `007`) y
-   `uv run --no-sync alembic check` (sin operaciones pendientes).
+4. Verificar que `alembic current` muestre la cabeza de la imagen (actualmente `010`) y que
+   `alembic check` no reporte operaciones pendientes.
 5. Arrancar las réplicas con el CMD de la imagen. En Coolify, usar `/readyz` como comprobación
    para habilitar tráfico; conservar `/healthz` como liveness.
 
@@ -128,6 +129,10 @@ dos canvas v1, doce áreas y once triggers PostgreSQL de integridad/historial.
 trazable, revisión humana, inmutabilidad de aprobados y puntero al PDF privado.
 `007` incorpora `documents` y permite que evidencias de archivo, fotografía o video
 usen un documento privado autorizado en lugar de una URL externa.
+`008` incorpora `evidence_folders` y `evidence_placements` para organizar evidencias por
+ciclo sin modificar el contenido original.
+`009` incorpora los canales estándar de emprendimiento y `010` las referencias entre
+mensajes y objetivos/actividades del ciclo.
 Los sucesivos `upgrade head` son idempotentes. `alembic check` compara esquema/modelos,
 pero no comprueba por sí mismo el contenido de las semillas ni la presencia de los triggers.
 
@@ -373,8 +378,9 @@ El Gestor no se recorrió. Siguen sin evidencia las migraciones del despliegue, 
 ## Pendientes vigentes
 
 - Recorrer el rol Gestor en staging y el arrastre del Kanban en sesión autenticada. Google OAuth real sigue sin ejercerse. La contraseña de la cuenta de prueba de Coordinadora no coincide con Clerk; no reintentarla.
-- Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
-  actual documentado del prototipo no equivale a desplegar esta API.
+- Aplicar `scripts/release.sh` en staging, con respaldo previo, y verificar `/readyz`, los
+  request logs y el SHA desplegado. El despliegue documentado del prototipo no equivale a
+  desplegar esta API.
 - Configurar y verificar `SIA_STORAGE_*` en el entorno aplicable para cargar y entregar
   archivos privados; sin ello el módulo responde 503. Adjuntos de chat y facturas no
   usan todavía `documents`.
@@ -386,7 +392,9 @@ El Gestor no se recorrió. Siguen sin evidencia las migraciones del despliegue, 
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
-- Añadir `pnpm --filter @sia/web test` a CI y verificar migración, observabilidad, backups y rollback del entorno de staging. El recorrido de Coordinadora y Emprendedor en Resumen, revisión de evidencias y Kanban visto quedó registrado el 2026-10-12.
+- Verificar en staging las migraciones `008–010`, los backups y el rollback. La suite y el
+  build de `apps/web` ya forman parte de CI. El recorrido de Coordinadora y Emprendedor en
+  Resumen, revisión de evidencias y Kanban quedó registrado el 2026-10-12.
 
 Los registros de 2026-09 y 2026-10-06 son evidencia histórica: sus hashes, conteos y
 limitaciones no sustituyen el corte de 2026-10-12 ni acreditan un despliegue autenticado.

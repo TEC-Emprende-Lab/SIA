@@ -308,9 +308,7 @@ async def list_channels(
     )
 
 
-async def ensure_standard_channels(
-    db: AsyncSession, actor: User, entrepreneurship_id: str
-) -> None:
+async def ensure_standard_channels(db: AsyncSession, actor: User, entrepreneurship_id: str) -> None:
     """Create the approved shared channels once, without touching historical ones."""
     existing = set(
         await db.scalars(
@@ -401,7 +399,9 @@ async def message_out(db: AsyncSession, item: Message, actor: User | None = None
     )
 
 
-async def message_references(db: AsyncSession, message_id: str, actor: User | None = None) -> list[s.MessageReferenceOut]:
+async def message_references(
+    db: AsyncSession, message_id: str, actor: User | None = None
+) -> list[s.MessageReferenceOut]:
     """Resolve reference titles at read time; titles are never duplicated in chat."""
     rows = await db.execute(
         select(MessageReference, Message, Channel)
@@ -420,7 +420,9 @@ async def message_references(db: AsyncSession, message_id: str, actor: User | No
                 continue
         model = Objective if reference.kind == "objective" else Activity
         target = await db.scalar(
-            select(model).where(model.id == reference.target_id, model.cycle_id == reference.cycle_id)
+            select(model).where(
+                model.id == reference.target_id, model.cycle_id == reference.cycle_id
+            )
         )
         if target is None:
             continue
@@ -450,7 +452,9 @@ async def validate_references(
             raise HTTPException(422, "La referencia pertenece a otro emprendimiento")
         model = Objective if reference.kind == "objective" else Activity
         target = await db.scalar(
-            select(model).where(model.id == reference.target_id, model.cycle_id == reference.cycle_id)
+            select(model).where(
+                model.id == reference.target_id, model.cycle_id == reference.cycle_id
+            )
         )
         if target is None:
             raise HTTPException(422, "La referencia no existe en el ciclo indicado")
@@ -467,7 +471,11 @@ async def references_for_target(
     refs = list(
         await db.scalars(
             select(MessageReference)
-            .where(MessageReference.cycle_id == cycle_id, MessageReference.kind == kind, MessageReference.target_id == target_id)
+            .where(
+                MessageReference.cycle_id == cycle_id,
+                MessageReference.kind == kind,
+                MessageReference.target_id == target_id,
+            )
             .order_by(MessageReference.created_at, MessageReference.id)
         )
     )

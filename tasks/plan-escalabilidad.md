@@ -162,7 +162,7 @@ de asignaciones es lógica, auditada y autorizada por scope exacto. Detalle y pr
 
 ## 8. Escalamiento horizontal (cómo se logra)
 
-La tabla conserva el **diseño objetivo**, no resultados de carga ni capacidades desplegadas. JWT y rate limiting Redis están implementados; cola/consumidores, Socket.IO, R2, tracing y métricas quedan pendientes. Los listados de expediente usan `limit/offset` y los de seguimiento no tienen paginación; keyset no está implementado. Bloqueos PostgreSQL y pruebas de concurrencia del núcleo no equivalen a una validación de escalamiento multiinstancia.
+La tabla conserva el **diseño objetivo**, no resultados de carga ni capacidades desplegadas. JWT, rate limiting Redis y request logs JSON están implementados; la cola persistente y el consumidor PDF existen, pero no hay evidencia de un worker desplegado. Socket.IO, R2, tracing y métricas quedan pendientes. Los listados de expediente usan `limit/offset` y los de seguimiento no tienen paginación; keyset no está implementado. Bloqueos PostgreSQL y pruebas de concurrencia del núcleo no equivalen a una validación de escalamiento multiinstancia.
 
 | Recurso | Decisión | Permite |
 |---|---|---|
@@ -192,7 +192,7 @@ Minimizar cambios en otros módulos y documentar las dependencias comunes necesa
 
 ## 10. Herramientas y calidad
 
-La tabla es la meta de calidad. CI actual comprueba API (Ruff, mypy, pytest, Alembic/bootstrap) y web/contratos (lint, typecheck, drift). El prototipo tiene su propio workflow de lint, dominio, build e imagen/HTTP. No hay job de worker ni E2E/build de la web real en `application-quality.yml`; Playwright de la demo no valida la aplicación conectada. Ver runs y conteos en [evidencia histórica](../docs/operacion-api.md#evidencia-histórica--2026-09-16) y la [verificación de staging](../docs/operacion-api.md#verificación-de-staging--2026-10-06).
+La tabla es la meta de calidad. CI comprueba API (Ruff, mypy, pytest, Alembic/bootstrap) y web/contratos (lint, typecheck, suite, build y drift). La API emite logs JSON por petición con `request_id`. El prototipo tiene su propio workflow de lint, dominio, build e imagen/HTTP. No hay job de worker ni E2E de la web real en `application-quality.yml`; Playwright de la demo no valida la aplicación conectada. Ver runs y conteos en [evidencia histórica](../docs/operacion-api.md#evidencia-histórica--2026-09-16) y la [verificación de staging](../docs/operacion-api.md#verificación-de-staging--2026-10-06).
 
 | Capa | Stack | Verificaciones |
 |---|---|---|

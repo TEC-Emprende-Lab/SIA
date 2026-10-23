@@ -40,9 +40,10 @@ El staging existente debe conservar recursos separados con esta configuración d
 
 Activar *Auto Deploy* según el flujo de ramas, pero no asumir que despliega migraciones: el
 Dockerfile de API no ejecuta Alembic al arrancar. Para el primer despliegue, publicar API,
-ejecutar la migración indicada más abajo, comprobar `/readyz` y luego publicar Web. Repetir
-esa secuencia cuando un cambio de API incluya una migración. El worker no forma parte del
-recorrido de staging de UI mientras no procese trabajos reales.
+ejecutar `scripts/release.sh` con respaldo previo, comprobar `/readyz` y luego publicar Web.
+Repetir esa secuencia cuando un cambio de API incluya una migración. El worker no forma parte
+del recorrido de staging de UI mientras no procese trabajos reales. Los request logs de la API
+incluyen `request_id`, método, ruta, estado y duración, sin cabeceras, cuerpo ni query string.
 
 ### Clerk y cuentas de prueba
 
@@ -105,10 +106,11 @@ caracteres reservados.
 En una base nueva, ejecutar una sola vez en el terminal de la API:
 
 ```bash
-uv run --no-sync alembic upgrade head
+sh scripts/release.sh
 ```
 
-La API queda lista solo cuando `GET /readyz` devuelve `200`.
+El script aplica `alembic upgrade head`, muestra `alembic current` y falla si `alembic check`
+detecta deriva. La API queda lista solo cuando `GET /readyz` devuelve `200`.
 
 ## Web SIA
 
