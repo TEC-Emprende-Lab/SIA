@@ -78,7 +78,11 @@ async def communication():
         await db.flush()
         for uid, role in [("manager", "Gestor"), ("founder", "Emprendedor")]:
             db.add(EntrepreneurshipAssignment(entrepreneurship_id="e1", user_id=uid, role=role))
-        db.add(EntrepreneurshipAssignment(entrepreneurship_id="e1", user_id="member", role="Emprendedor"))
+        db.add(
+            EntrepreneurshipAssignment(
+                entrepreneurship_id="e1", user_id="member", role="Emprendedor"
+            )
+        )
         for uid, role in [("scoped", "Gestor"), ("member", "Emprendedor"), ("wrong", "Gestor")]:
             db.add(ProgramCycleAssignment(program_cycle_id="c1", user_id=uid, role=role))
         await db.commit()
@@ -360,7 +364,9 @@ async def test_revocation_hides_history_and_inbox_without_deletion(communication
     ).status_code == 422
     async with sessions() as db:
         assert await db.scalar(select(func.count()).select_from(Notification)) == 1
-        db.add(EntrepreneurshipAssignment(entrepreneurship_id="e1", user_id=actor, role="Emprendedor"))
+        db.add(
+            EntrepreneurshipAssignment(entrepreneurship_id="e1", user_id=actor, role="Emprendedor")
+        )
         await db.commit()
     assert len((await client.get("/alerts", headers=headers(actor))).json()) == 1
 

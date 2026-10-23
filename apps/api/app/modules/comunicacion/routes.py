@@ -179,7 +179,11 @@ async def revoke_message(
     response_model=list[s.MessageReferenceOut],
 )
 async def get_target_references(
-    cycle_id: str, kind: Annotated[str, Path(pattern="^(objective|activity)$")], target_id: str, db: DB, user: Actor
+    cycle_id: str,
+    kind: Annotated[str, Path(pattern="^(objective|activity)$")],
+    target_id: str,
+    db: DB,
+    user: Actor,
 ) -> list[s.MessageReferenceOut]:
     return await service.references_for_target(db, user, cycle_id, kind, target_id)
 

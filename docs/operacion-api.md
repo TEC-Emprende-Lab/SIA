@@ -2,14 +2,17 @@
 
 ## Alcance y trazabilidad
 
-Ampliación local posterior al corte remoto: carpetas de evidencias, migración `008`
-después de `007`; detalle en [carpetas](evidencias-carpetas.md). Al instalar esta rama,
-`alembic upgrade head` incluye `008`. No se ha aplicado a una base persistente del usuario
-ni a staging. Las verificaciones del corte remoto siguientes no incluyen esta ampliación.
+Ampliación posterior al corte remoto: carpetas de evidencias (`008`), canales estándar
+(`009`) y referencias de chat (`010`) después de `007`; detalle en
+[carpetas](evidencias-carpetas.md). Al instalar esta rama, `alembic upgrade head` incluye
+`008–010`. No se ha aplicado a staging. Las verificaciones del corte remoto siguientes no
+incluyen esta ampliación.
 
-Estado revisado el **2026-10-12**, sobre `develop` `44a492e` y `main` `289c731`.
+Estado revisado el **2026-10-23**, sobre `develop` `ab5ebad` y `main` `289c731`.
 Incluye identidad/invitaciones, expediente, seguimiento, comunicación, cola persistente,
 informes técnicos, PDF por worker y documentos privados. Trazabilidad: US-PRO-001/002/004/005/006 y US-PM-001/002/003.
+Última verificación operativa: **2026-10-06**, sobre `1725260` (sección «Verificación operativa — 2026-10-06»).
+Última verificación de staging: **2026-10-12**, recorrido autenticado parcial en `https://sia.dev.neuroboard.app` (sección «Verificación de staging — 2026-10-12»). El smoke del 2026-10-06 permanece en la sección anterior.
 La evidencia consolidada del corte está en [estado actual](estado-actual.md).
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
@@ -110,10 +113,11 @@ La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra tam
 
 1. Construir la imagen con `docker build -f apps/api/Dockerfile -t <imagen-api> .` desde la raíz.
 2. Ejecutar **un único paso de release**, con esa misma imagen, red y `SIA_DATABASE_URL`, usando
-   `uv run --no-sync alembic upgrade head`. No ejecutar una migración por réplica/worker.
+   `sh scripts/release.sh`. El script ejecuta `alembic upgrade head`, `alembic current` y
+   `alembic check`. No ejecutar una migración por réplica/worker.
 3. Si el comando falla, detener el despliegue y revisar los logs; no continuar con `stamp head`.
-4. Verificar `uv run --no-sync alembic current` (actualmente `007`) y
-   `uv run --no-sync alembic check` (sin operaciones pendientes).
+4. Verificar que `alembic current` muestre la cabeza de la imagen (actualmente `010`) y que
+   `alembic check` no reporte operaciones pendientes.
 5. Arrancar las réplicas con el CMD de la imagen. En Coolify, usar `/readyz` como comprobación
    para habilitar tráfico; conservar `/healthz` como liveness.
 
@@ -125,6 +129,10 @@ dos canvas v1, doce áreas y once triggers PostgreSQL de integridad/historial.
 trazable, revisión humana, inmutabilidad de aprobados y puntero al PDF privado.
 `007` incorpora `documents` y permite que evidencias de archivo, fotografía o video
 usen un documento privado autorizado en lugar de una URL externa.
+`008` incorpora `evidence_folders` y `evidence_placements` para organizar evidencias por
+ciclo sin modificar el contenido original.
+`009` incorpora los canales estándar de emprendimiento y `010` las referencias entre
+mensajes y objetivos/actividades del ciclo.
 Los sucesivos `upgrade head` son idempotentes. `alembic check` compara esquema/modelos,
 pero no comprueba por sí mismo el contenido de las semillas ni la presencia de los triggers.
 
@@ -349,11 +357,30 @@ Esas URLs `sslip.io` no representan el staging actual y pueden cambiar al recrea
 No usarlas como evidencia de disponibilidad de staging; el entorno vigente es
 `https://sia.dev.neuroboard.app`.
 
+## Verificación de staging — 2026-10-12
+
+Recorrido autenticado en el navegador sobre `https://sia.dev.neuroboard.app`. No modifica reglas, permisos, API ni datos de staging: no se registró ninguna decisión de validación ni se soltó ninguna tarjeta del Kanban. No certifica la Fase 8 ni la Fase 9. No se identificó el SHA desplegado.
+
+El inicio de sesión de la cuenta de prueba de Coordinadora con contraseña fue rechazado por Clerk (`Password is incorrect`; quedaban dos intentos). No se reintentó la contraseña. Coordinadora y Emprendedor entraron con el código de correo de sus cuentas de prueba de Clerk Development. `GET /api/sia/me` confirmó los roles. Google OAuth no se ejerció. El widget de Clerk del sitio público muestra **Development mode**.
+
+| Rol | Proyecto | Qué se vio |
+|---|---|---|
+| Coordinadora | QA Staging - Flujo completo | Resumen en vacío: 0 objetivos, sin reuniones próximas, sin acuerdos y sin alertas sin resolver. |
+| Coordinadora y Emprendedor | Aula Viva · Ciencias accesibles [DEMO] | Resumen con avance de ciclo 0 % (0 de 6 objetivos aprobados), «Lo que sigue», plan compartido, acuerdos con fecha de compromiso y aviso de que el cumplimiento no está definido, y panel de alertas personales. No hay reuniones próximas. |
+| Coordinadora | Aula Viva | Lista de objetivos con «Validar objetivo». Diálogo de evidencias del kit con contexto, actividades y enlace de bitácora. Formulario de decisión (aprobar, solicitar corrección o rechazar) con observación obligatoria. No se envió. |
+| Emprendedor | Aula Viva | La lista no ofrece «Validar objetivo». El mismo diálogo muestra evidencias y acciones de actividad, sin formulario de decisión. |
+| Coordinadora y Emprendedor | Aula Viva, Kanban | Objetivos: 3 en Borrador, 3 en Pendiente de validación; Corrección solicitada, Rechazado y Aprobado vacíos. Actividades: 5 pendientes, 10 vencidas y 9 completadas. El arrastre no se ejecutó. |
+| Coordinadora | Finanzas y Equipo | Finanzas muestra el aviso de reglas y backend pendientes, sin datos de demostración. Equipo solo permite asignar durante la visita; no lista el equipo completo. |
+| Emprendedor | Equipo | Aviso de que la consulta de integrantes aún no está disponible. |
+
+El Gestor no se recorrió. Siguen sin evidencia las migraciones del despliegue, la observabilidad, los backups y el rollback.
+
 ## Pendientes vigentes
 
-- Renovar o sincronizar las credenciales de prueba y ejecutar los recorridos autenticados por rol en staging (Coordinadora, Gestor y Emprendedor). Confirmar explícitamente Clerk/Google OAuth, permisos y los servicios externos aplicables.
-- Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
-  actual documentado del prototipo no equivale a desplegar esta API.
+- Recorrer el rol Gestor en staging y el arrastre del Kanban en sesión autenticada. Google OAuth real sigue sin ejercerse. La contraseña de la cuenta de prueba de Coordinadora no coincide con Clerk; no reintentarla.
+- Aplicar `scripts/release.sh` en staging, con respaldo previo, y verificar `/readyz`, los
+  request logs y el SHA desplegado. El despliegue documentado del prototipo no equivale a
+  desplegar esta API.
 - Configurar y verificar `SIA_STORAGE_*` en el entorno aplicable para cargar y entregar
   archivos privados; sin ello el módulo responde 503. Adjuntos de chat y facturas no
   usan todavía `documents`.
@@ -365,9 +392,9 @@ No usarlas como evidencia de disponibilidad de staging; el entorno vigente es
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
-- Recorrido autenticado por rol sobre la publicación (Coordinadora, Emprendedor y Gestor),
-  añadir `pnpm --filter @sia/web test` a CI y verificar migración, observabilidad, backups
-  y rollback del entorno de staging: pendientes.
+- Verificar en staging las migraciones `008–010`, los backups y el rollback. La suite y el
+  build de `apps/web` ya forman parte de CI. El recorrido de Coordinadora y Emprendedor en
+  Resumen, revisión de evidencias y Kanban quedó registrado el 2026-10-12.
 
 Los registros de 2026-09 y 2026-10-06 son evidencia histórica: sus hashes, conteos y
 limitaciones no sustituyen el corte de 2026-10-12 ni acreditan un despliegue autenticado.
