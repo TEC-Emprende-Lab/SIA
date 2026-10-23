@@ -9,7 +9,7 @@ Create Date: 2026-10-23 12:00:00.000000
 from alembic import op
 
 revision = "011_drop_uq_channels_shared_kind"
-down_revision = "010_chat_message_references"
+down_revision = "010"
 branch_labels = None
 depends_on = None
 
