@@ -9,9 +9,11 @@ Evidencia de la Fase 8, sin cerrarla. Referencias: US-PRO-001/002 y US-PM-001/00
 - El Kanban de objetivos mostró 3 borradores y 3 pendientes de validación. El de actividades, 5 pendientes, 10 vencidas y 9 completadas. No se arrastró ninguna tarjeta.
 - QA Staging - Flujo completo abre el Resumen vacío. Finanzas sigue como aviso de pendiente. Equipo de Coordinadora solo asigna en la visita; el de Emprendedor informa que la consulta de integrantes no está disponible.
 - [x] Resumen, revisión de evidencias y Kanban visto para Coordinadora y Emprendedor.
-- [ ] Arrastre del Kanban en sesión autenticada.
-- [ ] Recorrido del Gestor. Sigue aplazado.
-- [ ] Migraciones `008–010`, observabilidad, backups y rollback de staging.
+- [x] Release: request logs, `scripts/release.sh`, migraciones `008–011` y CI web integrados en `develop` (PR mergeado). Migración `011` corrige `uq_channels_shared_kind` tras canales estándar.
+- [ ] Arrastre del Kanban en sesión autenticada (rol Gestor).
+- [ ] Recorrido del rol Gestor en staging.
+- [ ] Verificar request logs JSON (`request_id`, `method`, `path`, `status`, `duration_ms`, sin query/cuerpo/cabeceras) en logs de API de Coolify.
+- [ ] Confirmar `alembic current` = `011 (head)`, `alembic check` sin pendientes, backup recuperable previo a migración, imagen anterior para rollback y SHA de imagen desplegada coincide con `develop`.
 
 ## Carpetas de evidencias — implementación local 2026-10-12
 
