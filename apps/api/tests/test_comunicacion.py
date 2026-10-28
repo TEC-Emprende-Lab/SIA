@@ -12,7 +12,7 @@ from alembic.operations import Operations
 from fastapi import Header
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event, func, select, text
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.db.session import get_db
@@ -149,6 +149,92 @@ async def test_standard_shared_channels_are_seeded_once(communication):
         "/channels", json={"entrepreneurship_id": "e1", "name": "Consultas"}
     )
     assert rejected.status_code == 422
+
+
+async def test_shared_channel_uniqueness_preserves_legacy_channels(communication):
+    """US-COM-001: uniqueness applies to shared kinds, not historical free channels."""
+    client, sessions = communication
+    shared = (await client.get("/channels?entrepreneurship_id=e1")).json()
+    async with sessions() as db:
+        db.add_all(
+            [
+                Channel(
+                    id="legacy-one", entrepreneurship_id="e1", name="Histórico", created_by="coord"
+                ),
+                Channel(
+                    id="legacy-two", entrepreneurship_id="e1", name="Histórico", created_by="coord"
+                ),
+                Channel(
+                    entrepreneurship_id="e2", kind="finanzas", name="Finanzas", created_by="coord"
+                ),
+            ]
+        )
+        await db.commit()
+        with pytest.raises(IntegrityError):
+            async with db.begin_nested():
+                db.add(
+                    Channel(
+                        entrepreneurship_id="e1",
+                        kind="finanzas",
+                        name="Duplicado",
+                        created_by="coord",
+                    )
+                )
+                await db.flush()
+    visible = (await client.get("/channels?entrepreneurship_id=e1")).json()
+    assert {row["id"] for row in visible} == {row["id"] for row in shared} | {
+        "legacy-one",
+        "legacy-two",
+    }
+
+
+@pytest.mark.skipif(
+    not os.getenv("COMUNICACION_TEST_DATABASE_URL", "").startswith("postgresql"),
+    reason="Requires independent PostgreSQL transactions and row locks",
+)
+@pytest.mark.parametrize("operations", [("get", "get"), ("post", "post"), ("get", "post")])
+async def test_concurrent_shared_channels_reuse_same_rows(communication, monkeypatch, operations):
+    """US-COM-001: simultaneous readers and creators never duplicate or fail."""
+    client, sessions = communication
+    original_scope = service.policy.scope
+    ready = asyncio.Event()
+    arrived = 0
+
+    async def synchronized_scope(*args, **kwargs):
+        nonlocal arrived
+        await original_scope(*args, **kwargs)
+        arrived += 1
+        if arrived == len(operations):
+            ready.set()
+        await asyncio.wait_for(ready.wait(), timeout=5)
+
+    monkeypatch.setattr(service.policy, "scope", synchronized_scope)
+
+    async def request(operation):
+        if operation == "get":
+            response = await client.get("/channels?entrepreneurship_id=e1")
+            assert response.status_code == 200, response.text
+            return next(row["id"] for row in response.json() if row["kind"] == "finanzas")
+        response = await client.post(
+            "/channels", json={"entrepreneurship_id": "e1", "name": "Finanzas"}
+        )
+        assert response.status_code == 201, response.text
+        return response.json()["id"]
+
+    ids = await asyncio.wait_for(
+        asyncio.gather(*(request(operation) for operation in operations)), timeout=15
+    )
+    assert len(set(ids)) == 1
+    async with sessions() as db:
+        channels = list(
+            await db.scalars(select(Channel).where(Channel.entrepreneurship_id == "e1"))
+        )
+        assert len(channels) == (1 if operations == ("post", "post") else 3)
+        assert len({row.kind for row in channels}) == len(channels)
+        actions = list(
+            await db.scalars(select(AuditLog.action).where(AuditLog.entity_type == "Channel"))
+        )
+        assert len(actions) == len(channels)
 
 
 @pytest.mark.parametrize("cycle", ["c1", "c4"])

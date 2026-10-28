@@ -15,8 +15,20 @@ seguridad ni las migraciones 001–003.
 | Núcleo: modelo-de-datos-compartido | FK, ámbito heredado y restricciones SQL; revocación visual sin borrar historia; auditoría transaccional. |
 | Núcleo: notificaciones-y-alertas | Menciones autorizadas generan una alerta y notificación interna por destinatario; bandeja propia, lectura idempotente y revocación aplicada en cada petición. |
 
-No existen historias específicas numeradas para chat en los documentos vigentes:
-se usa la regla común como fuente, sin inventar identificadores funcionales.
+US-COM-001 en `docs/00-nucleo-comun/reuniones-minutas-y-canales.md` define una sola
+terna compartida por emprendimiento. La migración `012` restaura el índice único
+parcial eliminado en `011`, sin cambiar migraciones históricas. GET/POST serializan
+la creación mediante bloqueo de la fila del emprendimiento antes de consultar sus
+canales: solicitudes simultáneas reutilizan los mismos registros y no duplican auditoría.
+Los canales históricos libres se conservan. Si la base ya contiene tipos compartidos
+duplicados, la migración se detiene sin modificar registros; requiere resolución
+administrativa que conserve historial antes de reintentar.
+
+Aceptación: `tests/test_comunicacion.py` cubre GET/GET, POST/POST y GET/POST
+con transacciones PostgreSQL independientes y los mismos IDs; el índice rechaza
+duplicados y permite canales históricos libres. `tests/test_channel_uniqueness_migration.py`
+cubre preservación del contenido, predicado parcial, downgrade propio y rechazo de
+datos ambiguos en SQLite y PostgreSQL. Las reglas de ámbito y auditoría se mantienen.
 
 ## Contrato REST
 

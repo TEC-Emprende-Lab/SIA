@@ -8,10 +8,12 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -73,6 +75,16 @@ class Agreement(Editable, Base):
 
 class Channel(Editable, Base):
     __tablename__ = "channels"
+    __table_args__ = (
+        Index(
+            "uq_channels_shared_kind",
+            "entrepreneurship_id",
+            "kind",
+            unique=True,
+            postgresql_where=text("cycle_id IS NULL AND kind IS NOT NULL"),
+            sqlite_where=text("cycle_id IS NULL AND kind IS NOT NULL"),
+        ),
+    )
     entrepreneurship_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("entrepreneurships.id"), index=True
     )

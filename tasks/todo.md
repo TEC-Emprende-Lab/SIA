@@ -1,5 +1,20 @@
 # Consolidacion de decisiones
 
+## US-COM-001 — unicidad de canales y release, 2026-10-28
+
+- [x] Agregar `012` para restaurar el índice único parcial y declararlo en `Channel`.
+  Las migraciones históricas se conservan; duplicados anteriores detienen el upgrade
+  sin borrar ni fusionar conversaciones.
+- [x] Serializar creación GET/POST por fila del emprendimiento en PostgreSQL,
+  conservando autorización previa y auditoría en la misma transacción.
+- [x] Pruebas dirigidas: 9 correctas, incluidas carreras GET/GET, POST/POST y GET/POST
+  en PostgreSQL y preservación/rechazo de duplicados en SQLite/PostgreSQL.
+- [x] API con PostgreSQL desechable: **153 passed, 2 skipped**, con las pruebas de
+  concurrencia activas. Ruff, formato, mypy y drift OpenAPI correctos; imagen Docker
+  construida y upgrade `007` → `010` → `011` → `012` sin deriva de metadata.
+- [ ] Integrar por PR hacia `develop`, validar en staging y actualizar el release #38.
+  Producción conserva `007`; esta corrección local no migra datos remotos.
+
 ## Recorrido autenticado de staging — 2026-10-12
 
 Evidencia de la Fase 8, sin cerrarla. Referencias: US-PRO-001/002 y US-PM-001/002 para el seguimiento visto; roles en `actores-roles-y-permisos.md`. No cambia reglas, permisos, API ni contratos. No se escribieron datos en staging.

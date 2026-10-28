@@ -392,6 +392,11 @@ Canal del emprendimiento y, opcionalmente, de un ciclo exacto.
   parcial impide duplicarla. Los canales históricos libres conservan `kind = null` y
   no se eliminan. No hay canales nuevos por ciclo.
 
+  Corrección de US-COM-001, 2026-10-28: `012` restaura ese índice después de su
+  eliminación en `011` y lo declara en `Channel`. La creación compartida se serializa
+  por emprendimiento. Si hay duplicados anteriores, la migración falla sin reescribir
+  conversaciones; su resolución histórica requiere un procedimiento aprobado.
+
 ### `channel_messages` (doc: ChannelMessage) 🟢 · `Editable` · *borrado visual*
 Mensaje de chat.
 
