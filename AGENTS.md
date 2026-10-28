@@ -2,7 +2,7 @@
 
 ## Proyecto
 
-Plataforma de gestión de incubación de CataliTech / TEC Emprende Lab.
+Plataforma de gestión de incubación de Catalitec / TEC Emprende Lab.
 
 El sistema centraliza el seguimiento de proyectos incubados, sus objetivos, actividades, evidencias, reuniones, minutas, finanzas y compras, documentos, chat y alertas.
 

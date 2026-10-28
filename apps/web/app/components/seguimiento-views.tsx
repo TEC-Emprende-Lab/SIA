@@ -274,7 +274,7 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
     </>
   }
 
-  if (view === 'diagnostics' || view === 'evolution') return <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} validations={bundle.validations} evolution={view === 'evolution'} focusId={focusId} />
+  if (view === 'diagnostics' || view === 'evolution') return <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} validations={bundle.validations} evolution={view === 'evolution'} focusId={focusId} navigate={navigate} />
   if (view === 'ambitions') return <AmbitionSection {...shared} ambitions={bundle.ambitions} objectives={bundle.objectives} activities={bundle.activities} areas={bundle.canvas.areas} navigate={navigate} />
   if (view === 'evidence') return <EvidenceSection {...shared} evidence={bundle.evidence} activities={bundle.activities} objectives={bundle.objectives} focusId={focusId} navigate={navigate} />
 
@@ -999,7 +999,7 @@ function EvidenceSection({ cycleId, entrepreneurshipId, evidence, activities, ob
   const [folderOptions, setFolderOptions] = useState<EvidenceFolder[]>([])
   const [uploadFolder, setUploadFolder] = useState('')
   return <>
-    <ProjectHeading eyebrow="El respaldo de cada paso" title="Evidencias" description="Organiza archivos y enlaces sin perder su relación con el trabajo del proyecto." action={
+    <ProjectHeading eyebrow="El respaldo de cada paso" title="Evidencias" description="Organiza archivos y enlaces sin perder su relación con el trabajo del proyecto." action={activities.length === 0 && navigate ? <button className="btn primary" onClick={() => navigate('Objetivos y actividades')}>Ir al plan de trabajo <ArrowRight size={16} /></button> :
       <FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new">
         <label className={styles.field}>Actividad<select value={activityId} disabled={pendingId === 'evidence-new'} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>
         <label className={styles.field}>Carpeta personalizada<select value={uploadFolder} disabled={pendingId === 'evidence-new'} onChange={(event) => setUploadFolder(event.target.value)}><option value="">Sin carpeta personalizada</option>{folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
@@ -1007,7 +1007,7 @@ function EvidenceSection({ cycleId, entrepreneurshipId, evidence, activities, ob
         <p className="small muted">Agregar evidencia reabre la validación del objetivo aprobado. Elegir o mover una carpeta no cambia la aprobación.</p>
       </FormDialog>
     } />
-    <EvidenceBrowser cycleId={cycleId} entrepreneurshipId={entrepreneurshipId} evidence={evidence} activities={activities} objectives={objectives} focusId={focusId} onActivity={(id) => navigate?.('Objetivos y actividades', id)} onFoldersChange={setFolderOptions} onFolderChange={setUploadFolder}>{null}</EvidenceBrowser>
+    <EvidenceBrowser cycleId={cycleId} entrepreneurshipId={entrepreneurshipId} evidence={evidence} activities={activities} objectives={objectives} focusId={focusId} onActivity={(id) => navigate?.('Objetivos y actividades', id)} onFoldersChange={setFolderOptions} onFolderChange={setUploadFolder} onPlan={navigate ? () => navigate('Objetivos y actividades') : undefined}>{null}</EvidenceBrowser>
   </>
 }
 
@@ -1218,6 +1218,7 @@ export function ScheduleSection({ areas, schedule }: { areas: Area[]; schedule: 
 
 function DiagnosticSection({
   evolution = false,
+  navigate,
   focusId,
   cycleId,
   areas,
@@ -1227,7 +1228,7 @@ function DiagnosticSection({
   actionError,
   role,
   run,
-}: Actions & { areas: Area[]; diagnostics: Diagnostic[]; validations: Validation[]; evolution?: boolean; focusId?: string }) {
+}: Actions & { areas: Area[]; diagnostics: Diagnostic[]; validations: Validation[]; evolution?: boolean; focusId?: string; navigate?: TrackingProps['navigate'] }) {
   const [comparison, setComparison] = useState<DiagnosticComparison | null>(null)
   const [compareError, setCompareError] = useState<string | null>(null)
   const approved = diagnostics.filter((item) => item.status === 'approved')
@@ -1237,7 +1238,7 @@ function DiagnosticSection({
   return (
     <>
       <ProjectHeading title={evolution ? 'Evolución' : 'Diagnóstico 360°'} description={evolution ? 'Compara fotografías aprobadas para observar la evolución del proyecto.' : 'Explora las seis áreas de tu proyecto y encuentra dónde enfocar el siguiente paso.'} action={<>
-        <FormDialog title="Historial" trigger={<><History size={16} /> Historial</>} pending={false} error={null} actionId="history"><div className="stack">{ordered.map((item) => <button className="record-row" key={item.id} onClick={() => setSelected(item.id)}><CalendarDays size={18} /><div><strong>{formatDay(item.assessed_on)}</strong><p>{STATUS_LABEL[item.status]}</p></div></button>)}<p className="small muted">Selecciona una fotografía; cierra el historial para explorar sus áreas.</p></div></FormDialog>
+        {ordered.length > 0 && <FormDialog title="Historial" trigger={<><History size={16} /> Historial</>} pending={false} error={null} actionId="history"><div className="stack">{ordered.map((item) => <button className="record-row" key={item.id} onClick={() => setSelected(item.id)}><CalendarDays size={18} /><div><strong>{formatDay(item.assessed_on)}</strong><p>{STATUS_LABEL[item.status]}</p></div></button>)}<p className="small muted">Selecciona una fotografía; cierra el historial para explorar sus áreas.</p></div></FormDialog>}
         {!evolution && <FormDialog title="Nuevo diagnóstico" primary trigger={<><Plus size={17} /> Nuevo diagnóstico</>} pending={pendingId === 'diagnostic-new'} error={actionError} actionId="diagnostic-new"><DiagnosticForm id="diagnostic-new" areas={areas} approved={approved} pending={pendingId === 'diagnostic-new'} error={actionError} onSubmit={(body) => run('diagnostic-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'diagnostics'), parseDiagnostic, { method: 'POST', body }).then(asVoid))} /></FormDialog>}
       </>} />
       {!evolution && current && <>
@@ -1246,7 +1247,7 @@ function DiagnosticSection({
       </>}
       <section className={evolution ? 'panel mt-6' : diagnosticStyles.actions} aria-label={evolution ? 'Comparación de fotografías' : 'Acciones del diagnóstico'}>
       {!evolution && current ? <div className={diagnosticStyles.actionsHeading}><h2>Seguimiento de esta fotografía</h2><p>{current.status === 'approved' ? 'Esta fotografía está aprobada y se conserva sin cambios.' : 'Continúa el registro o envíalo a revisión cuando esté listo.'}</p></div> : null}
-      {diagnostics.length === 0 ? <div className={diagnosticStyles.empty}><h2>El primer diagnóstico empieza aquí</h2><p>Registra una fotografía de las seis áreas para conversar sobre las necesidades del proyecto. Usa Nuevo diagnóstico para comenzar.</p></div> : null}
+      {!evolution && diagnostics.length === 0 ? <div className={diagnosticStyles.empty}><h2>El primer diagnóstico empieza aquí</h2><p>Registra una fotografía de las seis áreas para conversar sobre las necesidades del proyecto. Usa Nuevo diagnóstico para comenzar.</p></div> : null}
       {(!evolution && current ? [current] : []).map((diagnostic) => {
         const decision = latest(validations, 'diagnostic_id', diagnostic.id)
         return (
@@ -1349,7 +1350,7 @@ function DiagnosticSection({
           }}
         />
       ) : null}
-      {evolution && approved.length < 2 && <p className="muted">La comparación estará disponible con dos diagnósticos aprobados.</p>}
+      {evolution && approved.length < 2 && <div className="guided-empty"><span className="welcome-icon" aria-hidden="true"><History size={25} /></span><h2>La evolución se construye con el tiempo</h2><p>Necesitas dos diagnósticos aprobados del mismo ciclo para comparar sus observaciones. {approved.length === 1 ? 'Ya tienes el primero.' : 'Empieza registrando una fotografía de las seis áreas.'}</p>{navigate && <button className="btn secondary" onClick={() => navigate('Diagnóstico 360°')}>Ir a diagnóstico 360° <ArrowRight size={16} /></button>}</div>}
       {compareError ? (
         <p className={shell.formError} role="alert">
           {compareError}
