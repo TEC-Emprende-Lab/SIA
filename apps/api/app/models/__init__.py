@@ -12,6 +12,7 @@ from app.models.comunicacion import (
     ReadReceipt,
 )
 from app.models.document import Document
+from app.models.evidence_folder import EvidenceFolder, EvidencePlacement
 from app.models.expediente import (
     Entrepreneurship,
     EntrepreneurshipAssignment,
@@ -52,6 +53,8 @@ __all__ = [
     "Diagnostic",
     "Document",
     "Evidence",
+    "EvidenceFolder",
+    "EvidencePlacement",
     "Objective",
     "ProgramCanvas",
     "Validation",

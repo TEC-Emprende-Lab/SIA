@@ -16,4 +16,8 @@ Solo Gestor asignado o Coordinadora puede enviar, revisar y aprobar. El PDF se g
 
 ## Servicios y operacion
 
-FastAPI compone los datos autorizados. Un worker procesa minutas, correo, alertas y PDF con tareas persistentes e idempotentes en PostgreSQL. R2 almacena los documentos privados y Resend envia correos.
+FastAPI compone los datos autorizados. La cola persistente de PostgreSQL y el worker
+procesan hoy el PDF posterior a la aprobación; el archivo se guarda en el almacén
+privado y se entrega mediante URL firmada después de autorizar el ciclo. Las tareas de
+minutas IA, correo Resend y alertas programadas, así como sus proveedores reales,
+siguen pendientes. Sin almacenamiento configurado el PDF queda en cola para reintento.

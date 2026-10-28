@@ -8,4 +8,8 @@ El giro admite arrastre con ratón o toque, botones en ambos ejes, flechas de te
 
 Los colores corresponden a las áreas, no a nivel de madurez. El contador incluye solo observaciones no vacías de áreas oficiales: no expresa progreso ni puntaje. No se introducen escalas numéricas pendientes de definición.
 
-Validación: typecheck, lint, pruebas de renderizado del explorador y suites web existentes; revisión visual local aislada en escritorio y móvil, selección de las seis áreas, controles de giro, teclado, arrastre, reinicio, contenido largo y ausencia de desbordamiento horizontal. La fixture temporal no se publica ni reemplaza la autorización de SIA. La validación autenticada en staging es un paso separado.
+Validación: typecheck, lint, pruebas de renderizado del explorador y suite Web local;
+revisión visual aislada en escritorio y móvil, selección de las seis áreas, controles de
+giro, teclado, arrastre, reinicio, contenido largo y ausencia de desbordamiento
+horizontal. La fixture temporal no se publica ni reemplaza la autorización de SIA. La
+validación autenticada en staging sigue siendo un paso separado.

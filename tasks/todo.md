@@ -1,5 +1,64 @@
 # Consolidacion de decisiones
 
+## US-COM-001 — unicidad de canales y release, 2026-10-28
+
+- [x] Agregar `012` para restaurar el índice único parcial y declararlo en `Channel`.
+  Las migraciones históricas se conservan; duplicados anteriores detienen el upgrade
+  sin borrar ni fusionar conversaciones.
+- [x] Serializar creación GET/POST por fila del emprendimiento en PostgreSQL,
+  conservando autorización previa y auditoría en la misma transacción.
+- [x] Pruebas dirigidas: 9 correctas, incluidas carreras GET/GET, POST/POST y GET/POST
+  en PostgreSQL y preservación/rechazo de duplicados en SQLite/PostgreSQL.
+- [x] API con PostgreSQL desechable: **153 passed, 2 skipped**, con las pruebas de
+  concurrencia activas. Ruff, formato, mypy y drift OpenAPI correctos; imagen Docker
+  construida y upgrade `007` → `010` → `011` → `012` sin deriva de metadata.
+- [ ] Integrar por PR hacia `develop`, validar en staging y actualizar el release #38.
+  Producción conserva `007`; esta corrección local no migra datos remotos.
+
+## Recorrido autenticado de staging — 2026-10-12
+
+Evidencia de la Fase 8, sin cerrarla. Referencias: US-PRO-001/002 y US-PM-001/002 para el seguimiento visto; roles en `actores-roles-y-permisos.md`. No cambia reglas, permisos, API ni contratos. No se escribieron datos en staging.
+
+- Coordinadora y Emprendedor entraron en `https://sia.dev.neuroboard.app`. La contraseña de prueba de Coordinadora fue rechazada; el acceso usado fue el código de correo de las cuentas de Clerk Development. `GET /api/sia/me` confirmó cada rol. Google OAuth no se probó. Clerk muestra Development mode.
+- En Aula Viva, ambos roles vieron el Resumen (avance 0 %, siguientes pasos, plan, acuerdos sin estado de cumplimiento y alertas personales), la revisión de evidencias y el Kanban. Coordinadora ve el formulario de validación y no lo envió. Emprendedor no ve «Validar objetivo» ni el formulario de decisión.
+- El Kanban de objetivos mostró 3 borradores y 3 pendientes de validación. El de actividades, 5 pendientes, 10 vencidas y 9 completadas. No se arrastró ninguna tarjeta.
+- QA Staging - Flujo completo abre el Resumen vacío. Finanzas sigue como aviso de pendiente. Equipo de Coordinadora solo asigna en la visita; el de Emprendedor informa que la consulta de integrantes no está disponible.
+- [x] Resumen, revisión de evidencias y Kanban visto para Coordinadora y Emprendedor.
+- [ ] Arrastre del Kanban en sesión autenticada.
+- [ ] Recorrido del Gestor. Sigue aplazado.
+- [ ] Migraciones `008–010`, observabilidad, backups y rollback de staging.
+
+## Carpetas de evidencias — implementación local 2026-10-12
+
+- Decisión del usuario: administración = Coordinadora, organización automática y
+  personalizada, Emprendedores también pueden crear carpetas dentro de su alcance.
+- Trazabilidad: US-PRO-001 y US-PM-001, preservando US-PRO-002/US-PM-002.
+- Backend: migración `008`, carpetas por ciclo, ubicación separada, carga con carpeta
+  atómica, renombrado/movimiento auditados y revisión optimista. No hay borrado histórico.
+- UI: objetivos/actividades como carpetas automáticas, personalizadas, búsqueda por
+  título/descripción/actividad, filtro de tipo, ruta visible, selección en carga y
+  movimiento desde detalle. Ver `docs/evidencias-carpetas.md`.
+- Verificación local: API **135 passed, 10 skipped** (dos advertencias preexistentes);
+  suite Web incluida la nueva cobertura de carpetas, typecheck, lint, build y mypy correctos.
+- Pendiente: aplicar `008` al entorno objetivo y recorrido autenticado/visual de UI.
+  Publicación por rama `feature/carpetas-evidencias` y PR hacia `develop`; no integrar
+  ni desplegar sin autorización. No se modificó una base persistente del usuario.
+
+## Corte de estado del repositorio — 2026-10-12
+
+- Remoto sincronizado: `develop` `44a492e`; `main` `289c731` (promoción del mismo
+  producto). No había cambios locales ni pull requests abiertos al realizar el corte.
+- Se corrigió la documentación de estado: `docs/estado-actual.md` concentra evidencia
+  verificable; README, operación, modelo ER y plan ya reflejan migraciones `005` (cola),
+  `006` (informes) y `007` (documentos privados).
+- Validación local del corte: lint, typecheck, suite Web, contratos y build Web correctos;
+  API **130 passed, 10 skipped**, Ruff/formato/mypy correctos. CI verde en ambas ramas.
+- Staging `https://sia.dev.neuroboard.app` respondió 200 en `/` y `/api/health` sin sesión.
+  No se certifican todavía flujos autenticados por rol, API/migraciones del despliegue,
+  observabilidad, backups o rollback.
+- No cambia requisitos, User Stories, permisos ni reglas de negocio. Finanzas, IA/correo,
+  Socket.IO, adjuntos de chat y los `TBD` funcionales se mantienen pendientes.
+
 ## Estado informativo de Equipo — 2026-10-07
 
 - Corrección de presentación del alcance actual; sin nueva capacidad funcional.
@@ -473,6 +532,8 @@ Referencias: US-PRO-004 / US-PM-003 (fuentes trazables del informe futuro),
 - [x] Implementar modelos, schemas, policy, service y rutas REST con autorización backend reutilizada, auditoría y revisiones.
 - [x] Reuniones, minutas manuales/borrador asistido, aprobación humana inmutable y acuerdos con responsable autorizado.
 - [x] Canales sin taxonomía inventada, mensajes, menciones, no leídos y notificaciones internas por ámbito exacto.
+- [x] **US-COM-001:** rediseñar la experiencia visual de canales como conversación y barra de canales responsiva; se preservan la terna compartida, los históricos, los estados de lectura, la edición/revocación auditada y el refresco manual (sin simular tiempo real).
+- [x] **US-COM-002:** referencias bidireccionales y trazables entre mensajes y objetivos/actividades del ciclo; la API valida el ámbito de canal, emprendimiento y ciclo, y no expone el texto de mensajes revocados.
 - [x] Interfaces/stubs explícitos y `TODO(TBD)` para integraciones y decisiones pendientes; documentar límites de IA y alertas.
 - [x] Regenerar OpenAPI/TypeScript; verificar `check.mjs`, lint y tipos; habilitar pruebas de comunicación PostgreSQL en CI.
 - [x] Verificar pytest completo, `test_comunicacion.py`, Ruff, mypy y `alembic check` en base desechable.

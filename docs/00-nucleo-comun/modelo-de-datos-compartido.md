@@ -25,12 +25,14 @@ Este modelo conceptual define entidades comunes y no prescribe un motor adiciona
 ## Comunicacion y alertas
 
 - `Meeting`, `MeetingMinutes`, `Agreement` y `MeetingAction`.
-- `Channel`, `ChannelMessage`, `ChatAttachment`, `ChatMention` y `ChatReadReceipt`.
+- `Channel`, `ChannelMessage`, `ChatMention` y `ChatReadReceipt`; cada emprendimiento
+  dispone de los canales estándar Gestión de proyecto, Finanzas y Reuniones
+  (US-COM-001). `ChatAttachment` sigue pendiente.
 - `Alert` y `Notification`.
 
 ## Finanzas e informes
 
-Las entidades financieras comunes se especifican en los programas que las habilitan: presupuesto, partida, compra, factura, documento y cambio presupuestario. Las entidades de informe son `TechnicalReport`, `TechnicalReportVersion`, `TechnicalReportSourceReference`, `TechnicalReportManualEntry` y `TechnicalReportDocument`.
+Las entidades financieras comunes se especifican en los programas que las habilitan: presupuesto, partida, compra, factura, documento y cambio presupuestario. Finanzas sigue pendiente. Un informe técnico se persiste como `TechnicalReport`: cada fila es una versión trazable del período, con composición de fuentes, revisión, vínculo de corrección y referencia privada al PDF cuando se genera.
 
 ## Auditoria
 

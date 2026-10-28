@@ -5,7 +5,7 @@ import type { components } from '@sia/contracts'
  * Reuniones, minutas y acuerdos: docs/00-nucleo-comun/reuniones-minutas-y-canales.md.
  * Publicar minutas: Coordinadora y Gestor asignado. Emprendedor consulta las publicadas.
  * Bandeja propia: docs/00-nucleo-comun/notificaciones-y-alertas.md. Sin tiempo real ni correo.
- * Canales: solo nombre, sin categorías ni permisos por tipo mientras su taxonomía siga TBD.
+ * US-COM-001: tres canales estándar por emprendimiento; los históricos sin tipo se conservan.
  * Mensajes sin tiempo real: se consultan al abrir o actualizar el canal. Solo el autor edita o revoca.
  * La autorización de cada operación sigue en la API.
  */
@@ -17,6 +17,8 @@ export type Alert = components['schemas']['AlertOut']
 export type Notification = components['schemas']['NotificationOut']
 export type Channel = components['schemas']['ChannelOut']
 export type Message = components['schemas']['MessageOut']
+export type MessageReference = components['schemas']['MessageReferenceOut']
+export type MessageReferenceCreate = components['schemas']['MessageReferenceCreate']
 
 export const MESSAGE_PAGE_SIZE = 50
 
@@ -40,14 +42,10 @@ export function meetingsUrl(
 
 export function channelsUrl(query: {
   entrepreneurshipId: string
-  cycleId?: string
   limit?: number
   offset?: number
 }): string {
   const params = new URLSearchParams({ entrepreneurship_id: query.entrepreneurshipId })
-  if (query.cycleId) {
-    params.set('cycle_id', query.cycleId)
-  }
   if (query.limit !== undefined) {
     params.set('limit', String(query.limit))
   }
@@ -59,6 +57,10 @@ export function channelsUrl(query: {
 
 export function channelUrl(channelId: string, path: string, query?: { limit?: number; offset?: number }): string {
   return withQuery(`/api/sia/channels/${channelId}/${path}`, query)
+}
+
+export function targetReferencesUrl(cycleId: string, kind: 'objective' | 'activity', targetId: string): string {
+  return `/api/sia/cycles/${cycleId}/chat-references/${kind}/${targetId}`
 }
 
 export function bandejaUrl(path: string, query?: { limit?: number; offset?: number }): string {
@@ -366,10 +368,11 @@ export function parseChannel(value: unknown): Channel | null {
   const entrepreneurshipId = requiredString(value.entrepreneurship_id)
   const cycleId = nullableString(value.cycle_id)
   const name = requiredString(value.name)
-  if (!base || !entrepreneurshipId || cycleId === undefined || !name) {
+  const kind = nullableString(value.kind)
+  if (!base || !entrepreneurshipId || cycleId === undefined || !name || kind === undefined) {
     return null
   }
-  return { ...base, entrepreneurship_id: entrepreneurshipId, cycle_id: cycleId, name }
+  return { ...base, entrepreneurship_id: entrepreneurshipId, cycle_id: cycleId, name, kind }
 }
 
 export function parseChannelList(value: unknown): Channel[] | null {
@@ -384,11 +387,26 @@ export function parseMessage(value: unknown): Message | null {
   const channelId = requiredString(value.channel_id)
   const content = value.content === null ? null : text(value.content)
   const mentions = parseList(value.mentioned_user_ids, (item) => (typeof item === 'string' && item ? item : null))
-  if (!base || !channelId || (content === null && value.content !== null) || !mentions) {
+  const references = parseList(value.references, parseMessageReference)
+  if (!base || !channelId || (content === null && value.content !== null) || !mentions || !references) {
     return null
   }
-  return { ...base, channel_id: channelId, content, mentioned_user_ids: mentions }
+  return { ...base, channel_id: channelId, content, mentioned_user_ids: mentions, references }
 }
+
+export function parseMessageReference(value: unknown): MessageReference | null {
+  if (!isRecord(value)) return null
+  const id = requiredString(value.id); const createdAt = requiredString(value.created_at)
+  const messageId = requiredString(value.message_id); const cycleId = requiredString(value.cycle_id)
+  const kind = value.kind === 'objective' || value.kind === 'activity' ? value.kind : null
+  const targetId = requiredString(value.target_id); const targetTitle = requiredString(value.target_title)
+  const channelId = requiredString(value.channel_id); const channelName = requiredString(value.channel_name)
+  const content = value.message_content === null ? null : text(value.message_content)
+  if (!id || !createdAt || !messageId || !cycleId || !kind || !targetId || !targetTitle || !channelId || !channelName || (content === null && value.message_content !== null)) return null
+  return { id, created_at: createdAt, message_id: messageId, cycle_id: cycleId, kind, target_id: targetId, target_title: targetTitle, channel_id: channelId, channel_name: channelName, message_content: content }
+}
+
+export function parseMessageReferenceList(value: unknown): MessageReference[] | null { return parseList(value, parseMessageReference) }
 
 export function parseMessageList(value: unknown): Message[] | null {
   return parseList(value, parseMessage)

@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.audit.service import write_audit
 from app.db.base import Base
 from app.models.document import Document
+from app.models.evidence_folder import EvidenceFolder, EvidencePlacement
 from app.models.seguimiento import (
     Activity,
     Ambition,
@@ -305,7 +306,11 @@ async def save(
         scope = await authorize_cycle(db, actor, cycle_id, lock=True)
         definition = await canvas_definition(db, scope, pin=True)
         await validate_references(db, scope, definition, payload)
-        values = payload.model_dump(mode="json", exclude={"expected_revision"})
+        values = payload.model_dump(mode="json", exclude={"expected_revision", "folder_id"})
+        if isinstance(payload, EvidenceCreate) and payload.folder_id:
+            folder = await db.get(EvidenceFolder, payload.folder_id)
+            if folder is None or folder.cycle_id != cycle_id:
+                raise HTTPException(404, "Carpeta no encontrada en este ciclo")
         # SQL Date columns require dates, not JSON strings.
         if isinstance(payload, ActivityCreate):
             values.update(starts_on=payload.starts_on, ends_on=payload.ends_on)
@@ -348,6 +353,16 @@ async def save(
             entity = model(**values)
             db.add(entity)
         await audit(db, actor, entity, "updated" if before else "created", before)
+        if (
+            isinstance(entity, Evidence)
+            and isinstance(payload, EvidenceCreate)
+            and payload.folder_id
+        ):
+            placement = EvidencePlacement(
+                evidence_id=entity.id, cycle_id=cycle_id, folder_id=payload.folder_id
+            )
+            db.add(placement)
+            await audit(db, actor, placement, "evidence.moved")
         if isinstance(entity, (Activity, Evidence)):
             objective_id = (
                 entity.objective_id

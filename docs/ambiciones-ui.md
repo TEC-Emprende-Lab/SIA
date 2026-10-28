@@ -6,4 +6,9 @@ La pantalla permite seleccionar una ambición, leer su descripción íntegra, ed
 
 Los estados y actividades mostrados pertenecen a los objetivos, no a la ambición. No se calcula un porcentaje, ni se añaden estados o prioridades a las ambiciones. Una ambición sin objetivos sigue siendo válida; los objetivos sin ambición no se agregan a otra. Se conservan los endpoints existentes, autorización backend, revisión optimista, historial y límites entre emprendimientos.
 
-Verificación de aceptación: creación y edición mantienen `expected_revision` al editar; vínculos opcionales preservados; cada objetivo conserva su área, estado y navegación original; no se duplican actividades ni avance. Pruebas de render para contenido, estados vacíos, relaciones, contenido escapado y controles accesibles; revisión de escritorio y móvil y comprobación independiente del despliegue en staging.
+Verificación de aceptación: creación y edición mantienen `expected_revision` al editar;
+vínculos opcionales preservados; cada objetivo conserva su área, estado y navegación
+original; no se duplican actividades ni avance. Las pruebas de render cubren contenido,
+estados vacíos, relaciones, escape de texto y controles accesibles. La revisión aislada
+de escritorio/móvil no sustituye una sesión autenticada: en staging solo está comprobada
+la disponibilidad HTTP sin sesión.

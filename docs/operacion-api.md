@@ -2,18 +2,26 @@
 
 ## Alcance y trazabilidad
 
-Estado revisado el **2026-10-06**, sobre `develop` `7e0947e`: identidad/invitaciones, expediente y seguimiento persistente para
-US-PRO-001, US-PRO-002, US-PRO-005, US-PRO-006, US-PM-001 y US-PM-002.
+Ampliación posterior al corte remoto: carpetas de evidencias (`008`), canales estándar
+(`009`) y referencias de chat (`010`) después de `007`; detalle en
+[carpetas](evidencias-carpetas.md). Al instalar esta rama, `alembic upgrade head` incluye
+`008–010`. No se ha aplicado a staging. Las verificaciones del corte remoto siguientes no
+incluyen esta ampliación.
+
+Estado revisado el **2026-10-23**, sobre `develop` `ab5ebad` y `main` `289c731`.
+Incluye identidad/invitaciones, expediente, seguimiento, comunicación, cola persistente,
+informes técnicos, PDF por worker y documentos privados. Trazabilidad: US-PRO-001/002/004/005/006 y US-PM-001/002/003.
 Última verificación operativa: **2026-10-06**, sobre `1725260` (sección «Verificación operativa — 2026-10-06»).
-Última verificación de staging: **2026-10-06**, sobre `develop` `7e0947e` (sección «Verificación de staging — 2026-10-06»).
+Última verificación de staging: **2026-10-12**, recorrido autenticado parcial en `https://sia.dev.neuroboard.app` (sección «Verificación de staging — 2026-10-12»). El smoke del 2026-10-06 permanece en la sección anterior.
+La evidencia consolidada del corte está en [estado actual](estado-actual.md).
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
 [`apps/api/app/modules/seguimiento/README.md`](../apps/api/app/modules/seguimiento/README.md).
 
-Esto valida el núcleo backend actual. No certifica que el MVP completo ni su UI estén terminados.
-El inventario canónico de componentes está en el [estado actual del README](../README.md#estado-actual).
+Esto valida controles locales del núcleo backend actual. No certifica que el MVP completo,
+la UI en sesión real ni los servicios externos estén terminados.
 
-## Fase 4 — comunicación backend, 2026-09-16
+## Registro histórico — comunicación backend, 2026-09-16
 
 Implementación local en `feature/comunicacion-backend`: reuniones, minutas manuales
 y flujo de borrador asistido, acuerdos, canales, mensajes, menciones, lecturas,
@@ -22,7 +30,7 @@ fuentes del futuro informe, y reglas de comunicación/alertas del núcleo común
 No implementa UI ni informes. Contratos, permisos, errores y limitaciones en el
 [módulo de comunicación](../apps/api/app/modules/comunicacion/README.md).
 
-Aplicar `alembic upgrade head`: la cabeza pasa a **004**. Esta migración crea
+En ese corte, `alembic upgrade head` terminaba en **004**. Esta migración crea
 nueve tablas de comunicación y sus restricciones, sin alterar las migraciones
 001–003 ni sus tablas. Las FK heredan emprendimiento/ciclo, un FK compuesto
 protege lecturas del canal y los triggers protegen ámbito, fuentes e historial.
@@ -105,16 +113,36 @@ La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra tam
 
 1. Construir la imagen con `docker build -f apps/api/Dockerfile -t <imagen-api> .` desde la raíz.
 2. Ejecutar **un único paso de release**, con esa misma imagen, red y `SIA_DATABASE_URL`, usando
-   `uv run --no-sync alembic upgrade head`. No ejecutar una migración por réplica/worker.
+   `sh scripts/release.sh`. El script ejecuta `alembic upgrade head`, `alembic current` y
+   `alembic check`. No ejecutar una migración por réplica/worker.
 3. Si el comando falla, detener el despliegue y revisar los logs; no continuar con `stamp head`.
-4. Verificar `uv run --no-sync alembic current` (actualmente `004`) y
-   `uv run --no-sync alembic check` (sin operaciones pendientes).
+4. Verificar que `alembic current` muestre la cabeza de la imagen (actualmente `012`) y que
+   `alembic check` no reporte operaciones pendientes.
 5. Arrancar las réplicas con el CMD de la imagen. En Coolify, usar `/readyz` como comprobación
    para habilitar tráfico; conservar `/healthz` como liveness.
 
 `001` instala identidad/auditoría, `002` expediente/asignaciones y `003` seguimiento con
 dos canvas v1, doce áreas y once triggers PostgreSQL de integridad/historial.
 `004` incorpora comunicación y sus once triggers PostgreSQL sobre las tablas nuevas.
+`005` incorpora `job_queue`, con reclamo idempotente y estados de trabajo.
+`006` incorpora `technical_reports`: una fila por versión de informe, composición
+trazable, revisión humana, inmutabilidad de aprobados y puntero al PDF privado.
+`007` incorpora `documents` y permite que evidencias de archivo, fotografía o video
+usen un documento privado autorizado en lugar de una URL externa.
+`008` incorpora `evidence_folders` y `evidence_placements` para organizar evidencias por
+ciclo sin modificar el contenido original.
+`009` incorpora los canales estándar de emprendimiento y `010` las referencias entre
+mensajes y objetivos/actividades del ciclo.
+`011_drop_uq_channels_shared_kind` eliminó el índice único de canales compartidos;
+`012` lo restaura y lo declara en el modelo (US-COM-001). La creación desde GET/POST
+se serializa por emprendimiento en PostgreSQL y mantiene la auditoría transaccional.
+Si ya hay dos canales compartidos del mismo tipo y emprendimiento, `012` se detiene
+antes de crear el índice: no borra, fusiona ni reasigna canales, mensajes o referencias.
+Consultar los grupos duplicados y acordar una resolución que conserve historial antes
+de reintentar. No modificar `009`/`011`, usar `stamp` ni omitir el índice para continuar.
+Los canales históricos con `kind IS NULL` y los de ciclo quedan fuera del índice parcial.
+El downgrade histórico de `011` no conserva el predicado de `009`; no usarlo como rollback
+de datos persistentes. Las pruebas de `012` solo revierten su propio índice en bases desechables.
 Los sucesivos `upgrade head` son idempotentes. `alembic check` compara esquema/modelos,
 pero no comprueba por sí mismo el contenido de las semillas ni la presencia de los triggers.
 
@@ -258,7 +286,25 @@ Las suites emiten dos advertencias de deprecación de Starlette/TestClient (http
 BlockingPortal de AnyIO); no son fallos de pruebas. La primera pasada TypeScript usó Node 20
 del host y avisó de engine no soportado; los controles finales se repitieron con Node 24.21.0.
 
-## Verificación operativa — 2026-10-06
+## Verificación actual — 2026-10-12
+
+Sin cambiar código, con el árbol sincronizado a `develop` `44a492e` y `main`
+`289c731`, se ejecutó localmente:
+
+| Control | Resultado |
+|---|---|
+| `pnpm lint`, `pnpm typecheck`, `pnpm --filter @sia/web test`, `pnpm contract:check` | Correctos. |
+| `pnpm --filter @sia/web build` | Correcto; Next.js compiló las rutas de Web y BFF. |
+| `uv run --frozen --group dev pytest -q` | **130 passed, 10 skipped**; dos advertencias de deprecación Starlette/AnyIO. |
+| `uv run --no-sync ruff check .`, `ruff format --check .`, `mypy` | Correctos. |
+| `git diff --check` | Correcto antes de la actualización documental. |
+| `https://sia.dev.neuroboard.app/` y `/api/health` | 200 sin sesión; no valida API ni permisos autenticados. |
+
+GitHub Actions está verde para `develop` `44a492e` y `main` `289c731`; enlaces y
+alcance en [estado actual](estado-actual.md). El workflow `web-and-contracts` aún no
+ejecuta ni la suite ni el build de `apps/web`.
+
+## Verificación operativa histórica — 2026-10-06
 
 Corte del [estado actual del README](../README.md#estado-actual): `main` en `1725260`
 (fusión del PR #20, 2026-10-05), que integra `develop` (`2ebfca0`, PR #19). Ese corte
@@ -321,18 +367,44 @@ Esas URLs `sslip.io` no representan el staging actual y pueden cambiar al recrea
 No usarlas como evidencia de disponibilidad de staging; el entorno vigente es
 `https://sia.dev.neuroboard.app`.
 
-## Pendientes
+## Verificación de staging — 2026-10-12
 
-- Renovar o sincronizar las credenciales de prueba y ejecutar los recorridos autenticados por rol en staging (Coordinadora, Gestor y Emprendedor). Confirmar explícitamente Clerk/Google OAuth, permisos y los servicios externos aplicables.
-- Configurar el paso único de migración y probes en el despliegue real de la API; el despliegue
-  actual documentado del prototipo no equivale a desplegar esta API.
-- Binarios privados R2, informes/PDF y finanzas. La UI de expediente, seguimiento, reuniones, canales y bandeja está conectada y publicada en `main` (Fase 7, 2026-09-29; smoke de despliegue 2026-10-06). Menciones y elegir a otra persona del ciclo siguen `TBD`: no hay listado de personas del ámbito.
+Recorrido autenticado en el navegador sobre `https://sia.dev.neuroboard.app`. No modifica reglas, permisos, API ni datos de staging: no se registró ninguna decisión de validación ni se soltó ninguna tarjeta del Kanban. No certifica la Fase 8 ni la Fase 9. No se identificó el SHA desplegado.
+
+El inicio de sesión de la cuenta de prueba de Coordinadora con contraseña fue rechazado por Clerk (`Password is incorrect`; quedaban dos intentos). No se reintentó la contraseña. Coordinadora y Emprendedor entraron con el código de correo de sus cuentas de prueba de Clerk Development. `GET /api/sia/me` confirmó los roles. Google OAuth no se ejerció. El widget de Clerk del sitio público muestra **Development mode**.
+
+| Rol | Proyecto | Qué se vio |
+|---|---|---|
+| Coordinadora | QA Staging - Flujo completo | Resumen en vacío: 0 objetivos, sin reuniones próximas, sin acuerdos y sin alertas sin resolver. |
+| Coordinadora y Emprendedor | Aula Viva · Ciencias accesibles [DEMO] | Resumen con avance de ciclo 0 % (0 de 6 objetivos aprobados), «Lo que sigue», plan compartido, acuerdos con fecha de compromiso y aviso de que el cumplimiento no está definido, y panel de alertas personales. No hay reuniones próximas. |
+| Coordinadora | Aula Viva | Lista de objetivos con «Validar objetivo». Diálogo de evidencias del kit con contexto, actividades y enlace de bitácora. Formulario de decisión (aprobar, solicitar corrección o rechazar) con observación obligatoria. No se envió. |
+| Emprendedor | Aula Viva | La lista no ofrece «Validar objetivo». El mismo diálogo muestra evidencias y acciones de actividad, sin formulario de decisión. |
+| Coordinadora y Emprendedor | Aula Viva, Kanban | Objetivos: 3 en Borrador, 3 en Pendiente de validación; Corrección solicitada, Rechazado y Aprobado vacíos. Actividades: 5 pendientes, 10 vencidas y 9 completadas. El arrastre no se ejecutó. |
+| Coordinadora | Finanzas y Equipo | Finanzas muestra el aviso de reglas y backend pendientes, sin datos de demostración. Equipo solo permite asignar durante la visita; no lista el equipo completo. |
+| Emprendedor | Equipo | Aviso de que la consulta de integrantes aún no está disponible. |
+
+El Gestor no se recorrió. Siguen sin evidencia las migraciones del despliegue, la observabilidad, los backups y el rollback.
+
+## Pendientes vigentes
+
+- Recorrer el rol Gestor en staging y el arrastre del Kanban en sesión autenticada. Google OAuth real sigue sin ejercerse. La contraseña de la cuenta de prueba de Coordinadora no coincide con Clerk; no reintentarla.
+- Aplicar `scripts/release.sh` en staging, con respaldo previo, y verificar `/readyz`, los
+  request logs y el SHA desplegado. El despliegue documentado del prototipo no equivale a
+  desplegar esta API.
+- Configurar y verificar `SIA_STORAGE_*` en el entorno aplicable para cargar y entregar
+  archivos privados; sin ello el módulo responde 503. Adjuntos de chat y facturas no
+  usan todavía `documents`.
+- PDF de informe: el consumidor y la cola están implementados, pero requiere almacenamiento
+  configurado y una prueba operativa del worker desplegado. IA real, correo y finanzas no están integrados.
+- Finanzas sigue sin backend. Menciones seleccionables y elegir otra persona del ciclo
+  siguen `TBD`: no hay listado autorizado de personas del ámbito.
 - Escalas de diagnóstico, catálogo oficial de entregables, evidencia mínima, transiciones y
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
-- Recorrido autenticado por rol sobre la publicación (Coordinadora, Emprendedor y Gestor),
-  añadir `pnpm --filter @sia/web test` a CI y verificar migración, observabilidad, backups
-  y rollback del entorno de staging: pendientes.
+- Verificar en staging las migraciones `008–010`, los backups y el rollback. La suite y el
+  build de `apps/web` ya forman parte de CI. El recorrido de Coordinadora y Emprendedor en
+  Resumen, revisión de evidencias y Kanban quedó registrado el 2026-10-12.
 
-En la integración local histórica no se hicieron commits ni se migró una base persistente del usuario. Los cambios de implementación ya figuran en los commits indicados arriba. La revisión documental del 2026-09-16 no hizo commit ni push; la actualización del 2026-10-06 entra por pull request de documentación, sin migraciones ni cambios de código.
+Los registros de 2026-09 y 2026-10-06 son evidencia histórica: sus hashes, conteos y
+limitaciones no sustituyen el corte de 2026-10-12 ni acreditan un despliegue autenticado.

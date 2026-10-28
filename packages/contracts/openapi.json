@@ -1323,6 +1323,350 @@
         }
       }
     },
+    "/cycles/{cycle_id}/seguimiento/folders": {
+      "get": {
+        "tags": [
+          "seguimiento"
+        ],
+        "summary": "Get Folders",
+        "operationId": "get_folders_cycles__cycle_id__seguimiento_folders_get",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FolderOut"
+                  },
+                  "title": "Response Get Folders Cycles  Cycle Id  Seguimiento Folders Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "seguimiento"
+        ],
+        "summary": "Create Folder",
+        "operationId": "create_folder_cycles__cycle_id__seguimiento_folders_post",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cycles/{cycle_id}/seguimiento/folders/{folder_id}": {
+      "put": {
+        "tags": [
+          "seguimiento"
+        ],
+        "summary": "Update Folder",
+        "operationId": "update_folder_cycles__cycle_id__seguimiento_folders__folder_id__put",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "folder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Folder Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cycles/{cycle_id}/seguimiento/evidence-placements": {
+      "get": {
+        "tags": [
+          "seguimiento"
+        ],
+        "summary": "Get Placements",
+        "operationId": "get_placements_cycles__cycle_id__seguimiento_evidence_placements_get",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlacementOut"
+                  },
+                  "title": "Response Get Placements Cycles  Cycle Id  Seguimiento Evidence Placements Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cycles/{cycle_id}/seguimiento/evidence/{evidence_id}/folder": {
+      "put": {
+        "tags": [
+          "seguimiento"
+        ],
+        "summary": "Move Evidence",
+        "operationId": "move_evidence_cycles__cycle_id__seguimiento_evidence__evidence_id__folder_put",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "evidence_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Evidence Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlacementUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacementOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cycles/{cycle_id}/seguimiento/summary": {
       "get": {
         "tags": [
@@ -4474,6 +4818,87 @@
         }
       }
     },
+    "/cycles/{cycle_id}/chat-references/{kind}/{target_id}": {
+      "get": {
+        "tags": [
+          "comunicacion"
+        ],
+        "summary": "Get Target References",
+        "operationId": "get_target_references_cycles__cycle_id__chat_references__kind___target_id__get",
+        "parameters": [
+          {
+            "name": "cycle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(objective|activity)$",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "target_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Target Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessageReferenceOut"
+                  },
+                  "title": "Response Get Target References Cycles  Cycle Id  Chat References  Kind   Target Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/channels/{channel_id}/read-receipt": {
       "put": {
         "tags": [
@@ -6065,6 +6490,17 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
           }
         },
         "type": "object",
@@ -6076,7 +6512,8 @@
           "revoked_at",
           "entrepreneurship_id",
           "cycle_id",
-          "name"
+          "name",
+          "kind"
         ],
         "title": "ChannelOut"
       },
@@ -6439,6 +6876,17 @@
             "title": "Description",
             "default": ""
           },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
           "activity_id": {
             "type": "string",
             "title": "Activity Id"
@@ -6560,6 +7008,72 @@
           "created_at"
         ],
         "title": "EvidenceOut"
+      },
+      "FolderCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "FolderCreate"
+      },
+      "FolderOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "cycle_id": {
+            "type": "string",
+            "title": "Cycle Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "cycle_id",
+          "name",
+          "revision"
+        ],
+        "title": "FolderOut"
+      },
+      "FolderUpdate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "expected_revision"
+        ],
+        "title": "FolderUpdate"
       },
       "HTTPValidationError": {
         "properties": {
@@ -6881,6 +7395,14 @@
             },
             "type": "array",
             "title": "Mentioned User Ids"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/MessageReferenceCreate"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "References"
           }
         },
         "additionalProperties": false,
@@ -6942,6 +7464,13 @@
             },
             "type": "array",
             "title": "Mentioned User Ids"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/MessageReferenceOut"
+            },
+            "type": "array",
+            "title": "References"
           }
         },
         "type": "object",
@@ -6953,9 +7482,109 @@
           "revoked_at",
           "channel_id",
           "content",
-          "mentioned_user_ids"
+          "mentioned_user_ids",
+          "references"
         ],
         "title": "MessageOut"
+      },
+      "MessageReferenceCreate": {
+        "properties": {
+          "cycle_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Cycle Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "objective",
+              "activity"
+            ],
+            "title": "Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Target Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cycle_id",
+          "kind",
+          "target_id"
+        ],
+        "title": "MessageReferenceCreate"
+      },
+      "MessageReferenceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "cycle_id": {
+            "type": "string",
+            "title": "Cycle Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "objective",
+              "activity"
+            ],
+            "title": "Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "title": "Target Id"
+          },
+          "target_title": {
+            "type": "string",
+            "title": "Target Title"
+          },
+          "channel_id": {
+            "type": "string",
+            "title": "Channel Id"
+          },
+          "channel_name": {
+            "type": "string",
+            "title": "Channel Name"
+          },
+          "message_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "message_id",
+          "cycle_id",
+          "kind",
+          "target_id",
+          "target_title",
+          "channel_id",
+          "channel_name"
+        ],
+        "title": "MessageReferenceOut"
       },
       "MessageUpdate": {
         "properties": {
@@ -7449,6 +8078,67 @@
           "area_id"
         ],
         "title": "ObjectiveUpdate"
+      },
+      "PlacementOut": {
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "title": "Evidence Id"
+          },
+          "cycle_id": {
+            "type": "string",
+            "title": "Cycle Id"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "cycle_id",
+          "folder_id",
+          "revision"
+        ],
+        "title": "PlacementOut"
+      },
+      "PlacementUpdate": {
+        "properties": {
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "PlacementUpdate"
       },
       "ProgramCycleCreate": {
         "properties": {

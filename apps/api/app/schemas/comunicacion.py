@@ -63,6 +63,13 @@ class ChannelCreate(Input):
 class MessageCreate(Input):
     content: NonBlank
     mentioned_user_ids: list[NonBlank] = Field(default_factory=list)
+    references: list["MessageReferenceCreate"] = Field(default_factory=list, max_length=10)
+
+
+class MessageReferenceCreate(Input):
+    cycle_id: NonBlank
+    kind: Literal["objective", "activity"]
+    target_id: NonBlank
 
 
 class MessageUpdate(CommunicationRevision):
@@ -115,12 +122,25 @@ class ChannelOut(EditableOut):
     entrepreneurship_id: str
     cycle_id: str | None
     name: str
+    kind: str | None
 
 
 class MessageOut(EditableOut):
     channel_id: str
     content: str | None
     mentioned_user_ids: list[str]
+    references: list["MessageReferenceOut"]
+
+
+class MessageReferenceOut(RecordOut):
+    message_id: str
+    cycle_id: str
+    kind: Literal["objective", "activity"]
+    target_id: str
+    target_title: str
+    channel_id: str
+    channel_name: str
+    message_content: str | None = None
 
 
 class ReadReceiptOut(RecordOut):

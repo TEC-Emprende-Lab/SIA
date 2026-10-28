@@ -6,5 +6,7 @@ RUN uv sync --frozen --no-dev
 COPY app ./app
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
+COPY scripts/release.sh ./scripts/release.sh
+RUN chmod +x ./scripts/release.sh
 EXPOSE 8000
 CMD ["uv", "run", "--no-sync", "fastapi", "run", "app/main.py", "--host", "0.0.0.0", "--port", "8000"]

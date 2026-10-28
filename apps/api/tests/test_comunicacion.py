@@ -12,7 +12,7 @@ from alembic.operations import Operations
 from fastapi import Header
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event, func, select, text
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.db.session import get_db
@@ -32,7 +32,7 @@ from app.security.deps import get_current_user
 
 
 def migrate(connection, direction):
-    files = sorted((Path(__file__).resolve().parents[1] / "alembic/versions").glob("00*.py"))
+    files = sorted((Path(__file__).resolve().parents[1] / "alembic/versions").glob("*.py"))
     if direction == "downgrade":
         files.reverse()
     with Operations.context(MigrationContext.configure(connection)):
@@ -78,6 +78,11 @@ async def communication():
         await db.flush()
         for uid, role in [("manager", "Gestor"), ("founder", "Emprendedor")]:
             db.add(EntrepreneurshipAssignment(entrepreneurship_id="e1", user_id=uid, role=role))
+        db.add(
+            EntrepreneurshipAssignment(
+                entrepreneurship_id="e1", user_id="member", role="Emprendedor"
+            )
+        )
         for uid, role in [("scoped", "Gestor"), ("member", "Emprendedor"), ("wrong", "Gestor")]:
             db.add(ProgramCycleAssignment(program_cycle_id="c1", user_id=uid, role=role))
         await db.commit()
@@ -122,11 +127,114 @@ async def new_meeting(client, cycle="c1", actor="manager"):
 
 
 async def new_channel(client, cycle="c1"):
-    result = await client.post(
-        "/channels", json={"entrepreneurship_id": "e1", "cycle_id": cycle, "name": "Consultas"}
+    result = await client.get("/channels?entrepreneurship_id=e1")
+    assert result.status_code == 200, result.text
+    kind = "finanzas" if cycle is None else "gestion_proyecto"
+    channel = next(item for item in result.json() if item["kind"] == kind)
+    return f"/channels/{channel['id']}"
+
+
+async def test_standard_shared_channels_are_seeded_once(communication):
+    client, _ = communication
+    first = await client.get("/channels?entrepreneurship_id=e1")
+    second = await client.get("/channels?entrepreneurship_id=e1")
+    assert first.status_code == second.status_code == 200
+    assert sorted((item["kind"], item["name"], item["cycle_id"]) for item in first.json()) == [
+        ("finanzas", "Finanzas", None),
+        ("gestion_proyecto", "Gestión de proyecto", None),
+        ("reuniones", "Reuniones", None),
+    ]
+    assert [item["id"] for item in first.json()] == [item["id"] for item in second.json()]
+    rejected = await client.post(
+        "/channels", json={"entrepreneurship_id": "e1", "name": "Consultas"}
     )
-    assert result.status_code == 201, result.text
-    return f"/channels/{result.json()['id']}"
+    assert rejected.status_code == 422
+
+
+async def test_shared_channel_uniqueness_preserves_legacy_channels(communication):
+    """US-COM-001: uniqueness applies to shared kinds, not historical free channels."""
+    client, sessions = communication
+    shared = (await client.get("/channels?entrepreneurship_id=e1")).json()
+    async with sessions() as db:
+        db.add_all(
+            [
+                Channel(
+                    id="legacy-one", entrepreneurship_id="e1", name="Histórico", created_by="coord"
+                ),
+                Channel(
+                    id="legacy-two", entrepreneurship_id="e1", name="Histórico", created_by="coord"
+                ),
+                Channel(
+                    entrepreneurship_id="e2", kind="finanzas", name="Finanzas", created_by="coord"
+                ),
+            ]
+        )
+        await db.commit()
+        with pytest.raises(IntegrityError):
+            async with db.begin_nested():
+                db.add(
+                    Channel(
+                        entrepreneurship_id="e1",
+                        kind="finanzas",
+                        name="Duplicado",
+                        created_by="coord",
+                    )
+                )
+                await db.flush()
+    visible = (await client.get("/channels?entrepreneurship_id=e1")).json()
+    assert {row["id"] for row in visible} == {row["id"] for row in shared} | {
+        "legacy-one",
+        "legacy-two",
+    }
+
+
+@pytest.mark.skipif(
+    not os.getenv("COMUNICACION_TEST_DATABASE_URL", "").startswith("postgresql"),
+    reason="Requires independent PostgreSQL transactions and row locks",
+)
+@pytest.mark.parametrize("operations", [("get", "get"), ("post", "post"), ("get", "post")])
+async def test_concurrent_shared_channels_reuse_same_rows(communication, monkeypatch, operations):
+    """US-COM-001: simultaneous readers and creators never duplicate or fail."""
+    client, sessions = communication
+    original_scope = service.policy.scope
+    ready = asyncio.Event()
+    arrived = 0
+
+    async def synchronized_scope(*args, **kwargs):
+        nonlocal arrived
+        await original_scope(*args, **kwargs)
+        arrived += 1
+        if arrived == len(operations):
+            ready.set()
+        await asyncio.wait_for(ready.wait(), timeout=5)
+
+    monkeypatch.setattr(service.policy, "scope", synchronized_scope)
+
+    async def request(operation):
+        if operation == "get":
+            response = await client.get("/channels?entrepreneurship_id=e1")
+            assert response.status_code == 200, response.text
+            return next(row["id"] for row in response.json() if row["kind"] == "finanzas")
+        response = await client.post(
+            "/channels", json={"entrepreneurship_id": "e1", "name": "Finanzas"}
+        )
+        assert response.status_code == 201, response.text
+        return response.json()["id"]
+
+    ids = await asyncio.wait_for(
+        asyncio.gather(*(request(operation) for operation in operations)), timeout=15
+    )
+    assert len(set(ids)) == 1
+    async with sessions() as db:
+        channels = list(
+            await db.scalars(select(Channel).where(Channel.entrepreneurship_id == "e1"))
+        )
+        assert len(channels) == (1 if operations == ("post", "post") else 3)
+        assert len({row.kind for row in channels}) == len(channels)
+        actions = list(
+            await db.scalars(select(AuditLog.action).where(AuditLog.entity_type == "Channel"))
+        )
+        assert len(actions) == len(channels)
 
 
 @pytest.mark.parametrize("cycle", ["c1", "c4"])
@@ -211,7 +319,7 @@ async def test_exact_cycle_shared_scope_and_cross_links(communication):
     ).status_code == 404
     shared = await new_channel(client, None)
     assert (await client.get(shared + "/messages", headers=headers("founder"))).status_code == 200
-    assert (await client.get(shared + "/messages", headers=headers("member"))).status_code == 403
+    assert (await client.get(shared + "/messages", headers=headers("member"))).status_code == 200
     assert (
         await client.post(
             "/cycles/c1/meetings",
@@ -269,7 +377,7 @@ async def test_messages_mentions_receipts_notifications_and_history(communicatio
     assert data["mentioned_user_ids"] == ["member"]
     assert (await client.get(channel + "/unread", headers=headers("member"))).json()["count"] == 1
     alerts = (await client.get("/alerts", headers=headers("member"))).json()
-    assert len(alerts) == 1 and alerts[0]["cycle_id"] == "c1"
+    assert len(alerts) == 1 and alerts[0]["cycle_id"] is None
     assert (await client.get("/alerts")).json() == []
     notifications = (await client.get("/notifications", headers=headers("member"))).json()
     notification_path = "/notifications/" + notifications[0]["id"] + "/read"
@@ -306,7 +414,7 @@ async def test_messages_mentions_receipts_notifications_and_history(communicatio
 async def test_receipts_are_monotonic_and_cannot_cross_channels(communication):
     client, _ = communication
     channel = await new_channel(client)
-    other = await new_channel(client)
+    other = await new_channel(client, None)
     first = (await client.post(channel + "/messages", json={"content": "Primero"})).json()
     second = (await client.post(channel + "/messages", json={"content": "Segundo"})).json()
     foreign = (await client.post(other + "/messages", json={"content": "Otro"})).json()
@@ -317,11 +425,9 @@ async def test_receipts_are_monotonic_and_cannot_cross_channels(communication):
     assert result.json()["last_read_message_id"] == second["id"]
 
 
-@pytest.mark.parametrize(
-    "actor,model", [("member", ProgramCycleAssignment), ("founder", EntrepreneurshipAssignment)]
-)
-async def test_revocation_hides_history_and_inbox_without_deletion(communication, actor, model):
+async def test_revocation_hides_history_and_inbox_without_deletion(communication):
     client, sessions = communication
+    actor, model = "founder", EntrepreneurshipAssignment
     channel = await new_channel(client)
     await client.post(
         channel + "/messages", json={"content": "Aviso", "mentioned_user_ids": [actor]}
@@ -344,7 +450,9 @@ async def test_revocation_hides_history_and_inbox_without_deletion(communication
     ).status_code == 422
     async with sessions() as db:
         assert await db.scalar(select(func.count()).select_from(Notification)) == 1
-        db.add(ProgramCycleAssignment(program_cycle_id="c1", user_id=actor, role="Emprendedor"))
+        db.add(
+            EntrepreneurshipAssignment(entrepreneurship_id="e1", user_id=actor, role="Emprendedor")
+        )
         await db.commit()
     assert len((await client.get("/alerts", headers=headers(actor))).json()) == 1
 

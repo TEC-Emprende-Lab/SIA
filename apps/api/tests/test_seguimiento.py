@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.db.session import get_db
 from app.models.audit import AuditLog
 from app.models.document import Document
+from app.models.evidence_folder import EvidencePlacement
 from app.models.expediente import (
     Entrepreneurship,
     EntrepreneurshipAssignment,
@@ -54,6 +55,7 @@ def migrate(connection, direction):
         "002_expediente.py",
         "003_seguimiento.py",
         "007_documents.py",
+        "008_evidence_folders.py",
     ]
     if direction == "downgrade":
         files.reverse()
@@ -137,6 +139,144 @@ def path(resource, cycle="c1"):
 
 def objective_data(**changes):
     return {"title": "Validar solución", "area_id": definition_id("Prototipado", "mvp"), **changes}
+
+
+@pytest.mark.parametrize("actor", ["coordinator", "manager", "founder", "cycle-founder"])
+async def test_evidence_folders_authorized_creation_and_revision(tracking, actor):
+    client, _ = tracking
+    headers = {"x-actor": actor}
+    created = await client.post(path("folders"), json={"name": "  Pruebas  "}, headers=headers)
+    assert created.status_code == 201
+    folder = created.json()
+    assert folder["name"] == "Pruebas"
+    updated = await client.put(
+        path(f"folders/{folder['id']}"),
+        json={"name": "Validación", "expected_revision": 1},
+        headers=headers,
+    )
+    assert updated.status_code == 200 and updated.json()["revision"] == 2
+    conflict = await client.put(
+        path(f"folders/{folder['id']}"),
+        json={"name": "Anterior", "expected_revision": 1},
+        headers=headers,
+    )
+    assert conflict.status_code == 409
+    assert (await client.get(path("folders"), headers=headers)).json()[0]["name"] == "Validación"
+
+
+async def test_folder_scope_and_organization_preserve_approved_evidence(tracking):
+    client, sessions = tracking
+    obj = await create_objective(client)
+    activity = await create_activity(client, obj)
+    folder = (await client.post(path("folders"), json={"name": "Pruebas"})).json()
+    evidence = (
+        await client.post(
+            path("evidence"),
+            json={
+                "activity_id": activity["id"],
+                "title": "Resultado",
+                "kind": "link",
+                "url": "https://example.test/results",
+                "folder_id": folder["id"],
+            },
+        )
+    ).json()
+    placement = (await client.get(path("evidence-placements"))).json()[0]
+    assert placement["folder_id"] == folder["id"]
+    await approve(client, "objectives", obj["id"])
+    before = await current(client, "objectives", obj["id"])
+    destination = (await client.post(path("folders"), json={"name": "Clientes"})).json()
+    moved = await client.put(
+        path(f"evidence/{evidence['id']}/folder"),
+        json={
+            "folder_id": destination["id"],
+            "expected_revision": 1,
+        },
+    )
+    assert moved.status_code == 200 and moved.json()["revision"] == 2
+    assert await current(client, "objectives", obj["id"]) == before
+    assert (await client.get(path("evidence"))).json() == [evidence]
+    assert (
+        await client.put(
+            path(f"evidence/{evidence['id']}/folder"),
+            json={
+                "folder_id": None,
+                "expected_revision": 1,
+            },
+        )
+    ).status_code == 409
+    foreign = (await client.post(path("folders", "c2"), json={"name": "Otro ciclo"})).json()
+    assert (
+        await client.put(
+            path(f"evidence/{evidence['id']}/folder"),
+            json={
+                "folder_id": foreign["id"],
+                "expected_revision": 2,
+            },
+        )
+    ).status_code == 404
+    assert (
+        await client.put(
+            path(f"evidence/{evidence['id']}/folder", "c2"),
+            json={
+                "folder_id": foreign["id"],
+                "expected_revision": 2,
+            },
+        )
+    ).status_code == 404
+    cleared = await client.put(
+        path(f"evidence/{evidence['id']}/folder"),
+        json={
+            "folder_id": None,
+            "expected_revision": 2,
+        },
+    )
+    assert cleared.status_code == 200 and cleared.json()["folder_id"] is None
+    for resource in ["folders", "evidence-placements"]:
+        assert (
+            await client.get(path(resource), headers={"x-actor": "outsider"})
+        ).status_code == 403
+    assert (
+        await client.post(path("folders"), json={"name": "Ajena"}, headers={"x-actor": "outsider"})
+    ).status_code == 403
+    assert (await client.post(path("folders"), json={"name": " "})).status_code == 422
+    async with sessions() as db:
+        events = list(
+            await db.scalars(
+                select(AuditLog).where(
+                    AuditLog.action == "seguimiento.evidence.moved",
+                    AuditLog.entity_id == evidence["id"],
+                )
+            )
+        )
+        assert len(events) == 3
+
+    async with sessions() as db:
+        placement = await db.get(EvidencePlacement, evidence["id"])
+        placement.cycle_id = "c2"
+        placement.folder_id = foreign["id"]
+        with pytest.raises(IntegrityError):
+            await db.commit()
+        await db.rollback()
+
+    async with sessions() as db:
+        assignment = await db.scalar(
+            select(EntrepreneurshipAssignment).where(
+                EntrepreneurshipAssignment.user_id == "founder"
+            )
+        )
+        assignment.revoked_at = datetime.now(UTC)
+        await db.commit()
+    assert (await client.get(path("folders"))).status_code == 403
+    assert (
+        await client.put(
+            path(f"evidence/{evidence['id']}/folder"),
+            json={
+                "folder_id": folder["id"],
+                "expected_revision": 3,
+            },
+        )
+    ).status_code == 403
 
 
 @pytest.mark.parametrize("actor", ["manager", "founder", "cycle-manager", "cycle-founder"])

@@ -8,10 +8,12 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -73,6 +75,16 @@ class Agreement(Editable, Base):
 
 class Channel(Editable, Base):
     __tablename__ = "channels"
+    __table_args__ = (
+        Index(
+            "uq_channels_shared_kind",
+            "entrepreneurship_id",
+            "kind",
+            unique=True,
+            postgresql_where=text("cycle_id IS NULL AND kind IS NOT NULL"),
+            sqlite_where=text("cycle_id IS NULL AND kind IS NOT NULL"),
+        ),
+    )
     entrepreneurship_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("entrepreneurships.id"), index=True
     )
@@ -80,6 +92,7 @@ class Channel(Editable, Base):
         String(36), ForeignKey("program_cycles.id"), index=True
     )
     name: Mapped[str] = mapped_column(String(200))
+    kind: Mapped[str | None] = mapped_column(String(32))
 
 
 class Message(Editable, Base):
@@ -87,6 +100,27 @@ class Message(Editable, Base):
     __table_args__ = (UniqueConstraint("id", "channel_id", name="uq_message_channel"),)
     channel_id: Mapped[str] = mapped_column(String(36), ForeignKey("channels.id"), index=True)
     content: Mapped[str] = mapped_column(Text)
+
+
+class MessageReference(Record, Base):
+    """A durable, scoped pointer from a chat message to work in a program cycle.
+
+    ``target_id`` is polymorphic, so the service validates its model and cycle before
+    persisting. The cycle is stored to preserve the original reference even if the
+    shared entrepreneurship chat later displays another cycle.
+    """
+
+    __tablename__ = "chat_message_references"
+    __table_args__ = (
+        UniqueConstraint("message_id", "kind", "target_id", name="uq_chat_message_reference"),
+        CheckConstraint("kind IN ('objective', 'activity')", name="ck_chat_reference_kind"),
+    )
+    message_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("channel_messages.id"), index=True
+    )
+    cycle_id: Mapped[str] = mapped_column(String(36), ForeignKey("program_cycles.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    target_id: Mapped[str] = mapped_column(String(36), index=True)
 
 
 class Mention(Record, Base):

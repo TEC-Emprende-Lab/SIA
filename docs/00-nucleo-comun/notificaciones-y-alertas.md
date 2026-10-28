@@ -1,8 +1,13 @@
 # Notificaciones y alertas
 
-SIA genera alertas para seguimientos, validaciones, acuerdos, actividades, entregables, presupuesto e informes pendientes, respetando el alcance de cada usuario.
+SIA registra alertas y notificaciones internas respetando el alcance de cada usuario.
+Actualmente las menciones de canales generan la alerta y la notificación; la generación
+automática para seguimiento, validaciones, acuerdos, actividades, entregables,
+presupuesto e informes sigue pendiente de reglas y consumidores confirmados.
 
-Las notificaciones se muestran dentro de la plataforma y, cuando corresponda, por correo mediante Resend. Los mensajes no leidos y menciones de canales autorizados pueden generar notificaciones.
+Las notificaciones se muestran dentro de la plataforma. El correo mediante Resend no
+está integrado. Los mensajes no leídos y las menciones de canales autorizados se
+resuelven con autorización backend; hoy las menciones son el disparador implementado.
 
 La periodicidad de seguimiento, las reglas de escalamiento, el criterio de cierre y las metricas definitivas del dashboard estan `TBD`. Una alerta de informe vencido recuerda su preparacion; no crea, aprueba ni emite un informe automaticamente.
 

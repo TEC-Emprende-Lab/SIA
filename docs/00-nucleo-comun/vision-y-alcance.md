@@ -50,3 +50,10 @@ Quedan fuera del primer alcance:
 - Despliegue: Coolify; `develop` despliega a staging (`https://sia.dev.neuroboard.app`) y `main` a produccion. La disponibilidad HTTP de staging se verifica por separado de los permisos y flujos autenticados.
 
 Todo trafico de produccion usa HTTPS. FastAPI valida firma, emisor, audiencia y vigencia del JWT antes de aplicar autorizacion. Los endpoints sensibles o costosos usan rate limiting distribuido y responden `429` sin ejecutar la accion cuando se excede el limite.
+
+## Estado de implementación
+
+El alcance define el producto deseado, no certifica entregas. El corte verificable de
+código, CI, pruebas y staging está en [estado actual](../estado-actual.md). Finanzas,
+integraciones de correo/IA/tiempo real y la validación autenticada de staging siguen
+pendientes o `TBD`; no se infieren a partir del prototipo ni del smoke HTTP.
