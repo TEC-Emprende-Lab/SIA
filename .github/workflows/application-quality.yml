@@ -49,6 +49,20 @@ jobs:
           uv run --no-sync alembic check
           uv run --no-sync python -m app.modules.identity.service --email admin@example.org --operator ci
 
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SIA_ENVIRONMENT: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --directory apps/api --frozen --all-groups
+      - name: Verify worker lifecycle, PDF rules and queue
+        run: uv run --no-sync --directory apps/api pytest tests/test_worker.py tests/test_informes.py tests/test_queue.py
+      - name: Build production worker image and verify startup with PostgreSQL
+        run: bash scripts/check-worker-image.sh
+
   web-and-contracts:
     runs-on: ubuntu-latest
     steps:

@@ -192,7 +192,7 @@ Minimizar cambios en otros módulos y documentar las dependencias comunes necesa
 
 ## 10. Herramientas y calidad
 
-La tabla es la meta de calidad. CI comprueba API (Ruff, mypy, pytest, Alembic/bootstrap) y web/contratos (lint, typecheck, suite, build y drift). La API emite logs JSON por petición con `request_id`. El prototipo tiene su propio workflow de lint, dominio, build e imagen/HTTP. No hay job de worker ni E2E de la web real en `application-quality.yml`; Playwright de la demo no valida la aplicación conectada. Ver runs y conteos en [evidencia histórica](../docs/operacion-api.md#evidencia-histórica--2026-09-16) y la [verificación de staging](../docs/operacion-api.md#verificación-de-staging--2026-10-06).
+La tabla es la meta de calidad. CI comprueba API (Ruff, mypy, pytest, Alembic/bootstrap) y web/contratos (lint, typecheck, suite, build y drift). El job `worker` ejecuta pruebas del ciclo consumidor, informes y cola; construye la imagen de producción y comprueba su arranque con PostgreSQL desechable migrado y sin trabajos pendientes. No verifica almacenamiento externo ni generación de un PDF desde esa imagen. La API emite logs JSON por petición con `request_id`. El prototipo tiene su propio workflow de lint, dominio, build e imagen/HTTP. No hay E2E de la web real en `application-quality.yml`; Playwright de la demo no valida la aplicación conectada. Ver runs y conteos en [evidencia histórica](../docs/operacion-api.md#evidencia-histórica--2026-09-16) y la [verificación de staging](../docs/operacion-api.md#verificación-de-staging--2026-10-06).
 
 | Capa | Stack | Verificaciones |
 |---|---|---|

@@ -21,6 +21,33 @@ La implementación y aceptación de seguimiento están detalladas en
 Esto valida controles locales del núcleo backend actual. No certifica que el MVP completo,
 la UI en sesión real ni los servicios externos estén terminados.
 
+## Verificación reproducible del worker PDF
+
+Trazabilidad: US-PRO-004 / US-PM-003 y sección 10 del plan de escalabilidad.
+El job `worker` de `Application quality` verifica el ciclo del consumidor, las reglas
+de aprobación/inmutabilidad y la cola con las pruebas existentes y `test_worker.py`.
+Los casos nuevos comprueban identidad configurable o de contenedor, espera con sesión
+cerrada, consumo continuo, recuperación tras un fallo y liberación del motor al cancelar.
+
+Para reproducir el control de la imagen desde la raíz:
+
+```bash
+bash scripts/check-worker-image.sh
+```
+
+Requiere Docker. Construye `apps/worker/Dockerfile`, crea una red y PostgreSQL 16
+desechables, aplica Alembic y comprueba ausencia de drift usando la misma imagen.
+Arranca su CMD real y verifica que siga ejecutándose sin errores de consulta de cola
+durante doce segundos. El script elimina únicamente los recursos que crea con su
+prefijo por ejecución y muestra los logs incluso si falla. No carga `.env`, usa
+credenciales exclusivas de prueba y no accede a bases persistentes del usuario.
+
+Este smoke comprueba packaging y arranque con cola vacía; no certifica generación de
+PDF con almacenamiento real ni recuperación de backups. Los tests de informes usan
+dobles de almacenamiento; la concurrencia PostgreSQL de cola requiere
+`SIA_TEST_POSTGRES_URL` y sigue cubierta por el job `api`. No cambia aprobaciones,
+permisos, contrato ni esquema. La ejecución remota del nuevo job queda pendiente del PR.
+
 ## Registro histórico — comunicación backend, 2026-09-16
 
 Implementación local en `feature/comunicacion-backend`: reuniones, minutas manuales
