@@ -19,6 +19,7 @@ from app.models.comunicacion import (
     Notification,
     ReadReceipt,
 )
+from app.models.expediente import Entrepreneurship
 from app.models.seguimiento import Activity, Objective
 from app.models.user import User
 from app.modules.comunicacion import policy
@@ -308,8 +309,18 @@ async def list_channels(
     )
 
 
+async def lock_shared_channels(db: AsyncSession, entrepreneurship_id: str) -> None:
+    """US-COM-001: serialize shared-channel creation, including an empty channel list."""
+    await db.scalar(
+        select(Entrepreneurship.id)
+        .where(Entrepreneurship.id == entrepreneurship_id)
+        .with_for_update()
+    )
+
+
 async def ensure_standard_channels(db: AsyncSession, actor: User, entrepreneurship_id: str) -> None:
     """Create the approved shared channels once, without touching historical ones."""
+    await lock_shared_channels(db, entrepreneurship_id)
     existing = set(
         await db.scalars(
             select(Channel.kind).where(
@@ -365,6 +376,7 @@ async def create_channel(db: AsyncSession, actor: User, payload: s.ChannelCreate
     kind = standard.get(payload.name)
     if kind is None:
         raise HTTPException(422, "El canal debe ser Gestión de proyecto, Finanzas o Reuniones")
+    await lock_shared_channels(db, payload.entrepreneurship_id)
     existing = await db.scalar(
         select(Channel).where(
             Channel.entrepreneurship_id == payload.entrepreneurship_id,

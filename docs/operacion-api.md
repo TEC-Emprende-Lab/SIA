@@ -116,7 +116,7 @@ La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra tam
    `sh scripts/release.sh`. El script ejecuta `alembic upgrade head`, `alembic current` y
    `alembic check`. No ejecutar una migración por réplica/worker.
 3. Si el comando falla, detener el despliegue y revisar los logs; no continuar con `stamp head`.
-4. Verificar que `alembic current` muestre la cabeza de la imagen (actualmente `010`) y que
+4. Verificar que `alembic current` muestre la cabeza de la imagen (actualmente `012`) y que
    `alembic check` no reporte operaciones pendientes.
 5. Arrancar las réplicas con el CMD de la imagen. En Coolify, usar `/readyz` como comprobación
    para habilitar tráfico; conservar `/healthz` como liveness.
@@ -133,6 +133,16 @@ usen un documento privado autorizado en lugar de una URL externa.
 ciclo sin modificar el contenido original.
 `009` incorpora los canales estándar de emprendimiento y `010` las referencias entre
 mensajes y objetivos/actividades del ciclo.
+`011_drop_uq_channels_shared_kind` eliminó el índice único de canales compartidos;
+`012` lo restaura y lo declara en el modelo (US-COM-001). La creación desde GET/POST
+se serializa por emprendimiento en PostgreSQL y mantiene la auditoría transaccional.
+Si ya hay dos canales compartidos del mismo tipo y emprendimiento, `012` se detiene
+antes de crear el índice: no borra, fusiona ni reasigna canales, mensajes o referencias.
+Consultar los grupos duplicados y acordar una resolución que conserve historial antes
+de reintentar. No modificar `009`/`011`, usar `stamp` ni omitir el índice para continuar.
+Los canales históricos con `kind IS NULL` y los de ciclo quedan fuera del índice parcial.
+El downgrade histórico de `011` no conserva el predicado de `009`; no usarlo como rollback
+de datos persistentes. Las pruebas de `012` solo revierten su propio índice en bases desechables.
 Los sucesivos `upgrade head` son idempotentes. `alembic check` compara esquema/modelos,
 pero no comprueba por sí mismo el contenido de las semillas ni la presencia de los triggers.
 
