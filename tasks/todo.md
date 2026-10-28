@@ -1,5 +1,26 @@
 # Consolidacion de decisiones
 
+## Calidad del worker PDF — 2026-10-28
+
+Tarea técnica de la sección 10 de `plan-escalabilidad.md`, vinculada con
+US-PRO-004 / US-PM-003. Sin cambios funcionales, permisos, contratos ni migraciones.
+
+- [x] Job independiente `worker` en `Application quality`: pruebas del ciclo, informes
+  y cola; build de la imagen real y smoke de arranque con PostgreSQL 16 desechable.
+- [x] Cobertura de espera liberando sesión, identidad del consumidor, continuación tras
+  trabajo procesado, recuperación de errores y cierre del motor por cancelación.
+- [x] Script reproducible `scripts/check-worker-image.sh`, con migraciones, drift,
+  logs en fallos y limpieza de sus contenedores/red/imagen.
+- [x] Verificación local: 19 pruebas aprobadas, una de concurrencia omitida por faltar
+  `SIA_TEST_POSTGRES_URL`; smoke de imagen correcto, incluyendo upgrade a `012` y drift.
+- [x] Suite API completa: **145 passed, 15 skipped**, dos advertencias preexistentes.
+  Los casos omitidos requieren servicios/variables de integración; no se acreditan como
+  aprobados. Ruff lint/formato, mypy, sintaxis Bash/YAML y `git diff --check` correctos.
+- [ ] Verificar el nuevo job en GitHub Actions después de publicar el PR.
+
+El smoke de imagen usa cola vacía. La entrega de PDF con almacenamiento real y los
+recorridos autenticados siguen siendo controles independientes.
+
 ## US-COM-001 — unicidad de canales y release, 2026-10-28
 
 - [x] Agregar `012` para restaurar el índice único parcial y declararlo en `Channel`.
