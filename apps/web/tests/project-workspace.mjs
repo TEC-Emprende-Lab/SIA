@@ -3,6 +3,9 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
+import { createRequire } from 'node:module'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 const temporary = await mkdtemp('/tmp/opencode/project-navigation-')
 const originalFetch = globalThis.fetch
@@ -50,6 +53,25 @@ try {
   globalThis.fetch = async () => reply([{ id: 'incomplete' }])
   await assert.rejects(loadProjects())
   console.log('✓ Empty, forbidden and malformed responses never produce seed projects')
+
+  const require = createRequire(import.meta.url)
+  const welcomeSource = await readFile(new URL('../app/components/project-welcome.tsx', import.meta.url), 'utf8')
+  const welcomeCode = ts.transpileModule(welcomeSource, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
+    .replace(/from ["'](react\/jsx-runtime|next\/link|lucide-react)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
+  await writeFile(join(temporary, 'welcome.mjs'), welcomeCode)
+  const { ProjectWelcome } = await import(pathToFileURL(join(temporary, 'welcome.mjs')))
+  const { canRegisterExpediente } = await import(pathToFileURL(join(temporary, 'expediente.mjs')))
+  const welcome = (role, overrides = {}) => renderToStaticMarkup(createElement(ProjectWelcome, { unavailable: false, hasProjects: false, canManage: canRegisterExpediente(role), onPick() {}, onRefresh() {}, ...overrides }))
+  for (const role of ['Coordinadora', 'Gestor']) {
+    assert(welcome(role).includes('href="/expediente"'))
+    assert(welcome(role).includes('Agrega su programa y ciclo'))
+  }
+  assert(!welcome('Emprendedor').includes('href="/expediente"'))
+  assert(welcome('Emprendedor').includes('consulta tu asignación'))
+  assert(!welcome('Emprendedor').includes('Elegir proyecto'))
+  assert(welcome('Coordinadora', { hasProjects: true }).includes('Elegir proyecto'))
+  assert(welcome('Coordinadora', { unavailable: true }).includes('Este proyecto no está disponible'))
+  console.log('✓ First-use guidance follows existing roles and distinguishes unavailable selection from an empty list')
 
   globalThis.fetch = async (input) => {
     const url = new URL(input, 'http://localhost')

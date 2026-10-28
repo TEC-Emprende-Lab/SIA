@@ -28,6 +28,30 @@
 .activity-list .record-row { width: 100%; }
 .project-dialog { width: min(650px, calc(100vw - 40px)); max-width: 650px; max-height: 88dvh; overflow-y: auto; background: white; padding: 25px; }
 
+/* Empty screens orient the next action without changing backend permissions. */
+.workspace-welcome { max-width: 850px; margin: 30px auto; padding: clamp(26px, 5vw, 56px); border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(140deg, #fff 55%, #f1f3e8); text-align: center; }
+.workspace-welcome h1 { max-width: 580px; margin: 14px auto; font-size: clamp(26px, 4vw, 36px); line-height: 1.25; }
+.welcome-icon { display: inline-grid; place-items: center; width: 60px; height: 60px; margin-bottom: 16px; border: 1px solid #e0e5d4; border-radius: 18px; background: #edf0e3; color: #626b3c; }
+.welcome-description { max-width: 540px; margin: 0 auto; color: #606854; font-size: 14px; line-height: 1.8; }
+.welcome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 24px; }
+.welcome-actions .btn { min-height: 42px; white-space: normal; }
+.workspace-welcome .btn.primary { background: #626632; border-color: #626632; }
+.welcome-hint { max-width: 470px; margin: 24px auto 0; font-size: 12px; color: #606854; }
+.welcome-steps { display: flex; justify-content: center; gap: 24px; list-style: none; margin: 32px 0 0; padding: 24px 0 0; border-top: 1px solid var(--line); text-align: left; }
+.welcome-steps li { display: flex; align-items: center; gap: 9px; font-size: 12px; color: #606854; }
+.welcome-steps span { display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: white; border: 1px solid var(--line); font-weight: 650; }
+.picker-empty, .guided-empty { padding: 32px 20px; text-align: center; }
+.picker-empty h3, .guided-empty h2, .guided-empty h3 { margin: 10px 0; color: var(--ink); font-size: 19px; }
+.picker-empty p, .guided-empty p { max-width: 470px; margin: 0 auto; color: #606854; font-size: 13px; line-height: 1.8; }
+.picker-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+.project-choice { border: 1px solid var(--line); border-radius: 10px; padding: 15px; overflow-wrap: anywhere; }
+.project-choice[aria-pressed='true'] { background: #f0f2e7; border-color: var(--olive); box-shadow: inset 3px 0 var(--olive); }
+.global-search { position: relative; }
+.search-clear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+.global-search label input { padding-right: 30px; }
+.search-results .search-scope { padding: 12px 14px; font-size: 10px; color: #606854; border-bottom: 1px solid var(--line); }
+@media (max-width: 650px) { .workspace-welcome { margin: 0; }.welcome-steps { flex-direction: column; gap: 14px; }.welcome-actions { flex-direction: column; }.welcome-actions .btn { width: 100%; }.picker-footer .btn { flex: 1; }.guided-empty { padding: 26px 12px; } }
+
 /* US-PRO-005: interaction only. Assessments remain descriptive, without scores. */
 .cube-scene { touch-action: none; cursor: grab; background: radial-gradient(circle at 50% 62%, #eef0df 0 16%, transparent 52%); border-radius: 1rem; }
 .cube-scene:active { cursor: grabbing; }
