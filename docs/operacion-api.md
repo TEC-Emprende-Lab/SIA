@@ -1,5 +1,10 @@
 # Operación del núcleo API
 
+**Evidencia posterior al corte histórico:** [login y recorrido del 2026-10-28](recorrido-login-2026-10-28.md).
+Google y rol Coordinadora comprobados en staging y producción; datos QA y recorrido
+parcial solo en staging. Incluye límites y la mejora solicitada de pantallas vacías.
+Las secciones siguientes conservan sus fechas y no se presentan como estado actual.
+
 ## Alcance y trazabilidad
 
 Ampliación posterior al corte remoto: carpetas de evidencias (`008`), canales estándar

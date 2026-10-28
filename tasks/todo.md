@@ -1,5 +1,40 @@
 # Consolidacion de decisiones
 
+## Primera tanda visual y UX — implementación local 2026-10-28
+
+Solicitud del usuario posterior al recorrido QA. Referencias: principio de interfaz
+comprensible y matriz de roles del núcleo; US-PRO-001/005, US-PM-001 para orientación
+de Evidencias/Evolución. Historia específica del acceso inicial: `TBD`.
+
+- [x] Entrada guiada sin proyectos y selector con carga, error, vacío, actualización y
+  selección actual; acceso a gestión solo según capacidad existente.
+- [x] Corregir la redirección que hacía inaccesibles las pantallas existentes de
+  Expediente. Conservar enlaces de ciclo hacia el espacio del proyecto.
+- [x] Búsqueda: limpiar, alcance visible, indicador de consulta y normalización de espacios.
+- [x] Evolución con siguiente paso disponible y Evidencias con mensajes/acciones según
+  actividades, filtros y carpeta. No se inventan aprobaciones ni permisos.
+- [x] Lint, typecheck, suite Web y build correctos; componente inicial aislado a
+  390/1440 px sin desbordamiento y con foco de teclado visible.
+- [ ] Publicar por PR hacia `develop` y recorrer los cambios con sesión real en staging.
+
+Sin dependencias nuevas, cambios de reglas, API, contratos, migraciones o datos remotos.
+Detalle y alcance pendiente: [mejora de pantallas vacías](../docs/mejora-pantallas-vacias.md).
+
+## Login real, recorrido QA y pantallas vacías — 2026-10-28
+
+- [x] Google → Clerk → SIA con `tecemprendelab@gmail.com`: `GET /api/sia/me`
+  200 y rol Coordinadora en staging y producción.
+- [x] Con autorización del usuario, crear proyecto QA y ciclo Prototipado en staging;
+  registrar objetivo, actividad, evidencia de enlace, reunión y mensaje, y comprobar
+  persistencia posterior. Sin datos QA en producción.
+- [x] Recorrer las vistas con Coordinadora y registrar resultados y límites en
+  [recorrido de login](../docs/recorrido-login-2026-10-28.md).
+- [x] Documentar la solicitud de [mejores pantallas vacías](../docs/mejora-pantallas-vacias.md),
+  incluyendo el acceso inicial sin proyectos y acciones que orienten según permisos.
+- [ ] Implementar esa mejora de UX usando flujos existentes; historia específica `TBD`.
+- [ ] Completar Gestor/Emprendedor, arrastre, validaciones y archivos/PDF. Este recorrido
+  parcial no cierra las fases operativas ni certifica el MVP.
+
 ## Calidad del worker PDF — 2026-10-28
 
 Tarea técnica de la sección 10 de `plan-escalabilidad.md`, vinculada con
