@@ -35,3 +35,18 @@ Como Emprendedor, quiero registrar la evaluación de las seis áreas de Prototip
 Como Emprendedor, quiero mantener visibles las ambiciones del proyecto y vincularlas opcionalmente a objetivos para entender el propósito estratégico del trabajo.
 
 **Aceptacion:** una ambición puede existir sin objetivos; cada objetivo pertenece a un área del Cubo 360 y puede tener cero o una ambición vinculada, sin duplicar el avance ni las actividades.
+
+## Finanzas operativas — ejecución confirmada 2026-10-29
+
+Complementan US-PRO-003/004 según la [decisión operativa](finanzas-operacion.md):
+
+- **US-PRO-007:** registrar/revisar los cinco tipos de trámite. Aceptación: revisión
+  optimista, checklist versionado, adjuntos privados, devolución, estados separados
+  de pago y aprobación, permisos backend y actor/fecha/motivo por cada acción.
+- **US-PRO-008:** conciliar archivo FUNDATEC manualmente. Aceptación: comparación
+  bilateral, hash y resultados inmutables, resolución auditada sin editar gastos.
+- **US-PRO-009:** solicitar/aprobar traslado entre partidas. Aceptación: mismo ciclo,
+  aprobación humana de Coordinadora, fondos suficientes sobre ejecutado y atomicidad.
+- **US-PRO-010:** consultar/exportar reportes operativos y cartera autorizada.
+  Aceptación: filtros, paginación, PDF operativo explícito, no acceso a ciclos ajenos
+  y texto de sesión desde validaciones reales. No afirma pagos no registrados.

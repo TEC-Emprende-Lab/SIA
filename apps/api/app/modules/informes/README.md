@@ -32,7 +32,9 @@ asignado o Coordinadora**; leer exige acceso al ciclo. La aprobación requiere
 
 `_compose` reúne objetivos aprobados, actividades completadas en el período, sus
 evidencias, minutas aprobadas y acuerdos de reuniones del período. Nada se
-inventa; **finanzas se marca `Pendiente de completar`** (Fase 6 pendiente).
+inventa; finanzas incorpora ejecuciones del período con id, revisión, partida y
+documento (migración 013, 2026-10-29). Sin ejecuciones se muestra `Pendiente de
+completar`. Aprobar captura esas fuentes; no cambia versiones ya aprobadas.
 
 ## Worker
 
@@ -60,4 +62,5 @@ reintento, período inválido y autenticación.
 - **Plantilla y campos obligatorios** del informe mensual: sin definir; el PDF
   solo vuelca `narrative` + `composition`, sin inventar secciones.
 - **Proveedor IA real** para borradores asistidos: pendiente (no se inventan hechos).
-- **Fuente de finanzas** (Fase 6): ausente, marcada como pendiente.
+- Las reservas/disponible operativo y el catálogo financiero siguen TBD; no se
+  interpretan como pagos ni se inventan en el informe.
