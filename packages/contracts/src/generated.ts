@@ -1078,6 +1078,317 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cycles/{cycle_id}/finanzas/report-text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report Text */
+        get: operations["report_text_cycles__cycle_id__finanzas_report_text_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/definitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Definitions */
+        get: operations["definitions_cycles__cycle_id__finanzas_definitions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Extraction */
+        post: operations["extraction_cycles__cycle_id__finanzas_extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summary */
+        get: operations["summary_cycles__cycle_id__finanzas_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Item Create */
+        post: operations["item_create_cycles__cycle_id__finanzas_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchases */
+        get: operations["purchases_cycles__cycle_id__finanzas_purchases_get"];
+        put?: never;
+        /** Purchase Create */
+        post: operations["purchase_create_cycles__cycle_id__finanzas_purchases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/purchases/{purchase_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchase Get */
+        get: operations["purchase_get_cycles__cycle_id__finanzas_purchases__purchase_id__get"];
+        /** Purchase Update */
+        put: operations["purchase_update_cycles__cycle_id__finanzas_purchases__purchase_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/purchases/{purchase_id}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition */
+        post: operations["transition_cycles__cycle_id__finanzas_purchases__purchase_id__transitions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/purchases/{purchase_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Attachments */
+        get: operations["attachments_cycles__cycle_id__finanzas_purchases__purchase_id__attachments_get"];
+        put?: never;
+        /** Attach */
+        post: operations["attach_cycles__cycle_id__finanzas_purchases__purchase_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Events */
+        get: operations["events_cycles__cycle_id__finanzas_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Changes */
+        get: operations["changes_cycles__cycle_id__finanzas_changes_get"];
+        put?: never;
+        /** Change Create */
+        post: operations["change_create_cycles__cycle_id__finanzas_changes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/changes/{change_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Decide */
+        post: operations["change_decide_cycles__cycle_id__finanzas_changes__change_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Duplicates */
+        get: operations["duplicates_cycles__cycle_id__finanzas_duplicates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/reconciliations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reconciliations */
+        get: operations["reconciliations_cycles__cycle_id__finanzas_reconciliations_get"];
+        put?: never;
+        /** Reconcile */
+        post: operations["reconcile_cycles__cycle_id__finanzas_reconciliations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/reconciliations/{reconciliation_id}/resolutions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve */
+        post: operations["resolve_cycles__cycle_id__finanzas_reconciliations__reconciliation_id__resolutions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{cycle_id}/finanzas/report.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report Pdf */
+        get: operations["report_pdf_cycles__cycle_id__finanzas_report_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/finanzas/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Overview */
+        get: operations["overview_finanzas_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/finanzas/report.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Overview Pdf */
+        get: operations["overview_pdf_finanzas_report_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1353,6 +1664,22 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /** AttachmentCreate */
+        AttachmentCreate: {
+            /** Document Id */
+            document_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** AttachmentOut */
+        AttachmentOut: {
+            /** Id */
+            id: string;
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+        };
         /** Body_post_document_entrepreneurships__entrepreneurship_id__documents_post */
         Body_post_document_entrepreneurships__entrepreneurship_id__documents_post: {
             /** File */
@@ -1368,6 +1695,53 @@ export interface components {
             version: number;
             /** Areas */
             areas: components["schemas"]["AreaOut"][];
+        };
+        /** ChangeCreate */
+        ChangeCreate: {
+            /** Source Id */
+            source_id: string;
+            /** Target Id */
+            target_id: string;
+            /** Amount */
+            amount: number | string;
+            /** Reason */
+            reason: string;
+        };
+        /** ChangeDecision */
+        ChangeDecision: {
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "reject";
+            /** Observation */
+            observation: string;
+            /**
+             * Human Reviewed
+             * @constant
+             */
+            human_reviewed: true;
+        };
+        /** ChangeOut */
+        ChangeOut: {
+            /** Id */
+            id: string;
+            /** Source Id */
+            source_id: string;
+            /** Target Id */
+            target_id: string;
+            /** Amount */
+            amount: string;
+            /** Reason */
+            reason: string;
+            /** Status */
+            status: string;
+            /** Revision */
+            revision: number;
+            /** Created By */
+            created_by: string;
         };
         /** ChannelCreate */
         ChannelCreate: {
@@ -1541,6 +1915,28 @@ export interface components {
              */
             updated_at: string;
         };
+        /** EventOut */
+        EventOut: {
+            /** Id */
+            id: string;
+            /** Entity Id */
+            entity_id: string;
+            /** Action */
+            action: string;
+            /** Observation */
+            observation: string;
+            /** Snapshot */
+            snapshot: {
+                [key: string]: unknown;
+            };
+            /** Actor Id */
+            actor_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** EvidenceCreate */
         EvidenceCreate: {
             /** Title */
@@ -1590,6 +1986,13 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** Extraction */
+        Extraction: {
+            /** Name */
+            name: string;
+            /** Content Base64 */
+            content_base64: string;
         };
         /** FolderCreate */
         FolderCreate: {
@@ -1651,6 +2054,26 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** ItemCreate */
+        ItemCreate: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: number | string;
+            /** Observation */
+            observation: string;
+        };
+        /** ItemOut */
+        ItemOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            /** Revision */
+            revision: number;
         };
         /** MeOut */
         MeOut: {
@@ -2040,6 +2463,111 @@ export interface components {
              */
             enrolled_at: string;
         };
+        /** PurchaseCreate */
+        PurchaseCreate: {
+            /** Item Id */
+            item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "factura" | "reintegro" | "uso_tc" | "comision_bancaria" | "pago_contrato";
+            /** Amount */
+            amount: number | string;
+            /** Supplier */
+            supplier: string;
+            /**
+             * Invoice Number
+             * @default
+             */
+            invoice_number: string;
+            /** Description */
+            description: string;
+            /** Submission Date */
+            submission_date?: string | null;
+            /** Checklist */
+            checklist?: {
+                [key: string]: boolean;
+            };
+            /** Request Key */
+            request_key: string;
+        };
+        /** PurchaseOut */
+        PurchaseOut: {
+            /** Id */
+            id: string;
+            /** Cycle Id */
+            cycle_id: string;
+            /** Item Id */
+            item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "factura" | "reintegro" | "uso_tc" | "comision_bancaria" | "pago_contrato";
+            /** Status */
+            status: string;
+            /** Amount */
+            amount: string;
+            /** Supplier */
+            supplier: string;
+            /** Invoice Number */
+            invoice_number: string;
+            /** Description */
+            description: string;
+            /** Submission Date */
+            submission_date: string | null;
+            /** Executed On */
+            executed_on: string | null;
+            /** Fundatec Number */
+            fundatec_number: string;
+            /** Checklist */
+            checklist: {
+                [key: string]: boolean;
+            };
+            /** Checklist Version */
+            checklist_version: number;
+            /** Revision */
+            revision: number;
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PurchaseUpdate */
+        PurchaseUpdate: {
+            /** Item Id */
+            item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "factura" | "reintegro" | "uso_tc" | "comision_bancaria" | "pago_contrato";
+            /** Amount */
+            amount: number | string;
+            /** Supplier */
+            supplier: string;
+            /**
+             * Invoice Number
+             * @default
+             */
+            invoice_number: string;
+            /** Description */
+            description: string;
+            /** Submission Date */
+            submission_date?: string | null;
+            /** Checklist */
+            checklist?: {
+                [key: string]: boolean;
+            };
+            /** Expected Revision */
+            expected_revision: number;
+            /** Observation */
+            observation: string;
+        };
         /** ReadReceiptCreate */
         ReadReceiptCreate: {
             /** Last Read Message Id */
@@ -2065,6 +2593,38 @@ export interface components {
              * Format: date-time
              */
             read_at: string;
+        };
+        /** ReconcileCreate */
+        ReconcileCreate: {
+            /** Name */
+            name: string;
+            /** Html */
+            html: string;
+            /**
+             * Confirm Cycle
+             * @constant
+             */
+            confirm_cycle: true;
+        };
+        /** ReconciliationOut */
+        ReconciliationOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Project Reference */
+            project_reference: string;
+            /** Results */
+            results: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ReportApproval */
         ReportApproval: {
@@ -2181,6 +2741,13 @@ export interface components {
              */
             narrative: string;
         };
+        /** Resolution */
+        Resolution: {
+            /** Row Key */
+            row_key: string;
+            /** Observation */
+            observation: string;
+        };
         /** Revision */
         Revision: {
             /** Expected Revision */
@@ -2240,6 +2807,30 @@ export interface components {
             activities_completed: number;
             /** Objectives */
             objectives: components["schemas"]["ObjectiveProgress"][];
+        };
+        /** Transition */
+        Transition: {
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "submit" | "request_correction" | "validate" | "register_fundatec" | "execute" | "reject" | "cancel";
+            /** Observation */
+            observation: string;
+            /**
+             * Human Reviewed
+             * @default false
+             */
+            human_reviewed: boolean;
+            /**
+             * Fundatec Number
+             * @default
+             */
+            fundatec_number: string;
+            /** Executed On */
+            executed_on?: string | null;
         };
         /** UnreadOut */
         UnreadOut: {
@@ -5227,6 +5818,849 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_text_cycles__cycle_id__finanzas_report_text_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definitions_cycles__cycle_id__finanzas_definitions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extraction_cycles__cycle_id__finanzas_extract_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Extraction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_cycles__cycle_id__finanzas_summary_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    item_create_cycles__cycle_id__finanzas_items_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchases_cycles__cycle_id__finanzas_purchases_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+                status?: string | null;
+                kind?: ("factura" | "reintegro" | "uso_tc" | "comision_bancaria" | "pago_contrato") | null;
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchase_create_cycles__cycle_id__finanzas_purchases_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchase_get_cycles__cycle_id__finanzas_purchases__purchase_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                purchase_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchase_update_cycles__cycle_id__finanzas_purchases__purchase_id__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                purchase_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_cycles__cycle_id__finanzas_purchases__purchase_id__transitions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                purchase_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Transition"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachments_cycles__cycle_id__finanzas_purchases__purchase_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                purchase_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_cycles__cycle_id__finanzas_purchases__purchase_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                purchase_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    events_cycles__cycle_id__finanzas_events_get: {
+        parameters: {
+            query: {
+                entity_id: string;
+                offset?: number;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    changes_cycles__cycle_id__finanzas_changes_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_create_cycles__cycle_id__finanzas_changes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_decide_cycles__cycle_id__finanzas_changes__change_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicates_cycles__cycle_id__finanzas_duplicates_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconciliations_cycles__cycle_id__finanzas_reconciliations_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_cycles__cycle_id__finanzas_reconciliations_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_cycles__cycle_id__finanzas_reconciliations__reconciliation_id__resolutions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+                reconciliation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Resolution"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_pdf_cycles__cycle_id__finanzas_report_pdf_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+                kind?: ("factura" | "reintegro" | "uso_tc" | "comision_bancaria" | "pago_contrato") | null;
+                status?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    overview_finanzas_overview_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    overview_pdf_finanzas_report_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
             /** @description Validation Error */

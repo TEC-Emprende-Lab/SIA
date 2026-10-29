@@ -118,7 +118,7 @@ export async function proxySia(
       body: init.body,
       cache: 'no-store',
     })
-    const body = await response.text()
+    const body = await response.arrayBuffer()
     return new NextResponse(body, {
       status: response.status,
       headers: {

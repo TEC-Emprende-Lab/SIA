@@ -30,3 +30,8 @@ El acceso usa exclusivamente Google OAuth mediante Clerk. El primer acceso requi
 | Preparar, revisar y aprobar informes | Si | Si, asignados | Puede proponer informacion de sus proyectos |
 
 Los permisos detallados de presupuesto, compras y facturas se definen por programa. Ninguna ocultacion en frontend sustituye la autorizacion backend.
+
+Prototipado: la [decisión operativa 2026-10-29](../02-prototipado/finanzas-operacion.md)
+define las acciones financieras de los tres roles existentes. No añade un rol
+Revisor financiero ni habilita acciones TBD; la ejecución/anulación y aprobación
+de traslados son de Coordinadora.

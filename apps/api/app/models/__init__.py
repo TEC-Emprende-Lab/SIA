@@ -20,6 +20,14 @@ from app.models.expediente import (
     ProgramCycleAssignment,
     ProgramEnrollment,
 )
+from app.models.finanzas import (
+    BudgetChange,
+    BudgetItem,
+    FinanceAttachment,
+    FinanceEvent,
+    Purchase,
+    Reconciliation,
+)
 from app.models.informes import TechnicalReport
 from app.models.invitation import Invitation
 from app.models.queue import Job
@@ -37,6 +45,12 @@ from app.models.seguimiento import (
 from app.models.user import User
 
 __all__ = [
+    "BudgetItem",
+    "BudgetChange",
+    "FinanceAttachment",
+    "FinanceEvent",
+    "Purchase",
+    "Reconciliation",
     "Agreement",
     "Alert",
     "Channel",
