@@ -43,7 +43,7 @@ IN_PERIOD = datetime(2026, 9, 15, 10, tzinfo=UTC)
 
 
 def migrate(connection, direction):
-    files = sorted((Path(__file__).resolve().parents[1] / "alembic/versions").glob("00*.py"))
+    files = sorted((Path(__file__).resolve().parents[1] / "alembic/versions").glob("[0-9]*.py"))
     if direction == "downgrade":
         files.reverse()
     with Operations.context(MigrationContext.configure(connection)):

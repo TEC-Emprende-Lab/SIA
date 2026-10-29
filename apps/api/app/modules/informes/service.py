@@ -14,6 +14,7 @@ from app.models.informes import TechnicalReport
 from app.models.queue import Job
 from app.models.seguimiento import Activity, Evidence, Objective
 from app.models.user import User
+from app.modules.finanzas.service import report_sources
 from app.modules.informes import policy
 from app.modules.informes.pdf import render_report_pdf
 from app.queue import service as queue
@@ -163,11 +164,7 @@ async def _compose(
             }
             for g in agreements
         ],
-        # Fase 6 (finanzas) aún no implementada: fuente ausente, no inventada.
-        "finances": {
-            "status": "Pendiente de completar",
-            "detail": "Módulo de finanzas (Fase 6) pendiente",
-        },
+        "finances": await report_sources(db, cycle_id, period_start, period_end),
     }
 
 

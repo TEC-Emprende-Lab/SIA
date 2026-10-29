@@ -18,6 +18,11 @@ def render_report_pdf(report: TechnicalReport) -> bytes:
     return _pdf(_pages(_lines(report)))
 
 
+def render_text_pdf(lines: list[str]) -> bytes:
+    """Exportación operativa de texto, sin afirmar aprobación institucional."""
+    return _pdf(_pages(lines))
+
+
 def _lines(report: TechnicalReport) -> list[str]:
     lines = [
         f"Informe {report.kind} · versión {report.version}",
@@ -109,7 +114,11 @@ def _finances(value: Any) -> str:
         return _MISSING
     detail = value.get("detail")
     status = _text(value.get("status"))
-    return status if not detail else f"{status}. {_text(detail)}"
+    result = status if not detail else f"{status}. {_text(detail)}"
+    for purchase in value.get("purchases", []):
+        if isinstance(purchase, dict):
+            result += f"; fuente {purchase.get('id')} · {purchase.get('supplier')} · {purchase.get('amount')} CRC · documento {purchase.get('invoice_number')} · ejecutado {purchase.get('executed_on')}"
+    return result
 
 
 def _plain(value: Any) -> str:

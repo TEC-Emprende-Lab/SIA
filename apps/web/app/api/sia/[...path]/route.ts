@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { proxySia } from '../../../lib/sia-bff'
 
 function isAllowedSiaPath(path: string): boolean {
-  return /^(users\/me|entrepreneurships(?:\/|$)|cycles\/[0-9a-f-]+\/(?:seguimiento|meetings|reports)(?:\/|$)|channels(?:\/|$)|alerts$|notifications(?:\/|$))/.test(
+  return /^(users\/me|finanzas\/(?:overview|report\.pdf)$|entrepreneurships(?:\/|$)|cycles\/[0-9a-f-]+\/(?:seguimiento|meetings|reports|finanzas)(?:\/|$)|channels(?:\/|$)|alerts$|notifications(?:\/|$))/.test(
     path,
   )
 }

@@ -11,6 +11,7 @@ import { ChannelsPanel } from './canales-views'
 import { BandejaView } from './bandeja-views'
 import { AssignmentPanel } from './administracion-views'
 import { ReportsView } from './reports-view'
+import { FinanzasView } from './finanzas-view'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { ProjectHeading } from './project-reference-ui'
 import { ProjectWelcome } from './project-welcome'
@@ -124,6 +125,7 @@ export function ProjectWorkspace() {
         : <AssignmentPanel scope={{ kind: 'cycle', id: project.cycle.id }} />}
     </>
     if (route.section === 'Informes') return <ReportsView cycleId={project.cycle.id} focusId={route.id} />
+    if (route.section === 'Finanzas y compras') return <FinanzasView cycleId={project.cycle.id} entrepreneurshipId={project.entrepreneurship.id} program={project.enrollment.program} />
     return <><ProjectHeading eyebrow="Recursos para avanzar" title={route.section} /><section className="panel"><p className="muted">Las reglas y el backend de finanzas y compras están pendientes de definición. No se muestran datos de demostración.</p></section></>
   }
   return <div className="app-shell">

@@ -528,6 +528,14 @@ alcance; el `payload` de cada tarea conserva los datos de su consumidor.
 
 ## 9. Finanzas por programa 🔴 *tentativo — casi todo TBD*
 
+> **Actualización de ejecución 2026-10-29:** la sección inferior conserva el diseño
+> histórico. La [decisión operativa de Prototipado](../02-prototipado/finanzas-operacion.md)
+> y [módulo implementado](../../apps/api/app/modules/finanzas/README.md) describen la
+> migración `013`: `finance_budget_items`, `finance_purchases`, `finance_attachments`,
+> `finance_budget_changes`, `finance_reconciliations`, `finance_events`. El ciclo es
+> contenedor de presupuesto; factura/respaldo no duplica el gasto. Se mantienen TBD
+> catálogo oficial, reservas/disponible operativo, permisos adicionales e integración API.
+
 > **Aviso fuerte:** es la parte más verde. Solo **Prototipado** habilita finanzas; **Puesta en marcha** aún **no define** su relación con presupuesto ([doc](../03-puesta-en-marcha/presupuesto-compras-y-facturas.md)). La **lista oficial de partidas, el flujo exacto de compras, los estados, los responsables y la integración administrativa** están `TBD`. Se modela para no perder el hilo; **no se implementa** hasta que el programa lo cierre. **La IA nunca aprueba** compras ni cambios presupuestarios.
 
 Regla de cálculo (decisión sostenida del borrador): **`ejecutado`, `disponible` y `% consumido` NO se guardan**; se **calculan** desde compras y facturas. Todo cuelga del **ciclo** (`program_cycle_id`).

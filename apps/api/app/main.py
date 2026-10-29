@@ -14,6 +14,8 @@ from app.db.session import engine
 from app.modules.comunicacion.routes import router as comunicacion_router
 from app.modules.documents.routes import router as documents_router
 from app.modules.expediente.routes import router as expediente_router
+from app.modules.finanzas.routes import global_router as finanzas_global_router
+from app.modules.finanzas.routes import router as finanzas_router
 from app.modules.identity.routes import router as identity_router
 from app.modules.informes.routes import router as informes_router
 from app.modules.seguimiento.routes import router as seguimiento_router
@@ -71,6 +73,8 @@ def create_app() -> FastAPI:
     app.include_router(seguimiento_router)
     app.include_router(comunicacion_router)
     app.include_router(informes_router)
+    app.include_router(finanzas_router)
+    app.include_router(finanzas_global_router)
 
     return app
 

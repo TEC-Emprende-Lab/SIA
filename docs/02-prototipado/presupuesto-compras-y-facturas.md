@@ -1,5 +1,9 @@
 # Presupuesto, compras y facturas de Prototipado
 
+La [decisión operativa de 2026-10-29](finanzas-operacion.md) cierra tipos, flujo y
+permisos para la réplica aprobada. Sus decisiones prevalecen sobre los TBD
+históricos siguientes; catálogo oficial, reservas e integración API siguen TBD.
+
 ## Presupuesto por partidas
 
 El presupuesto se organiza en partidas aprobadas y muestra monto asignado, ejecutado, disponible y porcentaje consumido. Las compras y facturas descuentan la partida correspondiente. Los cambios presupuestarios requieren revision o aprobacion y conservan trazabilidad.
