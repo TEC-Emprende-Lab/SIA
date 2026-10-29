@@ -18,6 +18,11 @@ from app.modules.identity.routes import router as identity_router
 from app.modules.informes.routes import router as informes_router
 from app.modules.seguimiento.routes import router as seguimiento_router
 
+# This is a bridge for the 012 API only. Review every accepted successor for
+# backward compatibility and remove it when this code begins requiring 013.
+BRIDGE_CODE_HEADS = frozenset({"012"})
+COMPATIBLE_DATABASE_REVISIONS = frozenset({"012", "013"})
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -55,7 +60,11 @@ def create_app() -> FastAPI:
                         str(Path(__file__).resolve().parents[1] / "alembic")
                     ).get_heads()
                 )
-                if revisions != expected:
+                if (
+                    expected != BRIDGE_CODE_HEADS
+                    or len(revisions) != 1
+                    or not (revisions <= COMPATIBLE_DATABASE_REVISIONS)
+                ):
                     raise RuntimeError("Database migration required")
         except Exception as exc:
             logging.getLogger(__name__).warning(
