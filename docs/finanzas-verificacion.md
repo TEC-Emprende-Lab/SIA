@@ -17,14 +17,23 @@ No es una certificación de staging/producción ni de autenticación Google real
 
 ## Automatización
 
-Resultado final local: **151 pruebas backend aprobadas**, con todos los grupos
-PostgreSQL habilitados (incluida concurrencia). Ruff, formato, mypy, lint/tipos Web,
-pruebas Web, contratos y build de producción aprobados. Migración 001–008 desde
-cero y `alembic check` sin diferencias en la base inicial de trabajo. Al integrar
-con develop, Finanzas pasa de revisión 008 a 013 para no colisionar con las
-migraciones 008–012 ya publicadas; la verificación de release se registra abajo.
-Dos avisos de deprecación de dependencias
-de pruebas preexistentes; no fallos. Esto no afirma ejecución de CI remoto.
+Resultado final local de release: **178 pruebas backend aprobadas y una omitida**,
+con todos los grupos PostgreSQL habilitados (incluida concurrencia). Ruff, formato,
+mypy, lint/tipos Web y contratos, pruebas Web y build de producción aprobados.
+Migración 001–013 desde cero: `013 (head)` y `alembic check` sin diferencias.
+Finanzas usa 013 para no colisionar con las migraciones 008–012 ya publicadas.
+Dos avisos de deprecación de dependencias de pruebas preexistentes; no fallos.
+Esto no afirma ejecución de CI remoto.
+
+La alternativa SQL se comprobó contra PostgreSQL 16: rechaza revisiones distintas
+de 012 y repeticiones, conserva un expediente previo y coincide con los modelos.
+Pruebas: `apps/api/tests/test_finanzas_sql.py`. Instrucciones de aplicación:
+[finanzas-migracion.md](finanzas-migracion.md).
+
+Refinamiento UI asociado a US-PRO-003/007–010: formulario en dos pasos, protección
+de borradores, acciones condicionales, confirmación de anulación, filtros que se
+conservan al actualizar, importes exactos y estados de error/vacío/carga.
+Detector estático Impeccable sobre los cinco archivos UI: sin hallazgos.
 
 Backend: `apps/api/tests/test_finanzas.py`, además de las pruebas previas del
 repositorio. Ejecutar con `uv run pytest`, Ruff y mypy desde `apps/api`.
@@ -61,6 +70,22 @@ Capturas locales de apoyo: `/tmp/opencode/finance-preview/budget-desktop.png`,
 `budget-mobile.png`, `dialog-styled.png`. No contienen información de producción.
 Este recorrido no prueba Clerk, R2 real, archivos FUNDATEC institucionales ni
 políticas de red de staging.
+
+Verificación adicional de la UI refinada en la rama de release:
+
+- Formulario guiado: información → checklist → guardar borrador → detalle,
+  conservando proveedor y monto; cancelar ofrece continuar o descartar.
+- Anulación deshabilitada sin motivo y confirmación; tras confirmar, el detalle
+  conserva el historial y ya no ofrece edición ni transiciones.
+- Emprendedor sin conciliación ni registro de partidas; Gestor con conciliación.
+- Conciliación exige archivo y confirmación de pertenencia al ciclo.
+- Capturas 1440×1000, 768×1024 y 390×844; el documento móvil no desborda
+  horizontalmente y el detalle tiene cuerpo desplazable y pie visible.
+- Sin errores JavaScript en el recorrido adicional. Identidades simuladas, no Clerk.
+
+Capturas adicionales locales: `polished-desktop.png`, `polished-wizard.png`,
+`polished-mobile.png`, `polished-mobile-detail.png`, `polished-reconciliation.png`
+en `/tmp/opencode/finance-preview/`.
 
 ## Antes de activar
 

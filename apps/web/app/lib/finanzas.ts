@@ -14,8 +14,28 @@ export type Extraction = { invoice_number: string; supplier: string; amount: str
 
 export const STATUS: Record<string, string> = { draft: 'Borrador', submitted: 'En revisión', correction_requested: 'Corrección solicitada', validated: 'Validado internamente', fundatec: 'Registrado en FUNDATEC', executed: 'Ejecutado', rejected: 'Rechazado', cancelled: 'Anulado' }
 export const RESULT: Record<string, string> = { match: 'Coincide', difference: 'Diferencia', only_sea: 'Solo SEA', only_fundatec: 'Solo FUNDATEC', ambiguous: 'Número ambiguo' }
-export const money = (amount: string | number) => new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(Number(amount))
+const currencyFormatter = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' })
+export function money(value: string | number): string {
+  if (typeof value === 'number') return Number.isFinite(value) ? currencyFormatter.format(value) : '—'
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(value)
+  if (!match) return '—'
+  const whole = BigInt(match[2]!)
+  const parts = currencyFormatter.formatToParts(match[1] ? -whole : whole)
+  const text = parts.map(part => part.type === 'fraction' ? (match[3] ?? '').padEnd(2, '0') : part.value).join('')
+  return match[1] && whole === 0n ? `-${text}` : text
+}
 export const financeUrl = (cycle: string, path: string) => `/api/sia/cycles/${encodeURIComponent(cycle)}/finanzas/${path}`
+
+export function sumFinanceAmounts(values: string[]): string {
+  const cents = values.reduce((total, value) => {
+    const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(value)
+    if (!match) throw new Error('Monto financiero inválido.')
+    const magnitude = BigInt(match[2]!) * 100n + BigInt((match[3] ?? '').padEnd(2, '0'))
+    return total + (match[1] ? -magnitude : magnitude)
+  }, 0n)
+  const magnitude = cents < 0n ? -cents : cents
+  return `${cents < 0n ? '-' : ''}${magnitude / 100n}.${String(magnitude % 100n).padStart(2, '0')}`
+}
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const strings = (value: Record<string, unknown>, keys: string[]) => keys.every(k => typeof value[k] === 'string')
@@ -64,8 +84,8 @@ export async function downloadFinancePdf(path: string, filename: string): Promis
   URL.revokeObjectURL(url)
 }
 
-export async function financeRequest<T>(cycle: string, path: string, method = 'GET', body?: unknown): Promise<T> {
-  const init: RequestInit = { method, cache: 'no-store' }
+export async function financeRequest<T>(cycle: string, path: string, method = 'GET', body?: unknown, signal?: AbortSignal): Promise<T> {
+  const init: RequestInit = { method, cache: 'no-store', signal }
   if (method !== 'GET' && body !== undefined) { init.headers = { 'content-type': 'application/json' }; init.body = JSON.stringify(body) }
   const response = await fetch(financeUrl(cycle, path), init)
   const value: unknown = await response.json().catch(() => null)
