@@ -49,7 +49,7 @@ export function FinanceStatus({ status, label }: { status: string; label?: strin
 }
 
 export function FinancePages({ offset, count, loading, change, size = 50 }: { offset: number; count: number; loading: boolean; change: (offset: number) => void; size?: number }) {
-  return <nav className={styles.pagination} aria-label="Páginas de resultados"><span>Página {offset / size + 1} · {count} {count === 1 ? 'registro' : 'registros'}</span><div><button className="btn secondary" disabled={!offset || loading} onClick={() => change(Math.max(0, offset - size))}>Anterior</button><button className="btn secondary" disabled={count < size || loading} onClick={() => change(offset + size)}>Siguiente</button></div></nav>
+  return <nav className={styles.pagination} aria-label="Páginas de resultados"><span>Página {offset / size + 1}, {count} {count === 1 ? 'registro' : 'registros'}</span><div><button className="btn secondary" disabled={!offset || loading} onClick={() => change(Math.max(0, offset - size))}>Anterior</button><button className="btn secondary" disabled={count < size || loading} onClick={() => change(offset + size)}>Siguiente</button></div></nav>
 }
 
 export function FinanceField({ label, hint, children }: { label: string; hint?: string; children: (id: string, hintId?: string) => ReactNode }) {

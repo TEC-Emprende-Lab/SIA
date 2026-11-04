@@ -147,7 +147,7 @@ function BandejaList({
               {alert ? (
                 <p className={shell.meta}>
                   <Link href={`/expediente/${alert.entrepreneurship_id}`}>Ver expediente</Link>
-                  {alert.resolved_at ? ` · Resuelta ${formatDateTime(alert.resolved_at)}` : ''}
+                  {alert.resolved_at ? `, resuelta ${formatDateTime(alert.resolved_at)}` : ''}
                 </p>
               ) : null}
               {notification.read_at ? (

@@ -81,7 +81,7 @@ export function SignedOutNotice() {
   return (
     <main className={styles.guest}>
       <section className={styles.guestHero}>
-        <p className={styles.guestEyebrow}>TEC Emprende Lab · Catalitec</p>
+        <p className={styles.guestEyebrow}>Catalitec de TEC Emprende Lab</p>
         <h1>SIA acompaña el avance que sí deja evidencia.</h1>
         <p className={styles.guestLead}>
           Un espacio para organizar el trabajo de cada emprendimiento, sus acuerdos y los aprendizajes de cada ciclo.
@@ -237,7 +237,7 @@ export function AuthenticatedShell({ children, chrome = true }: { children: Reac
                         className={styles.link}
                         aria-current={current ? 'page' : undefined}
                       >
-                        <span aria-hidden="true">{NAVIGATION_ICONS[item.label] ?? '·'}</span>
+                        <span aria-hidden="true">{NAVIGATION_ICONS[item.label] ?? '▣'}</span>
                         {item.label}
                       </Link>
                     )
