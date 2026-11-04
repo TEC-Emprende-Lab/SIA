@@ -34,6 +34,32 @@ El recorrido de staging de referencia corresponde a la versión anterior.
 Pendientes de esta mejora: verificar los cambios publicados con API/Clerk reales y
 continuar las acciones de vacíos de Resumen, Ambiciones, Informes, Reuniones y bandeja.
 
+## Acceso permanente a Expedientes — 2026-11-04
+
+El menú del espacio del proyecto incorpora Expedientes para Coordinadora y Gestor,
+usando `canRegisterExpediente` y el rol confirmado por la API. El enlace permanece
+disponible durante la carga y aunque no haya ciclos o exista un error al consultarlos.
+En móvil se encuentra en el mismo menú desplegable. Emprendedor conserva su navegación
+actual y las operaciones de alta siguen autorizándose en el backend.
+
+El recorrido utiliza las pantallas existentes de Nuevo emprendimiento, Inscribir en
+Prototipado y Nuevo ciclo. La configuración debe conservar accesibles `/expediente`
+y los detalles de emprendimiento e inscripción. Solo el enlace de un ciclo abre el
+espacio de proyecto correspondiente.
+
+La comprobación HTTP del 4 de noviembre detectó que producción y staging aún devuelven
+al inicio al consultar `/expediente`. El cambio en Git por sí solo no acredita su
+publicación. Se debe verificar el enlace y completar el recorrido autorizado en
+staging antes de promover la versión a producción.
+
+La suite Web, lint, TypeScript y build pasaron localmente. La prueba de navegación
+renderiza el menú real para los tres roles y verifica las redirecciones mediante
+Next.js. Estas comprobaciones no sustituyen el recorrido autenticado publicado.
+
+Se mantienen la trazabilidad y el identificador de historia específico `TBD` indicados
+abajo. Es una corrección de navegación para capacidades existentes, sin nuevas reglas,
+migraciones ni cambios de permisos o historial.
+
 ## Problema observado
 
 La Coordinadora recién autenticada llega a «No hay proyectos con ciclos disponibles
