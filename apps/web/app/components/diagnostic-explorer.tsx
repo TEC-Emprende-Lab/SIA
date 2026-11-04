@@ -89,7 +89,7 @@ export function DiagnosticExplorer({ areas, diagnostic }: { areas: Area[]; diagn
         <button type="button" className={styles.iconButton} aria-label="Girar hacia abajo" onClick={() => turn(-90, 0)}><ArrowDown size={18} /></button>
         <button type="button" className={styles.iconButton} aria-label="Girar a la derecha" onClick={() => turn(0, 90)}><ArrowRight size={18} /></button>
       </div>
-      <p className={styles.hint}><Move size={14} /> Arrastra para girar · Elige un área para enfocarla</p>
+      <p className={styles.hint}><Move size={14} /> Arrastra para girar y elige un área para enfocarla</p>
     </div>
     <div className={styles.reader}>
       <div className={styles.readerHeading}><h2>Áreas del diagnóstico</h2><span>{recorded} de {areas.length} registradas</span></div>

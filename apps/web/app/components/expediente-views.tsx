@@ -55,7 +55,7 @@ function usePageTitle(title: string | null) {
     if (!title) {
       return
     }
-    document.title = `${title} · SIA`
+    document.title = `${title}, SIA`
     return () => {
       document.title = 'SIA'
     }
@@ -897,7 +897,7 @@ function CycleWorkspace({
       <DetailHero
         eyebrow="Espacio del ciclo"
         title={cycle.name}
-        description={`${entrepreneurshipName} · ${program}`}
+        description={`${entrepreneurshipName}, ${program}`}
         monogram={cycle.name}
       />
       <Facts rows={[{ term: 'Programa', value: program }, { term: 'Creado', value: formatDateTime(cycle.created_at) }]} />

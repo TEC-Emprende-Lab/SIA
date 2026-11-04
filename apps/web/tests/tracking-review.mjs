@@ -66,7 +66,7 @@ try {
   assert(!escaped.includes('<script>'))
   assert(!escaped.includes('<img'))
   for (const [kind, label] of [['file', 'Documento'], ['photograph', 'Fotografía'], ['video', 'Video']]) {
-    assert(render(ActivityEvidence, { activity, evidence: [{ ...reference, kind }] }).includes(`${label} · referencia externa`))
+    assert(render(ActivityEvidence, { activity, evidence: [{ ...reference, kind }] }).includes(`${label}, referencia externa`))
   }
   const privateFile = render(ActivityEvidence, { activity, evidence: [{ ...reference, kind: 'file', url: null, document_id: '11111111-1111-1111-1111-111111111111' }] })
   assert(privateFile.includes('archivo privado'))

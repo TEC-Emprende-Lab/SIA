@@ -52,7 +52,7 @@ export function ActivityEvidence({ activity, evidence, entrepreneurshipId }: {
         return <li key={item.id} className={styles.evidenceReviewCard}>
           <div className={styles.evidenceIcon}><FileText size={25} aria-hidden="true" /></div>
           <div className={styles.evidenceBody}>
-            <span className={styles.evidenceKind}>{EVIDENCE_LABEL[item.kind] ?? 'Evidencia'} · {privateFile ? 'archivo privado' : 'referencia externa'}</span>
+            <span className={styles.evidenceKind}>{EVIDENCE_LABEL[item.kind] ?? 'Evidencia'}, {privateFile ? 'archivo privado' : 'referencia externa'}</span>
             <h6>{item.title}</h6>
             <p className={styles.reviewDescription}>{item.description || 'Sin descripción de la evidencia registrada.'}</p>
             <p className={styles.evidenceDate}>Registrada: {formatDateTime(item.created_at)}</p>

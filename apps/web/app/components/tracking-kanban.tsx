@@ -371,7 +371,7 @@ function ObjectiveKanbanCard({ objective, activities, areas, summary, pending, e
       <h4>{objective.title}</h4>
       <p className={styles.cardMeta}>
         {total} {total === 1 ? 'actividad' : 'actividades'}
-        {pending ? ' · Guardando…' : ''}
+        {pending ? ', Guardando…' : ''}
       </p>
       <div className={styles.cardFoot}>
         <span className={styles.progress}>
@@ -429,7 +429,7 @@ function ActivityKanbanCard({ activity, objectives, pending, error, dragging, on
             Completada
           </>
         ) : null}
-        {pending ? ' · Guardando…' : ''}
+        {pending ? ', Guardando…' : ''}
       </p>
       <div className={styles.cardFoot}>
         <span className={styles.smallMuted}>{activity.description ? 'Con descripción' : 'Sin descripción'}</span>
