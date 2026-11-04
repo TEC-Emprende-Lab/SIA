@@ -1,13 +1,16 @@
+import 'next/dist/server/node-environment-baseline.js'
 import assert from 'node:assert/strict'
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
 import { createRequire } from 'node:module'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { unstable_getResponseFromNextConfig } from 'next/experimental/testing/server.js'
 
-const temporary = await mkdtemp('/tmp/opencode/project-navigation-')
+const temporary = await mkdtemp(join(tmpdir(), 'sia-project-navigation-'))
 const originalFetch = globalThis.fetch
 try {
   for (const name of ['expediente', 'project-workspace', 'reports', 'tracking-summary']) {
@@ -72,6 +75,68 @@ try {
   assert(welcome('Coordinadora', { hasProjects: true }).includes('Elegir proyecto'))
   assert(welcome('Coordinadora', { unavailable: true }).includes('Este proyecto no está disponible'))
   console.log('✓ First-use guidance follows existing roles and distinguishes unavailable selection from an empty list')
+
+  // Render the real sidebar without starting Clerk or loading unrelated project panels.
+  await writeFile(join(temporary, 'panels.mjs'), `
+    let role = 'Coordinadora'
+    export const setRole = (value) => { role = value }
+    export const useMe = () => ({ role, email: 'navigation@example.org' })
+    export const UserButton = () => null
+    export const SeguimientoPanel = () => null
+    export const MeetingsPanel = () => null
+    export const ChannelsPanel = () => null
+    export const BandejaView = () => null
+    export const AssignmentPanel = () => null
+    export const ReportsView = () => null
+    export const FinanzasView = () => null
+    export const ProjectHeading = () => null
+    export const Dialog = () => null
+    export const DialogContent = () => null
+    export const DialogDescription = () => null
+    export const DialogHeader = () => null
+    export const DialogTitle = () => null
+    export const parseObjectiveList = () => null
+    export const parseEvidenceList = () => null
+    export const parseAmbitionList = () => null
+    export const requestSeguimiento = () => null
+    export const seguimientoUrl = () => null
+  `)
+  const workspaceSource = await readFile(new URL('../app/components/project-workspace.tsx', import.meta.url), 'utf8')
+  const workspaceCode = ts.transpileModule(workspaceSource, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
+    .replace(/from ["']([^"']+)["']/g, (_, name) => {
+      if (name === '../lib/project-workspace') return "from './project-workspace.mjs'"
+      if (name === '../lib/expediente') return "from './expediente.mjs'"
+      if (name === './project-welcome') return "from './welcome.mjs'"
+      if (name.startsWith('.') || name === '@clerk/nextjs') return "from './panels.mjs'"
+      return `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`
+    })
+  await writeFile(join(temporary, 'workspace.mjs'), workspaceCode)
+  const { ProjectWorkspace } = await import(pathToFileURL(join(temporary, 'workspace.mjs')))
+  const { setRole } = await import(pathToFileURL(join(temporary, 'panels.mjs')))
+  for (const role of ['Coordinadora', 'Gestor', 'Emprendedor']) {
+    setRole(role)
+    const html = renderToStaticMarkup(createElement(ProjectWorkspace))
+    const administration = html.match(/<nav aria-label="Administración"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
+    if (role === 'Emprendedor') assert.equal(administration, undefined)
+    else {
+      assert(administration?.includes('href="/expediente"'))
+      assert(administration?.includes('Expedientes'))
+    }
+  }
+  console.log('✓ Coordinadora and Gestor can reach Expedientes before any project loads; Emprendedor has no management link')
+
+  const configSource = await readFile(new URL('../next.config.ts', import.meta.url), 'utf8')
+  await writeFile(join(temporary, 'config.mjs'), ts.transpileModule(configSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText)
+  const { default: nextConfig } = await import(pathToFileURL(join(temporary, 'config.mjs')))
+  for (const path of ['/expediente', '/expediente/e1', '/expediente/e1/inscripciones/en1']) {
+    const response = await unstable_getResponseFromNextConfig({ url: `https://sia.example${path}`, nextConfig })
+    assert.equal(response.status, 200, path)
+    assert.equal(response.headers.get('location'), null, path)
+  }
+  const cycleResponse = await unstable_getResponseFromNextConfig({ url: 'https://sia.example/expediente/e1/inscripciones/en1/ciclos/c1', nextConfig })
+  assert.equal(cycleResponse.status, 307)
+  assert.equal(cycleResponse.headers.get('location'), 'https://sia.example/?project=c1')
+  console.log('✓ Registration pages stay reachable and cycle links still open their project workspace')
 
   globalThis.fetch = async (input) => {
     const url = new URL(input, 'http://localhost')
