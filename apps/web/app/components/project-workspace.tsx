@@ -134,6 +134,12 @@ export function ProjectWorkspace() {
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>
       <button className="brand brand-button" onClick={() => navigate('Diagnóstico 360°')}><span className="brand-mark"><img src="/brand/logo.svg" alt="" /></span><span><strong>catalitec<span className="brand-period">.</span></strong><small>TEC EMPRENDE LAB</small></span></button>
       <button className="workspace" onClick={() => setPicker(true)}><span className="workspace-logo">{project ? initials(name) : '—'}</span><span><strong>{name}</strong><small>Espacio del proyecto</small></span><ChevronDown size={14} /></button>
+      {canManageProjects && <nav aria-label="Administración" className="workspace-administration">
+        <Link className="expediente-link" href="/expediente" onClick={() => setMenu(false)}>
+          <FolderOpen size={18} strokeWidth={1.7} aria-hidden="true" />
+          <span>Expedientes</span>
+        </Link>
+      </nav>}
       <nav aria-label="Navegación del proyecto">{PROJECT_GROUPS.map((group, index) => <div className="nav-group" key={group.label}>{index > 0 && <p className="nav-label">{group.label}</p>}{group.sections.map((section) => { const Icon = icons[section]; return <button key={section} onClick={() => navigate(section)} className={route.section === section ? 'active' : ''} aria-current={route.section === section ? 'page' : undefined}><Icon size={18} strokeWidth={1.7} /><span>{section}</span>{route.section === section && <i />}</button> })}</div>)}</nav>
       <div className="sidebar-bottom"><button className="help-link" onClick={() => setHelp(true)}><CircleHelp size={17} />Guía de acompañamiento<ArrowUpRight size={14} /></button><div className="profile"><span className="avatar sand">{initials(me.email)}</span><div><strong>{me.email}</strong><small>{me.role}</small></div><UserButton /></div></div>
     </aside>
