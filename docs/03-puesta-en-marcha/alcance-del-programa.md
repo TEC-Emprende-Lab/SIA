@@ -21,5 +21,6 @@ Se requiere modelo de negocio definido, prototipo validado y evidencia consisten
 
 Existe canvas v1 y el seguimiento común puede leer el programa, pero el alta
 administrativa se bloquea con 409 mientras esas condiciones de entrada no tengan fuente
-persistente verificable. Presupuesto, compras y facturas no tienen backend. Consultar el
-[estado actual](../estado-actual.md) para evidencia y límites de validación.
+persistente verificable. Presupuesto, compras y facturas no están habilitados para Puesta
+en marcha: la implementación financiera existente es solo de Prototipado (migración `013`).
+Consultar el [estado actual](../estado-actual.md) para evidencia y límites de validación.

@@ -1,5 +1,35 @@
 # Consolidacion de decisiones
 
+> Estado canónico: [docs/estado-actual.md](../docs/estado-actual.md). Las casillas de
+> este archivo conservan historia y no certifican por sí solas implementación, despliegue
+> ni aceptación funcional.
+
+## Finanzas y compras de Prototipado — 2026-10-29
+
+Implementación y release de US-PRO-003/004/007–010; ver
+[verificación](../docs/finanzas-verificacion.md) y [release 013](../docs/release-013-staging.md).
+
+- [x] Backend y Web de Prototipado: partidas, borradores, checklist, revisión, ejecución,
+  traslados, adjuntos privados, extracción XML/PDF, duplicados, conciliación manual y reportes.
+- [x] Migración `013`, fuentes financieras del informe y pruebas de integración/concurrencia
+  PostgreSQL.
+- [x] Integración por PR a `develop` (#44/#45) y a `main` (#49).
+- [ ] Recorrer Finanzas con Coordinadora, Gestor y Emprendedor en staging; validar un archivo
+  FUNDATEC anonimizado.
+- [ ] Confirmar `alembic current` = `013 (head)`, backup/restauración y SHA o digest servido.
+- [ ] Definir catálogo oficial, reservas/disponible operativo, umbrales, permisos adicionales,
+  límites de adjuntos y API FUNDATEC.
+
+## Perfil, idioma y acceso a Expedientes — 2026-11-04
+
+Correcciones de presentación y navegación; historia específica `TBD`.
+
+- [x] Perfil con un único avatar de Clerk, textos sin puntos medios y catálogo de Clerk en español.
+- [x] Enlace permanente a Expedientes para Coordinadora y Gestor, incluido móvil.
+- [x] Suite Web, lint, TypeScript y build locales correctos; integración por PR #47/#49.
+- [ ] Verificar en staging el perfil con sesión real y que `/expediente` ya no redirija al inicio.
+- [ ] Completar el recorrido de alta e inscripción por la interfaz publicada.
+
 ## Primera tanda visual y UX — implementación local 2026-10-28
 
 Solicitud del usuario posterior al recorrido QA. Referencias: principio de interfaz
@@ -15,7 +45,8 @@ de Evidencias/Evolución. Historia específica del acceso inicial: `TBD`.
   actividades, filtros y carpeta. No se inventan aprobaciones ni permisos.
 - [x] Lint, typecheck, suite Web y build correctos; componente inicial aislado a
   390/1440 px sin desbordamiento y con foco de teclado visible.
-- [ ] Publicar por PR hacia `develop` y recorrer los cambios con sesión real en staging.
+- [x] Publicar por PR hacia `develop` e integrar en `main` (#42/#43/#47/#49).
+- [ ] Recorrer los cambios publicados con sesión real en staging.
 
 Sin dependencias nuevas, cambios de reglas, API, contratos, migraciones o datos remotos.
 Detalle y alcance pendiente: [mejora de pantallas vacías](../docs/mejora-pantallas-vacias.md).
@@ -31,7 +62,9 @@ Detalle y alcance pendiente: [mejora de pantallas vacías](../docs/mejora-pantal
   [recorrido de login](../docs/recorrido-login-2026-10-28.md).
 - [x] Documentar la solicitud de [mejores pantallas vacías](../docs/mejora-pantallas-vacias.md),
   incluyendo el acceso inicial sin proyectos y acciones que orienten según permisos.
-- [ ] Implementar esa mejora de UX usando flujos existentes; historia específica `TBD`.
+- [x] Implementar la primera tanda de la mejora de UX usando flujos existentes; historia
+  específica `TBD`.
+- [ ] Continuar la segunda tanda en Resumen, Ambiciones, Informes, Reuniones y bandeja.
 - [ ] Completar Gestor/Emprendedor, arrastre, validaciones y archivos/PDF. Este recorrido
   parcial no cierra las fases operativas ni certifica el MVP.
 
@@ -51,7 +84,7 @@ US-PRO-004 / US-PM-003. Sin cambios funcionales, permisos, contratos ni migracio
 - [x] Suite API completa: **145 passed, 15 skipped**, dos advertencias preexistentes.
   Los casos omitidos requieren servicios/variables de integración; no se acreditan como
   aprobados. Ruff lint/formato, mypy, sintaxis Bash/YAML y `git diff --check` correctos.
-- [ ] Verificar el nuevo job en GitHub Actions después de publicar el PR.
+- [x] Integrar el job `worker` en `Application quality` (PR #40/#41).
 
 El smoke de imagen usa cola vacía. La entrega de PDF con almacenamiento real y los
 recorridos autenticados siguen siendo controles independientes.
@@ -68,7 +101,7 @@ recorridos autenticados siguen siendo controles independientes.
 - [x] API con PostgreSQL desechable: **153 passed, 2 skipped**, con las pruebas de
   concurrencia activas. Ruff, formato, mypy y drift OpenAPI correctos; imagen Docker
   construida y upgrade `007` → `010` → `011` → `012` sin deriva de metadata.
-- [ ] Integrar por PR hacia `develop`, validar en staging y actualizar el release #38.
+- [x] Integrar por PR hacia `develop` (#39) y promover el release (#40).
   Producción conserva `007`; esta corrección local no migra datos remotos.
 
 ## Recorrido autenticado de staging — 2026-10-12
@@ -82,7 +115,11 @@ Evidencia de la Fase 8, sin cerrarla. Referencias: US-PRO-001/002 y US-PM-001/00
 - [x] Resumen, revisión de evidencias y Kanban visto para Coordinadora y Emprendedor.
 - [ ] Arrastre del Kanban en sesión autenticada.
 - [ ] Recorrido del Gestor. Sigue aplazado.
-- [ ] Migraciones `008–010`, observabilidad, backups y rollback de staging.
+- [ ] Migraciones `008–013`, observabilidad, backups y rollback de staging. La aplicación
+  de `013` está registrada en [release 013](../docs/release-013-staging.md).
+
+> Finanzas se implementó después (2026-10-29, migración `013`); el aviso de esta sección
+> describe el recorrido del 2026-10-12.
 
 ## Carpetas de evidencias — implementación local 2026-10-12
 
@@ -204,14 +241,14 @@ Estado histórico verificado antes de la corrección de staging, 2026-10-06:
 
 Pendientes abiertos:
 
-- [ ] Revisión autenticada por rol sobre la publicación: Coordinadora y Emprendedor en el
-  Kanban, la revisión de evidencias y el Resumen. El recorrido del Gestor sigue aplazado
-  por indicación del usuario.
-- [ ] Añadir `pnpm --filter @sia/web test` a CI: `web-and-contracts` termina en
-  `pnpm contract:check` y hoy no ejecuta esa suite.
+- [x] Revisión autenticada de Coordinadora y Emprendedor (2026-10-12) en el Kanban, la
+  revisión de evidencias y el Resumen.
+- [ ] Recorrido del Gestor; sigue aplazado por indicación del usuario.
+- [x] Añadir suite y build de `apps/web` a CI (PR #42). El workflow actual también ejecuta
+  API con PostgreSQL y worker con imagen real.
 - [x] Entorno de staging separado de `main` y HTTPS del despliegue: disponible en
-  `https://sia.dev.neuroboard.app`; falta certificar sus recorridos autenticados,
-  migraciones, observabilidad, backups y rollback.
+  `https://sia.dev.neuroboard.app`; falta certificar los recorridos autenticados por rol,
+  las migraciones `008–013`, la observabilidad, los backups y el rollback.
 
 ## Kanban de objetivos y actividades, 2026-10-05
 
@@ -402,10 +439,11 @@ expediente, comunicación, roles e informes. No cambian reglas ni contratos API.
 - [ ] Comparación visual y recorridos autenticados en desktop/móvil: bloqueados
   localmente por falta de clave/sesión Clerk y browser de escritorio desconectado.
 
-Límites explícitos: Kanban deshabilitado mientras sus estados sean TBD; indicadores
-360° numéricos pendientes, sin scores; finanzas pendiente de reglas/backend;
-descarga privada del PDF pendiente de integración. No se declara réplica visual
-idéntica ni despliegue verificado sin realizar revisión autenticada.
+Límites explícitos de ese corte: Kanban deshabilitado mientras sus estados sean TBD;
+indicadores 360° numéricos pendientes, sin scores; Finanzas pendiente de reglas/backend
+(implementada después, 2026-10-29); descarga privada del PDF pendiente de integración.
+No se declara réplica visual idéntica ni despliegue verificado sin realizar revisión
+autenticada.
 
 Validación de esta entrega: seis grupos de pruebas frontend pasan; lint y
 typecheck de Web/contratos, build de Next.js, contract:check y diff --check pasan.
@@ -430,8 +468,9 @@ por el usuario al autorizar ejecutar el plan por fases.
 - [x] Continuar el dashboard general por módulos: reuniones, acuerdos y alertas reales
   (implementación local 2026-10-05; ver límites y verificación en la sección superior).
 
-No se implementan Kanban, puntajes de diagnóstico, cargas privadas o finanzas `TBD`.
-No se afirma paridad visual idéntica: esta entrega es la base conectada de las fases.
+En ese corte no se implementan Kanban, puntajes de diagnóstico, cargas privadas o
+finanzas `TBD` (Finanzas llegó después, 2026-10-29). No se afirma paridad visual
+idéntica: esta entrega es la base conectada de las fases.
 API: 117 pruebas pasan; 9 se omiten por requisitos de entorno, incluidos PostgreSQL.
 Ruff y mypy pasan; contratos OpenAPI, lint/typecheck/build Web verificados.
 
@@ -509,8 +548,9 @@ web conectada, preservando FastAPI como autoridad y sin convertir datos demo o d
 4. Conservar diagnóstico descriptivo por área, actividades con finalización manual,
    evidencias URL inmutables y transiciones/validaciones originadas en la API. No portar
    puntajes 1–5, radar, deltas numéricos, estados Kanban ni automatizaciones del mockup.
-5. Mantener Finanzas como no disponible, y Equipo/búsqueda global como pendientes de
-   endpoints autorizados y decisiones funcionales; no exponer datos demo.
+5. Mantener Finanzas como no disponible en ese corte (implementada después en
+   Prototipado), y Equipo/búsqueda global como pendientes de endpoints autorizados y
+   decisiones funcionales; no exponer datos demo.
 6. Verificar autorización visual y backend, responsive, accesibilidad, lint, tipos,
    build, contratos y recorrido autenticado local antes de documentar el corte.
 
@@ -524,8 +564,8 @@ unificaron las superficies de expediente, seguimiento y comunicación con tarjet
 formularios, badges y estados responsivos del lenguaje del mockup. Referencias:
 US-PRO-001/002/004/005/006 y US-PM-001/002/003. No se cambió API ni autorización;
 diagnósticos permanecen descriptivos, actividades solo usan su finalización real y
-finanzas, puntajes, radar, búsqueda global y adjuntos privados siguen fuera por `TBD`
-o ausencia de backend.
+finanzas, puntajes, radar, búsqueda global y adjuntos privados seguían fuera por `TBD`
+o ausencia de backend en ese corte. Finanzas se implementó después (2026-10-29).
 
 Actualización de sistema de diseño — 2026-09-29: se habilitó Tailwind CSS v4 y la
 configuración local de shadcn (`components.json`, fuentes bajo `app/components/ui`) sin
@@ -616,7 +656,7 @@ Plan de trabajo (documentación; no cambia requisitos ni reglas de negocio):
 - [x] Incorporar revocación de asignaciones por scope, instalación independiente del prototipo y conteos con procedencia; marcar resultados anteriores como históricos y staging como no verificado.
 - [x] Verificar enlaces internos y `git diff --check`, revisar el diff y registrar resultados. No realizar commit ni push.
 
-Estado vigente en esa fecha: [matriz canónica](../README.md#estado-actual). Evidencia confirmada y procedencia del último local comunicado: [operación API](../docs/operacion-api.md#evidencia-histórica--2026-09-16). Backend de identidad, expediente y seguimiento integrado; UI real y módulos restantes en curso. Staging **NO verificado** en ese corte histórico; ver la [corrección de staging del 2026-10-06](#corrección-de-staging--2026-10-06).
+Estado vigente en esa fecha: [matriz canónica](../README.md#estado-actual). Evidencia confirmada y procedencia del último local comunicado: [operación API](../docs/operacion-api.md#evidencia-histórica--2026-09-16). Backend de identidad, expediente y seguimiento integrado; UI real y módulos restantes en curso. Staging **NO verificado** en ese corte histórico; ver la [corrección de staging del 2026-10-06](#corrección-de-staging-2026-10-06).
 
 Resultado documental: README y plan alineados con el código; operación enlaza runs y logs CI del SHA inspeccionado, separa el último local comunicado de la evidencia histórica y describe la corrección de revocación. CONTRIBUTING, README visuales e IMPLEMENTATION del prototipo reproducen `--ignore-workspace`. El borrador de modelo se conserva íntegro con nota histórica y la guía Coolify diferencia CI de despliegue remoto. Verificación con script temporal Python 3 fuera del repo: 38 documentos Markdown versionados de proyecto y 54 enlaces Markdown internos, comprobando existencia y anclas de encabezado, sin errores; `git diff --check` correcto y diff revisado. No se reejecutaron suites, ni se hizo commit/push.
 
@@ -810,9 +850,11 @@ Resultado: la marca se organiza en `visual/brand/` y el mockup en `visual/protot
 
 - [x] Documentar requisitos, historias, reglas, permisos y flujos.
 - [x] Documentar modelo de datos, arquitectura, UX, alcance y criterios de aceptación.
-- [ ] Implementar migraciones, API, interfaz y pruebas del módulo.
+- [x] Implementar migraciones, API, interfaz y pruebas del módulo.
 
-Actualización 2026-09-16: migración 003, API y pruebas backend ya implementadas para fotografías descriptivas; la casilla compuesta continúa abierta por UI y alcance pendiente. Véase [seguimiento](../apps/api/app/modules/seguimiento/README.md). Las escalas numéricas de la demo no se trasladan al backend.
+Actualización 2026-11-04: la migración `003`, la API y la interfaz del diagnóstico
+descriptivo están conectadas. Las escalas numéricas de la demo no se trasladan al backend.
+Véase [seguimiento](../apps/api/app/modules/seguimiento/README.md).
 
 Resultado histórico reemplazado: el seguimiento vigente es `diagnóstico por área -> objetivo -> actividad -> evidencia -> resultado -> nuevo diagnóstico`. Las ambiciones permanecen visibles y se vinculan opcionalmente desde el objetivo; los diagnósticos aprobados son inmutables.
 
@@ -829,9 +871,14 @@ Resultado: Prototipado usa Identidad y dirección estratégica, Modelo de negoci
 
 - [x] Documentar requisitos, historias, reglas, permisos y flujo de informe.
 - [x] Documentar versión, fuentes, instantáneas, PDF, UX, arquitectura y criterios.
-- [ ] Implementar migraciones, API, interfaz, PDF y pruebas del módulo.
+- [x] Implementar migraciones, API, interfaz, cola de PDF y pruebas del módulo.
+- [ ] Probar el worker PDF desplegado con almacenamiento configurado.
 
-Resultado: los informes reutilizan registros fuente del proyecto para un período, muestran faltantes como `Pendiente de completar`, se aprueban antes de generar PDF y preservan cada versión como instantánea inmutable. Programa y cambios formales de alcance permanecen `TBD` hasta disponer de entidades fuente aprobadas.
+Resultado: los informes reutilizan registros fuente del proyecto para un período, muestran
+faltantes como `Pendiente de completar`, se aprueban antes de generar PDF y preservan cada
+versión como instantánea inmutable. El consumidor y la cola están implementados; falta la
+prueba operativa con almacenamiento. Programa y cambios formales de alcance permanecen
+`TBD` hasta disponer de entidades fuente aprobadas.
 
 ## Simplificar el Diagnóstico 360°
 

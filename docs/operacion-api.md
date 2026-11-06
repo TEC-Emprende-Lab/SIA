@@ -7,17 +7,22 @@ Las secciones siguientes conservan sus fechas y no se presentan como estado actu
 
 ## Alcance y trazabilidad
 
-Ampliación posterior al corte remoto: carpetas de evidencias (`008`), canales estándar
-(`009`) y referencias de chat (`010`) después de `007`; detalle en
-[carpetas](evidencias-carpetas.md). Al instalar esta rama, `alembic upgrade head` incluye
-`008–010`. No se ha aplicado a staging. Las verificaciones del corte remoto siguientes no
-incluyen esta ampliación.
+Cadena de migraciones vigente: `001–013`. `008` incorpora carpetas de evidencias
+([detalle](evidencias-carpetas.md)), `009` canales estándar, `010` referencias de chat,
+`011`/`012` la unicidad de canales compartidos y `013` Finanzas de Prototipado.
+`alembic upgrade head` instala la cadena completa. La aplicación de `013` en staging se
+registra en [release 013](release-013-staging.md); no se certifica aquí su verificación
+funcional ni la de producción.
 
-Estado revisado el **2026-10-23**, sobre `develop` `ab5ebad` y `main` `289c731`.
+Estado revisado el **2026-11-04**, sobre `develop` `e07e6dc` y `main` `6eae158`.
 Incluye identidad/invitaciones, expediente, seguimiento, comunicación, cola persistente,
-informes técnicos, PDF por worker y documentos privados. Trazabilidad: US-PRO-001/002/004/005/006 y US-PM-001/002/003.
-Última verificación operativa: **2026-10-06**, sobre `1725260` (sección «Verificación operativa — 2026-10-06»).
-Última verificación de staging: **2026-10-12**, recorrido autenticado parcial en `https://sia.dev.neuroboard.app` (sección «Verificación de staging — 2026-10-12»). El smoke del 2026-10-06 permanece en la sección anterior.
+informes técnicos, PDF por worker, documentos privados y Finanzas de Prototipado.
+Trazabilidad: US-PRO-001/002/003/004/005/006/007–010 y US-PM-001/002/003.
+Última verificación operativa general: **2026-10-29**, release de Finanzas
+([verificación](finanzas-verificacion.md)).
+Último recorrido autenticado: **2026-10-28**, login y parcial en
+`https://sia.dev.neuroboard.app` ([registro](recorrido-login-2026-10-28.md)); el
+recorrido por roles del 2026-10-12 se conserva como evidencia histórica.
 La evidencia consolidada del corte está en [estado actual](estado-actual.md).
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
@@ -51,7 +56,8 @@ Este smoke comprueba packaging y arranque con cola vacía; no certifica generaci
 PDF con almacenamiento real ni recuperación de backups. Los tests de informes usan
 dobles de almacenamiento; la concurrencia PostgreSQL de cola requiere
 `SIA_TEST_POSTGRES_URL` y sigue cubierta por el job `api`. No cambia aprobaciones,
-permisos, contrato ni esquema. La ejecución remota del nuevo job queda pendiente del PR.
+permisos, contrato ni esquema. El job `worker` forma parte de `Application quality`; su
+ejecución remota se consulta en GitHub Actions.
 
 ## Registro histórico — comunicación backend, 2026-09-16
 
@@ -148,7 +154,7 @@ La imagen API incluye `alembic.ini` y todo `alembic/`; `app.models` registra tam
    `sh scripts/release.sh`. El script ejecuta `alembic upgrade head`, `alembic current` y
    `alembic check`. No ejecutar una migración por réplica/worker.
 3. Si el comando falla, detener el despliegue y revisar los logs; no continuar con `stamp head`.
-4. Verificar que `alembic current` muestre la cabeza de la imagen (actualmente `012`) y que
+4. Verificar que `alembic current` muestre la cabeza de la imagen (actualmente `013`) y que
    `alembic check` no reporte operaciones pendientes.
 5. Arrancar las réplicas con el CMD de la imagen. En Coolify, usar `/readyz` como comprobación
    para habilitar tráfico; conservar `/healthz` como liveness.
@@ -175,6 +181,10 @@ de reintentar. No modificar `009`/`011`, usar `stamp` ni omitir el índice para 
 Los canales históricos con `kind IS NULL` y los de ciclo quedan fuera del índice parcial.
 El downgrade histórico de `011` no conserva el predicado de `009`; no usarlo como rollback
 de datos persistentes. Las pruebas de `012` solo revierten su propio índice en bases desechables.
+`013` incorpora Finanzas de Prototipado: seis tablas, índices, claves foráneas y triggers
+de alcance/no-borrado, sin modificar tablas anteriores. No crea partidas ni presupuestos de
+ejemplo. Su aplicación en staging está registrada en [release 013](release-013-staging.md);
+un `downgrade` posterior eliminaría tablas históricas y no se considera un rollback seguro.
 Los sucesivos `upgrade head` son idempotentes. `alembic check` compara esquema/modelos,
 pero no comprueba por sí mismo el contenido de las semillas ni la presencia de los triggers.
 
@@ -318,7 +328,20 @@ Las suites emiten dos advertencias de deprecación de Starlette/TestClient (http
 BlockingPortal de AnyIO); no son fallos de pruebas. La primera pasada TypeScript usó Node 20
 del host y avisó de engine no soportado; los controles finales se repitieron con Node 24.21.0.
 
-## Verificación actual — 2026-10-12
+## Verificación actual — 2026-10-29 / 2026-11-04
+
+El release de Finanzas documentó **178 pruebas backend aprobadas y una omitida**, con
+todos los grupos PostgreSQL habilitados (incluida concurrencia). Ruff, formato, mypy,
+lint/tipos Web, contratos, pruebas Web, build de producción, migración `001–013` desde
+cero y `alembic check` resultaron correctos. Detalle y límites en
+[verificación de Finanzas](finanzas-verificacion.md).
+
+Las correcciones de perfil/idioma y Expedientes del 2026-11-04 reportan suite Web, lint,
+TypeScript y build locales correctos. La CI actual ejecuta API con PostgreSQL, worker con
+imagen real, suite y build de `apps/web`, contratos y drift. Esta revisión documental no
+reejecutó las suites ni consultó los runs remotos del SHA `6eae158`.
+
+## Verificación histórica — 2026-10-12
 
 Sin cambiar código, con el árbol sincronizado a `develop` `44a492e` y `main`
 `289c731`, se ejecutó localmente:
@@ -332,9 +355,9 @@ Sin cambiar código, con el árbol sincronizado a `develop` `44a492e` y `main`
 | `git diff --check` | Correcto antes de la actualización documental. |
 | `https://sia.dev.neuroboard.app/` y `/api/health` | 200 sin sesión; no valida API ni permisos autenticados. |
 
-GitHub Actions está verde para `develop` `44a492e` y `main` `289c731`; enlaces y
-alcance en [estado actual](estado-actual.md). El workflow `web-and-contracts` aún no
-ejecuta ni la suite ni el build de `apps/web`.
+En ese corte, GitHub Actions estaba verde para `develop` `44a492e` y `main` `289c731`
+y el workflow `web-and-contracts` todavía no ejecutaba la suite ni el build de
+`apps/web`; ambos se incorporaron después.
 
 ## Verificación operativa histórica — 2026-10-06
 
@@ -356,9 +379,11 @@ Cambios del núcleo desde el corte anterior del README (`919dff5`, 2026-09-29):
 Evidencia remota: `Application quality` y `Prototype quality` verdes sobre `main`
 `1725260` ([run 37354456543](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456543),
 [run 37354456484](https://github.com/TEC-Emprende-Lab/SIA/actions/runs/37354456484)) y sobre
-`develop` `2ebfca0`. El job `web-and-contracts` ejecuta `pnpm install --frozen-lockfile`,
-`pnpm lint`, `pnpm typecheck`, `export_openapi.py --check` y `pnpm contract:check`; **no**
-ejecuta la suite de `apps/web`, que se corrió localmente (23 grupos, 2026-10-06).
+`develop` `2ebfca0`. En ese corte, el job `web-and-contracts` ejecutaba
+`pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`,
+`export_openapi.py --check` y `pnpm contract:check`; **no** ejecutaba la suite de
+`apps/web`, que se corrió localmente (23 grupos, 2026-10-06). La suite y el build se
+incorporaron después al workflow.
 
 Smoke HTTP del despliegue público, 2026-10-06, sin sesión:
 
@@ -370,8 +395,8 @@ Smoke HTTP del despliegue público, 2026-10-06, sin sesión:
 
 Limitaciones: es un smoke sin autenticación ni roles, no un recorrido por rol. Este
 registro corresponde a la URL histórica de producción; el staging actual se documenta
-en la sección siguiente. Las URLs `sslip.io` pueden cambiar al recrearse. La suite de
-`apps/web` sigue fuera de CI.
+en la sección siguiente. Las URLs `sslip.io` pueden cambiar al recrearse. En ese momento
+la suite de `apps/web` seguía fuera de CI; se incorporó después.
 
 ## Verificación de staging — 2026-10-06
 
@@ -415,28 +440,47 @@ El inicio de sesión de la cuenta de prueba de Coordinadora con contraseña fue 
 | Coordinadora | Finanzas y Equipo | Finanzas muestra el aviso de reglas y backend pendientes, sin datos de demostración. Equipo solo permite asignar durante la visita; no lista el equipo completo. |
 | Emprendedor | Equipo | Aviso de que la consulta de integrantes aún no está disponible. |
 
-El Gestor no se recorrió. Siguen sin evidencia las migraciones del despliegue, la observabilidad, los backups y el rollback.
+El Gestor no se recorrió. En ese recorrido seguían sin evidencia las migraciones del
+despliegue, la observabilidad, los backups y el rollback. La aplicación de `013` se
+registró después en [release 013](release-013-staging.md).
+
+## Verificación de staging — 2026-10-30
+
+La rama `fix/alembic-012-013-readiness` registra la aplicación de la migración `013` en
+staging: respaldo y restauración previos, `013 (head)`, `alembic check` sin diferencias,
+`/readyz` disponible y el endpoint de Finanzas rechazando una petición sin sesión. El
+detalle y sus límites están en [release 013](release-013-staging.md).
+
+Esa evidencia no está fusionada en `main`, no demuestra los roles autenticados y no
+certifica producción. Las imágenes usadas estaban en un registro local sin autenticación
+y el respaldo carecía de custodia externa.
 
 ## Pendientes vigentes
 
-- Recorrer el rol Gestor en staging y el arrastre del Kanban en sesión autenticada. Google OAuth real sigue sin ejercerse. La contraseña de la cuenta de prueba de Coordinadora no coincide con Clerk; no reintentarla.
-- Aplicar `scripts/release.sh` en staging, con respaldo previo, y verificar `/readyz`, los
-  request logs y el SHA desplegado. El despliegue documentado del prototipo no equivale a
-  desplegar esta API.
-- Configurar y verificar `SIA_STORAGE_*` en el entorno aplicable para cargar y entregar
-  archivos privados; sin ello el módulo responde 503. Adjuntos de chat y facturas no
-  usan todavía `documents`.
-- PDF de informe: el consumidor y la cola están implementados, pero requiere almacenamiento
-  configurado y una prueba operativa del worker desplegado. IA real, correo y finanzas no están integrados.
-- Finanzas sigue sin backend. Menciones seleccionables y elegir otra persona del ciclo
-  siguen `TBD`: no hay listado autorizado de personas del ámbito.
+- Recorrer el rol Gestor en staging y el arrastre del Kanban en sesión autenticada. Google
+  OAuth real se recorrió el 2026-10-28; falta el Gestor. La contraseña de la cuenta de
+  prueba de Coordinadora no coincide con Clerk; no reintentarla.
+- Confirmar en staging `alembic current` = `013 (head)`, `alembic check` sin diferencias,
+  los request logs y el SHA o digest servido. Repetir el release en producción con su
+  propio plan, respaldo y aprobación; el despliegue del prototipo no equivale a esta API.
+- Configurar y verificar `SIA_STORAGE_*` para cargar y entregar archivos privados; sin ello
+  el módulo responde 503. Evidencias y respaldos financieros pueden usar `documents`; los
+  adjuntos de chat todavía no.
+- PDF de informe: el consumidor y la cola están implementados, pero requieren almacenamiento
+  configurado y una prueba operativa del worker desplegado. IA real y correo no están integrados.
+- Finanzas de Prototipado está implementada (migración `013`). Siguen `TBD` o pendientes el
+  catálogo oficial de partidas, reserva/comprometido/disponible operativo, umbrales de
+  alerta, permisos adicionales de Gestor, límites de adjuntos y la API FUNDATEC.
+- Menciones seleccionables y elegir otra persona del ciclo siguen `TBD`: no hay listado
+  autorizado de personas del ámbito.
 - Escalas de diagnóstico, catálogo oficial de entregables, evidencia mínima, transiciones y
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
-- Verificar en staging las migraciones `008–010`, los backups y el rollback. La suite y el
-  build de `apps/web` ya forman parte de CI. El recorrido de Coordinadora y Emprendedor en
-  Resumen, revisión de evidencias y Kanban quedó registrado el 2026-10-12.
+- Verificar en staging las migraciones `008–013`, los backups, la observabilidad y el
+  rollback. La suite y el build de `apps/web` ya forman parte de CI. El recorrido de
+  Coordinadora y Emprendedor en Resumen, revisión de evidencias y Kanban quedó registrado
+  el 2026-10-12.
 
 Los registros de 2026-09 y 2026-10-06 son evidencia histórica: sus hashes, conteos y
-limitaciones no sustituyen el corte de 2026-10-12 ni acreditan un despliegue autenticado.
+limitaciones no sustituyen el corte de 2026-11-04 ni acreditan un despliegue autenticado.

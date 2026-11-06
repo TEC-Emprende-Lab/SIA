@@ -11,7 +11,7 @@ Cada emprendimiento tiene un expediente unico e historial persistente. El paso e
 - `ProgramCycle`: ciclo, proyecto financiado o intervencion especifica dentro de una inscripcion.
 - Gestores y emprendedores relacionados N:M con el emprendimiento o ciclo segun corresponda.
 
-Los campos obligatorios del perfil, estados de inscripcion y reglas de transicion entre programas estan `TBD`.
+Los campos obligatorios del perfil del emprendimiento, estados de inscripcion y reglas de transicion entre programas estan `TBD`. La presentacion del perfil de cuenta y el acceso permanente a Expedientes se ajustaron el 2026-11-04; el alta e inscripcion por interfaz aun no se validan en staging.
 
 ## Historial y cambios
 

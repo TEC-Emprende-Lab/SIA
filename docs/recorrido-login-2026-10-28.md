@@ -65,7 +65,8 @@ del expediente a través de un formulario visible.**
   actividad. Acuerdos, alertas e historial de validaciones permanecieron vacíos.
 - **Diagnóstico, Ambiciones, Evolución e Informes:** se visitaron los estados sin datos.
   No se crearon ni aprobaron diagnósticos o informes. Evolución indicó que requiere dos
-  diagnósticos aprobados; Finanzas informó que su backend y reglas siguen pendientes.
+  diagnósticos aprobados; en esa fecha Finanzas informó que su backend y reglas seguían
+  pendientes. Se implementó después (migración `013`; ver [release 013](release-013-staging.md)).
 - **Equipo:** indicó que solo presenta asignaciones realizadas durante la visita y que
   no había Gestores ni Emprendedores con sesión iniciada para asignar. No se asignaron roles.
 

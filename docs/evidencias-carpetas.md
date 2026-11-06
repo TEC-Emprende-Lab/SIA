@@ -49,5 +49,7 @@ del objetivo; reorganizar una ya existente no la reabre.
 
 Pruebas: `apps/api/tests/test_seguimiento.py` y `apps/web/tests/evidence-folders.mjs`.
 La configuración de almacenamiento y límites MIME/tamaño existentes no cambian.
-La migración no se ha aplicado a una base del usuario ni a staging. El recorrido
-autenticado de UI y la revisión visual móvil/escritorio siguen pendientes.
+La cadena `001–013`, incluida `008`, está aplicada en staging según el
+[registro de release 013](release-013-staging.md); no se ha aplicado a una base local del
+usuario. El recorrido autenticado de UI y la revisión visual móvil/escritorio siguen
+pendientes.

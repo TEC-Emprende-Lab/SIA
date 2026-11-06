@@ -25,5 +25,6 @@ aislada del componente real y su CSS compilado a 1440, 1024 y 390 píxeles confi
 un solo avatar, correo dentro del perfil y ausencia de desbordamiento horizontal
 en la barra lateral. Usa un sustituto visual de Clerk, sin sesión ni datos remotos.
 
-Pendientes la publicación y la revisión con una sesión real de Clerk en staging.
-La integración en Git no certifica que producción muestre estos cambios.
+Publicado en `develop`/`main` el 2026-11-04. Queda pendiente la revisión con una sesión
+real de Clerk en staging; la integración en Git no certifica que producción muestre estos
+cambios.

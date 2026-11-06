@@ -31,7 +31,8 @@ Objetivos en borrador/pendientes, diagnósticos en borrador, minutas de origen
 aprobaciones humanas ni PDF aprobados.** El avance agregado del ciclo sigue
 siendo 0 % hasta validar objetivos; el avance por objetivo muestra las actividades
 simuladas completadas. La comparación de diagnósticos aprobados necesita revisión
-humana. Finanzas y compras siguen pendientes; no se inventan partidas ni facturas.
+humana. La carga no incluye partidas ni facturas; Finanzas de Prototipado está
+implementada, pero este seed no siembra datos financieros.
 
 Puesta en marcha no se siembra: su alta está bloqueada por requisitos de entrada
 `TBD`; la carga no evita esa restricción.

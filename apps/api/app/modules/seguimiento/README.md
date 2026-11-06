@@ -10,9 +10,10 @@ Router: `app.modules.seguimiento.routes.router`, prefijo `/cycles/{cycle_id}/seg
 Aplicar migración `003` después de `002`; contiene el seed fijo de ambos canvas v1.
 Los modelos se registran explícitamente mediante `app.models`, también desde Alembic.
 El router está integrado en `main.py` y los contratos OpenAPI/TypeScript están regenerados.
-Estado revisado: **2026-10-12**, `develop` `44a492e` y `main` `289c731`. El
-arranque y la evidencia local/CI están en la [guía operativa](../../../../../docs/operacion-api.md);
-el corte global está en [estado actual](../../../../../docs/estado-actual.md).
+Estado del módulo: **2026-10-12**, sin cambios funcionales posteriores. El corte global
+es **2026-11-04**, `develop` `e07e6dc` y `main` `6eae158`; el arranque y la evidencia
+local/CI están en la [guía operativa](../../../../../docs/operacion-api.md) y el corte
+consolidado en [estado actual](../../../../../docs/estado-actual.md).
 
 ## Trazabilidad y aceptación
 
