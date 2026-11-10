@@ -11,6 +11,7 @@ import type { EvidenceFolder } from '../lib/evidence-folders'
 import { SummaryCommunication } from './summary-communication'
 import { TrackingKanban, type ObjectiveDropAction, type ObjectiveDecision } from './tracking-kanban'
 import type { ProjectSection } from '../lib/project-workspace'
+import { ACTIVITY_COLUMN_LABEL, activityColumn } from '../lib/kanban'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 
 import { useMe } from './authenticated-shell'
@@ -87,6 +88,14 @@ function today(): string {
   const date = new Date()
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function activityPresentation(activity: { completed_at: string | null; ends_on: string }) {
+  const column = activityColumn(activity, today())
+  return {
+    label: ACTIVITY_COLUMN_LABEL[column],
+    status: column === 'completed' ? 'approved' : column === 'overdue' ? 'overdue' : 'draft',
+  } as const
 }
 
 function dateInputValue(value: string | undefined): string | undefined {
@@ -264,7 +273,7 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
       <div className="summary-grid">
         <ProjectPanel title="Lo que sigue" action={<ProjectLink onClick={() => navigate?.('Alertas')}>Ver alertas</ProjectLink>}>
           {awaiting.map((objective) => <button className="record-row" key={objective.id} onClick={() => navigate?.('Objetivos y actividades', objective.id)}><Target size={20} /><div><strong>{objective.title}</strong><p>Objetivo pendiente de aprobación, {areaName(areas, objective.area_id)}</p></div><ChevronRight size={16} /></button>)}
-          {upcoming.map((activity) => <button className="record-row" key={activity.id} onClick={() => navigate?.('Objetivos y actividades', activity.id)}><CalendarDays size={20} /><div><strong>{activity.title}</strong><p>{formatDay(activity.ends_on)}, pendiente</p></div><ChevronRight size={16} /></button>)}
+          {upcoming.map((activity) => <button className="record-row" key={activity.id} onClick={() => navigate?.('Objetivos y actividades', activity.id)}><CalendarDays size={20} /><div><strong>{activity.title}</strong><p>{formatDay(activity.ends_on)}, {activityPresentation(activity).label}</p></div><ChevronRight size={16} /></button>)}
           {awaiting.length === 0 && upcoming.length === 0 && <p className="muted">No hay próximos pasos pendientes registrados.</p>}
         </ProjectPanel>
         <ProjectPanel title="El plan compartido">{bundle.objectives.length === 0 ? <p className="muted">Aún no hay objetivos registrados.</p> : bundle.objectives.map((objective) => { const progress = bundle.summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0; return <div className="summary-objective" key={objective.id}><ProjectLink onClick={() => navigate?.('Objetivos y actividades', objective.id)}>{objective.title}</ProjectLink><div className="inline"><ProjectProgress value={progress} label={`Avance de ${objective.title}`} /><span className="small">{Math.round(progress)}%</span></div><span className={`badge ${objective.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[objective.status]}</span></div> })}</ProjectPanel>
@@ -470,7 +479,7 @@ function ObjectiveSection({
   const searchTerm = query.trim().toLocaleLowerCase('es-CR')
   const matchesObjective = (item: Objective) => `${item.title} ${item.description}`.toLocaleLowerCase('es-CR').includes(searchTerm)
   const filtered = objectives.filter((item) => (objectiveFilter === 'all' || item.id === objectiveFilter) && (matchesObjective(item) || activities.some((activity) => activity.objective_id === item.id && `${activity.title} ${activity.description}`.toLocaleLowerCase('es-CR').includes(searchTerm))))
-  const visibleActivities = activities.filter((item) => filtered.some((objective) => objective.id === item.objective_id && (matchesObjective(objective) || `${item.title} ${item.description}`.toLocaleLowerCase('es-CR').includes(searchTerm))) && (viewMode === 'board' || activityFilter === 'all' || (activityFilter === 'completed' ? Boolean(item.completed_at) : !item.completed_at)))
+  const visibleActivities = activities.filter((item) => filtered.some((objective) => objective.id === item.objective_id && (matchesObjective(objective) || `${item.title} ${item.description}`.toLocaleLowerCase('es-CR').includes(searchTerm))) && (viewMode === 'board' || activityFilter === 'all' || activityColumn(item, today()) === activityFilter))
   function clearFilters() { setQuery(''); setObjectiveFilter('all'); setActivityFilter('all') }
   function dropObjective(objective: Objective, drop: ObjectiveDropAction) {
     if (drop.action === 'submit') {
@@ -515,7 +524,7 @@ function ObjectiveSection({
             <button type="button" className={board === 'activities' ? 'selected' : ''} aria-pressed={board === 'activities'} onClick={() => setBoard('activities')}>Actividades</button>
           </div> : null}
         <select aria-label="Filtrar actividades por objetivo" value={objectiveFilter} onChange={(event) => setObjectiveFilter(event.target.value)}><option value="all">Todos los objetivos</option>{objectives.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
-        {viewMode === 'list' ? <select aria-label="Estado de las actividades" value={activityFilter} onChange={(event) => setActivityFilter(event.target.value)}><option value="all">Todas las actividades</option><option value="pending">Pendientes</option><option value="completed">Completadas</option></select> : null}
+        {viewMode === 'list' ? <select aria-label="Estado de las actividades" value={activityFilter} onChange={(event) => setActivityFilter(event.target.value)}><option value="all">Todas las actividades</option><option value="pending">Pendientes</option><option value="overdue">Vencidas</option><option value="completed">Completadas</option></select> : null}
         <label className={styles.searchField}><Search size={16} aria-hidden="true" /><input aria-label="Buscar objetivo o actividad" type="search" placeholder="Buscar en el plan…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
       </div>
       {(query || objectiveFilter !== 'all' || (viewMode === 'list' && activityFilter !== 'all')) && <div className={styles.filterFeedback}><span role="status">{filtered.length} objetivos{viewMode === 'list' ? `, ${visibleActivities.length} actividades` : ''}</span><button type="button" className="text-link" onClick={clearFilters}>Limpiar filtros</button></div>}
@@ -546,7 +555,7 @@ function ObjectiveSection({
             <div className={styles.objectiveGroupCopy}><span className={styles.areaLabel}>{areaName(areas, objective.area_id)}</span><button type="button" onClick={() => setSelectedObjective(objective.id)}>{objective.title}<ArrowRight size={16} aria-hidden="true" /></button>{ambition && <p>Ambición: {ambition.title}</p>}</div>
             <div className={styles.objectiveGroupState}><span className={styles.badge} data-status={objective.status}>{STATUS_LABEL[objective.status]}</span><span>{work.filter((item) => Boolean(item.completed_at)).length} / {work.length} actividades completadas</span><div className={styles.objectiveProgress}><progress value={progress} max={100} aria-label={`Avance de ${objective.title}`} /><strong>{Math.round(progress)}%</strong></div></div>
           </header>
-          {visibleWork.map((activity) => <button type="button" className={styles.activityRow} key={activity.id} onClick={() => setSelectedActivity(activity.id)}><span className={styles.activityState} data-completed={Boolean(activity.completed_at)}>{activity.completed_at ? <CheckCircle2 size={20} /> : <CalendarDays size={20} />}</span><span className={styles.activityRowCopy}><strong>{activity.title}</strong><small>Vence {formatDay(activity.ends_on)}, {evidence.filter((item) => item.activity_id === activity.id).length} evidencias</small></span><span className={styles.badge} data-status={activity.completed_at ? 'approved' : 'draft'}>{activity.completed_at ? 'Completada' : 'Pendiente'}</span><ChevronRight size={16} aria-hidden="true" /></button>)}
+          {visibleWork.map((activity) => { const presentation = activityPresentation(activity); return <button type="button" className={styles.activityRow} key={activity.id} onClick={() => setSelectedActivity(activity.id)}><span className={styles.activityState} data-completed={Boolean(activity.completed_at)}>{activity.completed_at ? <CheckCircle2 size={20} /> : <CalendarDays size={20} />}</span><span className={styles.activityRowCopy}><strong>{activity.title}</strong><small>Vence {formatDay(activity.ends_on)}, {evidence.filter((item) => item.activity_id === activity.id).length} evidencias</small></span><span className={styles.badge} data-status={presentation.status}>{presentation.label}</span><ChevronRight size={16} aria-hidden="true" /></button> })}
           {visibleWork.length === 0 && <p className={styles.groupEmpty}>{work.length === 0 ? 'Aún no tiene actividades. Abre el objetivo para añadir el primer paso.' : 'No hay actividades que coincidan con estos filtros.'}</p>}
           <footer className={styles.objectiveGroupFooter}><button type="button" className="text-link" onClick={() => setSelectedObjective(objective.id)}>Ver objetivo y evidencias <ArrowRight size={15} /></button>{objective.status === 'pending_validation' && canValidate(role) && <button type="button" className="btn secondary" onClick={() => setSelectedObjective(objective.id)}>Validar objetivo</button>}</footer>
         </section>
@@ -836,7 +845,7 @@ function ActivityCard({
     <article className={styles.nested}>
       <div className={styles.row}>
         <h4>{activity.title}</h4>
-        <span className={styles.badge}>{activity.completed_at ? <><CheckCircle2 aria-hidden="true" size={13} /> Completada</> : 'Pendiente'}</span>
+        <span className={styles.badge} data-status={activityPresentation(activity).status}>{activity.completed_at ? <><CheckCircle2 aria-hidden="true" size={13} /> {activityPresentation(activity).label}</> : activityPresentation(activity).label}</span>
       </div>
       <p className={shell.meta}>
         <CalendarDays aria-hidden="true" size={13} />{' '}

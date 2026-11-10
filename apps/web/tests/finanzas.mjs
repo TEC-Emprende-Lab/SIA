@@ -66,6 +66,7 @@ try {
   assert(view.includes('onPointerDownOutside'))
   assert(view.includes('disabled={busy || !canAct}'))
   assert(!sources[0].includes("key={version}"), 'Refreshing must not remount drafts or reset list filters')
+  assert(sources[0].includes('action={coordinate ? <button className="btn primary"'), 'The first budget action stays outside the empty-state paragraph')
   const bff = await readFile(new URL('../app/lib/sia-bff.ts', import.meta.url), 'utf8')
   assert(bff.includes('await response.arrayBuffer()'))
   console.log('✓ UI carries human review, scoped revisions and manual confirmation; BFF preserves PDF bytes')
