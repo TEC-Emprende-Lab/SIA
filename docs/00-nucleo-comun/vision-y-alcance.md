@@ -53,7 +53,9 @@ Todo trafico de produccion usa HTTPS. FastAPI valida firma, emisor, audiencia y 
 
 ## Estado de implementación
 
-El alcance define el producto deseado, no certifica entregas. El corte verificable de
-código, CI, pruebas y staging está en [estado actual](../estado-actual.md). Finanzas,
-integraciones de correo/IA/tiempo real y la validación autenticada de staging siguen
-pendientes o `TBD`; no se infieren a partir del prototipo ni del smoke HTTP.
+El alcance define el producto deseado, no certifica entregas. El corte verificable está
+en [estado actual](../estado-actual.md) y en el [recorrido del 2026-11-10](../recorrido-operativo-2026-11-10.md).
+Finanzas de Prototipado responde en staging y producción para Coordinadora. Siguen
+pendientes o `TBD` la habilitación financiera de Puesta en marcha, el correo, la IA, el
+tiempo real y la validación con Gestor y Emprendedor. La fase que falta para un grupo
+real es la 9.

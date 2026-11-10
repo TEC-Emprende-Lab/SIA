@@ -2,7 +2,9 @@
 
 Rama de entrega: `feature/finanzas-ux-release`. Fuente funcional y decisiones:
 [operación de Prototipado](02-prototipado/finanzas-operacion.md).
-No es una certificación de staging/producción ni de autenticación Google real.
+No es una certificación de staging/producción ni de autenticación Google real. La
+aplicación de `013` en staging y sus límites se registran en
+[release 013](release-013-staging.md).
 
 ## Trazabilidad de aceptación
 
@@ -90,8 +92,9 @@ en `/tmp/opencode/finance-preview/`.
 ## Antes de activar
 
 1. Revisar decisiones y TBD pendientes con Coordinadora.
-2. Aplicar `alembic upgrade head` (revisión 013) en el ambiente destino mediante el migrador
-   habitual, después de respaldo/verificación operativa.
+2. Staging: la revisión `013` se aplicó el 2026-10-30; confirmar `alembic current`
+   y `alembic check` según [release 013](release-013-staging.md). El 2026-11-10 las
+   consultas de finanzas respondieron en los dos entornos; esa lectura no ejecutó Alembic.
 3. Reconstruir API/worker con lockfile actualizado (pypdf) y Web.
 4. Configurar Redis y almacenamiento privado. Sin Redis, finanzas falla cerrado
    con 503; no se realizan mutaciones.
