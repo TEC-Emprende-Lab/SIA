@@ -1,4 +1,4 @@
-.workspace { --ink: #30382c; --muted: #606b57; --line: #dfe4d7; color: var(--ink); min-width: 0; }
+.workspace { color: var(--ink); min-width: 0; }
 .heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 24px; }
 .heading h1 { margin: 0; font-size: clamp(29px, 3vw, 42px); line-height: 1.15; font-weight: 600; letter-spacing: -.035em; }
 .heading p { margin: 9px 0 0; color: var(--muted); font-size: 15px; }

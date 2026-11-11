@@ -16,3 +16,20 @@
 .emptyState { display: flex; align-items: flex-start; gap: .85rem; padding: 1.2rem; border: 1px dashed #d7dec9; border-radius: .7rem; color: #6f7863; background: #fafbf7; }.emptyIcon { display: grid; width: 2.1rem; height: 2.1rem; flex: none; place-items: center; border-radius: .55rem; color: #758250; background: #edf1e2; }.emptyIcon svg { width: 1rem; height: 1rem; }.emptyState h2 { margin: .05rem 0 0; color: #4a543d; font-size: .87rem; }.emptyState p { margin: .35rem 0 0; font-size: .77rem; line-height: 1.6; }.emptyAction { margin-top: .75rem; }
 .detailLayout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: 1.1rem; align-items: start; }.primaryColumn, .sideColumn { display: flex; flex-direction: column; gap: 1.1rem; }.summaryCard, .guidanceCard { padding: 1.1rem; border: 1px solid #e1e6d8; border-radius: .75rem; background: #fff; }.summaryCard .facts { margin-top: .75rem; grid-template-columns: 1fr; }.guidanceCard { background: #f9faf5; }.guidanceCard p { margin: .5rem 0 0; color: #6f7863; font-size: .77rem; line-height: 1.65; }.sectionHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }.sectionHeader h2 { margin: 0; }.sectionHeader p { margin: .3rem 0 0; color: #78806d; font-size: .75rem; line-height: 1.55; }.sectionAction { flex: none; }.sectionAction .button { display: inline-flex; align-items: center; gap: .4rem; }.formCompact { display: flex; flex-direction: column; gap: .85rem; }.formCompact .field input { width: 100%; }
 @media (max-width: 720px) { .page { gap: 1.15rem; }.section, .form { padding: 1rem; }.projectHero { align-items: flex-start; padding: 1.15rem; }.projectMonogram { width: 2.5rem; height: 2.5rem; }.statusBadge { display: none; }.facts { grid-template-columns: 1fr; }.pageHero, .detailHero, .listToolbar, .sectionHeader { align-items: flex-start; flex-direction: column; }.detailHero { gap: .75rem; }.detailHeroAction, .sectionAction, .pageHero .button { width: 100%; }.detailHeroAction .button, .sectionAction .button { width: 100%; justify-content: center; }.searchField { width: 100%; }.detailLayout { grid-template-columns: 1fr; }.sideColumn { display: grid; grid-template-columns: 1fr; }.listWorkspace { padding: .85rem; }.cycleTabs { width: calc(100vw - 4rem); } }
+
+/* US-PRO-001 and US-PM-001, readable project navigation and records. */
+.header h1, .pageHero h1, .detailHero h1, .projectHero h1 { color: var(--ink); letter-spacing: -.035em; }
+.intro, .meta, .cardMeta, .projectMeta, .sectionHeader p, .listToolbar p { color: var(--muted); font-size: .85rem; }
+.crumbs, .eyebrow, .fact dt { color: var(--muted); font-size: .72rem; }
+.card, .section, .form, .projectHero, .pageHero, .detailHero, .listWorkspace, .summaryCard, .guidanceCard { border-color: var(--line); border-radius: .85rem; box-shadow: none; }
+.pageHero, .detailHero, .guidanceCard { background: #fff; }
+.card:hover, .card:focus-visible { transform: none; box-shadow: none; border-color: #aebda8; background: #fcfdfb; }
+.cardTitle, .fact dd { color: var(--ink); font-size: .95rem; }
+.field { color: var(--ink); font-size: .83rem; }
+.field input, .field textarea, .field select { min-height: 2.75rem; border-radius: .55rem; font-size: .88rem; }
+.button, .buttonSecondary { min-height: 2.75rem; padding: .6rem 1rem; border-radius: .55rem; font-size: .82rem; }
+.button { border-color: var(--olive); background: var(--olive); }
+.button:hover { border-color: var(--olive-dark); background: var(--olive-dark); }
+.buttonSecondary { border-color: #cbd5c8; color: var(--olive-dark); }
+.projectTab, .cycleTab { min-height: 2.75rem; font-size: .82rem; }
+.emptyState p, .guidanceCard p, .notice { color: var(--muted); font-size: .85rem; }
