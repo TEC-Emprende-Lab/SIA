@@ -3,7 +3,7 @@
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ArrowUpRight, Bell, CalendarDays, ChevronDown, ChevronRight, CircleHelp, Compass, FileText, FolderOpen, GitCompareArrows, Home, LayoutDashboard, Menu, MessageSquare, Search, Sparkles, Target, Users, Wallet, X } from 'lucide-react'
+import { ArrowUpRight, Bell, CalendarDays, ChevronDown, ChevronRight, CircleHelp, Compass, FileText, FolderOpen, GitCompareArrows, Home, LayoutDashboard, Menu, MessageSquare, Search, Flag, Target, Users, Wallet, X } from 'lucide-react'
 import { useMe } from './authenticated-shell'
 import { SeguimientoPanel } from './seguimiento-views'
 import { MeetingsPanel } from './comunicacion-views'
@@ -19,7 +19,7 @@ import { loadProjects, PROJECT_GROUPS, readProjectSection, type Project, type Pr
 import { parseObjectiveList, parseEvidenceList, parseAmbitionList, requestSeguimiento, seguimientoUrl } from '../lib/seguimiento'
 import { canRegisterExpediente } from '../lib/expediente'
 
-const icons = { Resumen: LayoutDashboard, 'Diagnóstico 360°': Compass, Ambiciones: Sparkles, 'Objetivos y actividades': Target, Evidencias: FolderOpen, Evolución: GitCompareArrows, Informes: FileText, Reuniones: CalendarDays, 'Finanzas y compras': Wallet, Chat: MessageSquare, Equipo: Users }
+const icons = { Resumen: LayoutDashboard, 'Diagnóstico 360°': Compass, Ambiciones: Flag, 'Objetivos y actividades': Target, Evidencias: FolderOpen, Evolución: GitCompareArrows, Informes: FileText, Reuniones: CalendarDays, 'Finanzas y compras': Wallet, Chat: MessageSquare, Equipo: Users }
 const initials = (name: string) => name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()
 type SearchItem = { title: string; section: ProjectSection; id?: string }
 
@@ -132,7 +132,7 @@ export function ProjectWorkspace() {
     <a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>Saltar al contenido</a>
     {menu && <button className="sidebar-scrim" aria-label="Cerrar navegación" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>
-      <button className="brand brand-button" onClick={() => project ? navigate('Diagnóstico 360°') : setPicker(true)}><span className="brand-mark"><img src="/brand/logo.svg" alt="" /></span><span><strong>catalitec<span className="brand-period">.</span></strong><small>TEC EMPRENDE LAB</small></span></button>
+      <button className="brand brand-button" onClick={() => project ? navigate('Diagnóstico 360°') : setPicker(true)}><span className="brand-mark"><img src="/brand/logo.svg" alt="" /></span><span><strong>SIA</strong><small>TEC Emprende Lab</small></span></button>
       <button className="workspace" onClick={() => setPicker(true)}><span className="workspace-logo">{project ? initials(name) : '—'}</span><span><strong>{name}</strong><small>Espacio del proyecto</small></span><ChevronDown size={14} /></button>
       {canManageProjects && <nav aria-label="Administración" className="workspace-administration">
         <Link className="expediente-link" href="/expediente" onClick={() => setMenu(false)}>
@@ -145,9 +145,9 @@ export function ProjectWorkspace() {
     </aside>
     <main className="main-area">
       <header className="topbar"><div className="breadcrumb"><button className="icon-btn mobile-menu" aria-label="Abrir navegación" onClick={() => setMenu(true)}><Menu size={21} /></button><button className="breadcrumb-home" onClick={() => setPicker(true)}><Home size={15} /><span>Proyectos</span></button><ChevronRight size={13} /><span>{name}</span><ChevronRight size={13} /><b>{project ? route.section : 'Inicio'}</b></div><div className="top-actions"><div className="global-search"><label><Search size={17} /><input aria-label="Buscar en el proyecto" placeholder="Buscar en el proyecto…" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} /></label>{query && <button className="icon-btn search-clear" aria-label="Limpiar búsqueda del proyecto" onClick={() => setQuery('')}><X size={15} /></button>}{searching && <div className="search-results"><p className="search-scope">Objetivos, evidencias, ambiciones y secciones</p>{searchLoading && <p role="status">Buscando en el proyecto…</p>}{searchError ? <p role="alert">{searchError}</p> : matches.length ? matches.map((item) => <button key={`${item.section}/${'id' in item ? item.id ?? 'section' : 'section'}`} onClick={() => navigate(item.section, 'id' in item ? item.id : undefined)}><span>{item.title}<small>{item.section}</small></span><ChevronRight size={15} /></button>) : <p>Sin resultados para «{query}».</p>}</div>}</div><button className="icon-btn notifications" aria-label="Ver alertas" onClick={() => navigate('Alertas')}><Bell size={19} /></button><span className="top-divider" /><UserButton /></div></header>
-      <div className="project-context"><div><span className="project-symbol">{project ? initials(name) : '—'}</span><span><strong>{name}</strong><small>{project?.enrollment.program ?? 'Selecciona tu proyecto'}{project && project.cycle.name !== name ? `, ${project.cycle.name}` : null}</small></span></div><div className="project-team"><span>Acompañamos tu siguiente paso</span></div></div>
+      <div className="project-context"><div><span className="project-symbol">{project ? initials(name) : '—'}</span><span><strong>{name}</strong><small>{project?.enrollment.program ?? 'Selecciona tu proyecto'}{project && project.cycle.name !== name ? `, ${project.cycle.name}` : null}</small></span></div></div>
       <div className="page" id="main-content" tabIndex={-1}>
-        {!loaded ? <p className="loading" role="status">Preparando tu espacio de acompañamiento…</p> : error ? <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>  : !project ? <ProjectWelcome unavailable={Boolean(projectId)} hasProjects={projects.length > 0} canManage={canManageProjects} onPick={() => setPicker(true)} onRefresh={() => setRetry((value) => value + 1)} /> : <div key={`${project.cycle.id}/${route.section}/${route.id ?? ''}`}>{content()}</div>}
+        {!loaded ? <p className="loading" role="status">Cargando proyectos…</p> : error ? <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>  : !project ? <ProjectWelcome unavailable={Boolean(projectId)} hasProjects={projects.length > 0} canManage={canManageProjects} onPick={() => setPicker(true)} onRefresh={() => setRetry((value) => value + 1)} /> : <div key={`${project.cycle.id}/${route.section}/${route.id ?? ''}`}>{content()}</div>}
       </div>
       <footer className="app-footer"><span>Catalitec<span className="footer-description">Sistema de Incubación y Acompañamiento</span></span><span>Datos del expediente autorizado</span></footer>
     </main>

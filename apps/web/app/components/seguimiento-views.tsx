@@ -268,8 +268,8 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
     const upcoming = bundle.activities.filter((item) => !item.completed_at).sort((left, right) => left.ends_on.localeCompare(right.ends_on)).slice(0, 5)
     const awaiting = bundle.objectives.filter((item) => item.status === 'pending_validation')
     return <>
-      <ProjectHeading eyebrow="Un proyecto con propósito" title="Ideas que se convierten en impacto." />
-      <div className="summary-hero"><div><p className="eyebrow">{projectName}, {program}</p><h2>Acompañamos el camino.<br />Construimos el siguiente paso.</h2><p>Del primer hallazgo a la evidencia de lo que hemos logrado.</p><button className="btn secondary" onClick={() => navigate?.('Diagnóstico 360°')}>Explorar diagnóstico <ArrowRight size={16} /></button></div><div className="summary-ring" style={{ background: `conic-gradient(#e4c99a ${bundle.summary.progress_percent}%, #ffffff25 0)` }}><span><strong>{Math.round(bundle.summary.progress_percent)}%</strong><small>avance del proyecto</small></span></div></div>
+      <ProjectHeading title="Resumen del ciclo" description={`${projectName}, ${program}`} action={<button className="btn secondary" onClick={() => navigate?.('Diagnóstico 360°')}>Ver diagnóstico <ArrowRight size={16} /></button>} />
+      <div className="summary-progress"><div><span>Avance del ciclo</span><strong>{Math.round(bundle.summary.progress_percent)}%</strong></div><ProjectProgress value={bundle.summary.progress_percent} label="Avance del ciclo" /><p>Promedio de avance de los objetivos aprobados.</p></div>
       <div className="summary-grid">
         <ProjectPanel title="Lo que sigue" action={<ProjectLink onClick={() => navigate?.('Alertas')}>Ver alertas</ProjectLink>}>
           {awaiting.map((objective) => <button className="record-row" key={objective.id} onClick={() => navigate?.('Objetivos y actividades', objective.id)}><Target size={20} /><div><strong>{objective.title}</strong><p>Objetivo pendiente de aprobación, {areaName(areas, objective.area_id)}</p></div><ChevronRight size={16} /></button>)}
