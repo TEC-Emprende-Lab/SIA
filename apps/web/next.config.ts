@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 const config: NextConfig = {
+  devIndicators: false,
   async redirects() {
     return [
       // Open a cycle in the project workspace; keep expediente management reachable.

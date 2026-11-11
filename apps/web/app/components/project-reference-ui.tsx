@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 
 // Same DOM/classes as visual/prototype/src/ui.tsx, using the host React runtime.
-export function ProjectHeading({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
-  return <div className="page-heading"><div>{eyebrow && <p className="eyebrow">{eyebrow}</p>}<h1>{title}</h1>{description && <p className="muted">{description}</p>}</div><div className="heading-actions">{action}</div></div>
+export function ProjectHeading({ title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
+  return <div className="page-heading"><div><h1>{title}</h1>{description && <p className="muted">{description}</p>}</div><div className="heading-actions">{action}</div></div>
 }
 export function ProjectPanel({ title, action, children, className = '' }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return <section className={`panel ${className}`}>{title && <div className="panel-heading"><h2>{title}</h2>{action}</div>}{children}</section>

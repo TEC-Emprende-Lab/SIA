@@ -36,7 +36,7 @@ try {
   assert(!html.includes('No debe agregarse'))
   assert(html.includes('no un porcentaje de avance'))
   assert(render({ objectives: [] }).includes('Una ambición también puede esperar su momento'))
-  assert(render({ ambitions: [] }).includes('Tu siguiente gran idea empieza aquí'))
+  assert(render({ ambitions: [] }).includes('Aún no hay ambiciones'))
   assert(render({ ambitions: [{ ...ambition, description: '   ' }] }).includes('todavía no tiene una descripción'))
   const escaped = render({ ambitions: [{ ...ambition, title: '<script>unsafe()</script>', description: '<img src=x>' }] })
   assert(escaped.includes('&lt;script&gt;'))

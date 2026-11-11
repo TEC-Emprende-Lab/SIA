@@ -28,14 +28,14 @@ const columns: ColumnDef<Entrepreneurship>[] = [
       <Button
         type="button"
         variant="ghost"
-        className="-ml-3 h-8 text-xs font-semibold text-[#465037] hover:bg-[#eef2e6] hover:text-[#465037]"
+        className="-ml-3 h-8 text-xs font-semibold text-foreground hover:bg-muted hover:text-foreground"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Emprendimiento <ArrowUpDown aria-hidden="true" className="size-3" />
       </Button>
     ),
     cell: ({ row }) => (
-      <Link className="font-semibold text-[#465037] underline-offset-4 hover:text-[#68642d] hover:underline" href={`/expediente/${row.original.id}`}>
+      <Link className="font-semibold text-foreground underline-offset-4 hover:text-foreground hover:underline" href={`/expediente/${row.original.id}`}>
         {row.original.name}
       </Link>
     ),
@@ -46,13 +46,13 @@ const columns: ColumnDef<Entrepreneurship>[] = [
       <Button
         type="button"
         variant="ghost"
-        className="-ml-3 h-8 text-xs font-semibold text-[#465037] hover:bg-[#eef2e6] hover:text-[#465037]"
+        className="-ml-3 h-8 text-xs font-semibold text-foreground hover:bg-muted hover:text-foreground"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Fecha de creación <ArrowUpDown aria-hidden="true" className="size-3" />
       </Button>
     ),
-    cell: ({ row }) => <span className="text-xs text-[#78806d]">{dateFormatter.format(new Date(row.original.created_at))}</span>,
+    cell: ({ row }) => <span className="text-xs text-muted-foreground">{dateFormatter.format(new Date(row.original.created_at))}</span>,
   },
 ]
 
@@ -68,9 +68,9 @@ export function EntrepreneurshipTable({ items }: { items: Entrepreneurship[] }) 
   })
 
   return (
-    <Table className="overflow-hidden rounded-xl border border-[#e1e6d8] bg-white">
+    <Table className="border-y border-border bg-white">
       <TableCaption className="sr-only">Emprendimientos disponibles en tu alcance</TableCaption>
-      <TableHeader className="bg-[#fafbf7]">
+      <TableHeader className="bg-white">
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
