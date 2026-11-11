@@ -1,4 +1,4 @@
-.workspace { --ink: #30382c; --muted: #606b57; --line: #dfe4d7; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1fr); background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 24px; color: var(--ink); }
+.workspace { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1fr); background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 24px; color: var(--ink); }
 .visual { min-width: 0; padding: 26px; background: #f1f3ea; container-type: inline-size; }
 .visualHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .visualHeading h2, .readerHeading h2 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -.025em; line-height: 1.3; }

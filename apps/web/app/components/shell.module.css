@@ -17,15 +17,15 @@
   align-items: stretch;
   min-height: 100vh;
   position: relative;
-  background: #f8f9f5;
+  background: var(--canvas);
 }
 
 .nav {
-  width: 17.5rem;
+  width: 16.5rem;
   flex: none;
   box-sizing: border-box;
   padding: 1.65rem 1rem;
-  border-right: 1px solid #e4e7dc;
+  border-right: 1px solid var(--line);
   background: #fff;
   position: sticky;
   top: 0;
@@ -38,7 +38,7 @@
   align-items: center;
   gap: 0.7rem;
   padding: 0 0.55rem;
-  color: #2e322a;
+  color: var(--ink);
   text-decoration: none;
 }
 
@@ -49,7 +49,7 @@
   place-items: center;
   border-radius: 0.85rem 0.25rem 0.85rem 0.25rem;
   color: #fff;
-  background: #7c8041;
+  background: var(--olive);
   font-size: 1.4rem;
   font-weight: 750;
 }
@@ -67,8 +67,8 @@
 
 .wordmark small {
   margin-top: 0.3rem;
-  color: #7e866e;
-  font-size: 0.5rem;
+  color: var(--muted);
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.16em;
 }
@@ -81,7 +81,7 @@
   padding: 0.75rem;
   border: 1px solid #e4e8da;
   border-radius: 0.7rem;
-  background: #f9faf6;
+  background: #f6f8f5;
 }
 
 .identityAvatar {
@@ -110,7 +110,7 @@
 .identity strong {
   overflow: hidden;
   color: #38402e;
-  font-size: 0.72rem;
+  font-size: 0.83rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -118,19 +118,19 @@
 .identity span:not(.identityAvatar) {
   margin-top: 0.2rem;
   color: #68705d;
-  font-size: 0.7rem;
+  font-size: 0.76rem;
 }
 
 .scope {
   margin-top: 0.3rem;
   color: #879072;
-  font-size: 0.61rem;
+  font-size: 0.7rem;
 }
 
 .groupLabel {
   margin: 1.45rem 0 0.5rem;
   padding: 0 0.65rem;
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -150,7 +150,7 @@
   padding: 0.68rem 0.7rem;
   border-radius: 0.5rem;
   color: #66705a;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 550;
   text-decoration: none;
 }
@@ -171,7 +171,7 @@
 
 .link[aria-current='page'] {
   color: #566230;
-  background: #e8eddc;
+  background: #eaf0e7;
   font-weight: 700;
 }
 
@@ -207,10 +207,10 @@
 }
 
 .breadcrumb,
-.breadcrumb a { color: #8b9181; font-size: 0.76rem; }
+.breadcrumb a { color: var(--muted); font-size: 0.8rem; }
 .breadcrumb b { color: #626b54; font-weight: 650; }
-.notificationLink { display: inline-flex; align-items: center; gap: 0.35rem; color: #69725a; font-size: 0.75rem; font-weight: 650; }
-.rolePill { padding: 0.28rem 0.5rem; border: 1px solid #e0e5d5; border-radius: 0.3rem; color: #7c856d; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.notificationLink { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--olive-dark); font-size: 0.8rem; font-weight: 650; }
+.rolePill { padding: 0.3rem 0.55rem; border: 1px solid var(--line); border-radius: 0.4rem; color: var(--muted); font-size: 0.7rem; font-weight: 650; }
 
 .panel {
   margin: 0;
@@ -325,18 +325,7 @@
   border: 1px solid #dce1d1;
   border-radius: 1.25rem;
   background: #fff;
-  box-shadow: 0 1.5rem 4rem rgb(54 64 30 / 0.12);
-}
-
-.guestCard::after {
-  position: absolute;
-  right: -4rem;
-  bottom: -5rem;
-  width: 13rem;
-  height: 13rem;
-  border-radius: 50%;
-  background: #e7edd7;
-  content: '';
+  box-shadow: none;
 }
 
 .guestMark {
