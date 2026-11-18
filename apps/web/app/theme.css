@@ -1,0 +1,40 @@
+/* Shared visual language for every connected SIA view. */
+:root {
+  --sia-canvas: #f6f7f4;
+  --sia-surface: #ffffff;
+  --sia-surface-soft: #fafbf8;
+  --sia-tint: #edf3e8;
+  --sia-hover: #e1ebdb;
+  --sia-ink: #273a2f;
+  --sia-text: #43544a;
+  --sia-muted: #626d65;
+  --sia-subtle: #6e786f;
+  --sia-line: #e2e7df;
+  --sia-border: #c6d2c4;
+  --sia-accent: #315442;
+  --sia-accent-hover: #284936;
+  --sia-accent-soft: #eaf1e6;
+  --sia-progress: #567a49;
+  --sia-success: #42683b;
+  --sia-success-bg: #edf4e8;
+  --sia-warning: #886336;
+  --sia-warning-bg: #faf2e3;
+  --sia-danger: #9b392e;
+  --sia-danger-bg: #fff1ee;
+  --sia-danger-border: #eccfc8;
+  --sia-info: #456575;
+  --sia-info-bg: #edf3f5;
+  --sia-radius: 16px;
+  --sia-control-radius: 9px;
+  --sia-shadow: 0 2px 8px rgb(30 50 35 / 3%);
+}
+@media (prefers-contrast: more) {
+  :root {
+    --sia-muted: #36463b;
+    --sia-subtle: #36463b;
+    --sia-line: #8b9f8b;
+    --sia-border: #718771;
+    --sia-danger: #832b22;
+    --sia-warning: #6e4b1d;
+  }
+}

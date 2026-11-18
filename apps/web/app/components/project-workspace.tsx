@@ -3,7 +3,7 @@
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
-import { ArrowUpRight, Bell, CalendarDays, ChevronDown, ChevronRight, CircleHelp, Compass, FileText, FolderOpen, GitCompareArrows, Home, LayoutDashboard, Menu, MessageSquare, Search, Flag, Target, Users, Wallet, X } from 'lucide-react'
+import { ArrowUpRight, Bell, CalendarDays, ChartNoAxesCombined, ChevronDown, ChevronRight, CircleHelp, Compass, FileText, FolderClosed, FolderOpen, Home, ListTodo, Menu, MessagesSquare, PanelsTopLeft, Search, Flag, Users, Wallet, X } from 'lucide-react'
 import { useMe } from './authenticated-shell'
 import { SeguimientoPanel } from './seguimiento-views'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
@@ -16,7 +16,7 @@ import { parseObjectiveList, parseEvidenceList, parseAmbitionList, requestSeguim
 import { canRegisterExpediente } from '../lib/expediente'
 import { canViewTeam } from '../lib/administracion'
 
-const icons = { Resumen: LayoutDashboard, 'Diagnóstico 360°': Compass, Ambiciones: Flag, 'Objetivos y actividades': Target, Evidencias: FolderOpen, Evolución: GitCompareArrows, Informes: FileText, Reuniones: CalendarDays, 'Finanzas y compras': Wallet, Chat: MessageSquare, Equipo: Users }
+const icons = { Resumen: PanelsTopLeft, 'Diagnóstico 360°': Compass, Ambiciones: Flag, 'Objetivos y actividades': ListTodo, Evidencias: FolderClosed, Evolución: ChartNoAxesCombined, Informes: FileText, Reuniones: CalendarDays, 'Finanzas y compras': Wallet, Chat: MessagesSquare, Equipo: Users }
 const MeetingsPanel = lazy(() => import('./comunicacion-views').then((module) => ({ default: module.MeetingsPanel })))
 const ChannelsPanel = lazy(() => import('./canales-views').then((module) => ({ default: module.ChannelsPanel })))
 const BandejaView = lazy(() => import('./bandeja-views').then((module) => ({ default: module.BandejaView })))
@@ -143,6 +143,7 @@ export function ProjectWorkspace() {
     navigate('Resumen')
   }
   const name = project?.entrepreneurship.name ?? 'Espacio del proyecto'
+  const cycleLabel = project ? [project.enrollment.program, project.cycle.name !== name ? project.cycle.name : ''].filter(Boolean).join(' · ') : 'Seleccionar proyecto'
   const canManageProjects = canRegisterExpediente(me.role)
   const showTeam = canViewTeam(me.role)
   const projectGroups = PROJECT_GROUPS.map((group) => ({
@@ -179,22 +180,6 @@ export function ProjectWorkspace() {
       </div>}
       {!loading && missing.length === 0 && matches.length === 0 && <p>Sin resultados para «{query}».</p>}
     </>
-  }
-  function projectContext() {
-    if (!loaded) {
-      return <div aria-hidden="true">
-        <span className="project-symbol" />
-        <div className="project-context-placeholder"><SkeletonBar /><SkeletonBar size="text" /></div>
-      </div>
-    }
-    let symbol = '—'
-    let subtitle = 'Selecciona tu proyecto'
-    if (project) {
-      symbol = initials(name)
-      subtitle = project.enrollment.program
-      if (project.cycle.name !== name) subtitle += `, ${project.cycle.name}`
-    }
-    return <div><span className="project-symbol">{symbol}</span><span><strong>{name}</strong><small>{subtitle}</small></span></div>
   }
   function projectLoadError() {
     return <div className="project-recovery">
@@ -260,14 +245,14 @@ export function ProjectWorkspace() {
     {menu && <button className="sidebar-scrim" aria-label="Cerrar navegación" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>
       <button className="brand brand-button" onClick={() => project ? navigate('Diagnóstico 360°') : setPicker(true)}><span className="brand-mark"><img src="/brand/logo.svg" alt="" /></span><span><strong>SIA</strong><small>TEC Emprende Lab</small></span></button>
-      <button className="workspace" onClick={() => setPicker(true)}><span className="workspace-logo">{project ? initials(name) : '—'}</span><span><strong>{name}</strong><small>Espacio del proyecto</small></span><ChevronDown size={14} /></button>
+      <button className="workspace" aria-label={!loaded ? 'Cargando proyectos' : undefined} onClick={() => setPicker(true)}><span className="workspace-logo">{project ? initials(name) : '—'}</span>{loaded ? <span><strong>{name}</strong><small title={cycleLabel}>{cycleLabel}</small></span> : <span className="workspace-placeholder" aria-hidden="true"><SkeletonBar /><SkeletonBar size="text" /></span>}<ChevronDown size={14} /></button>
       {canManageProjects && <nav aria-label="Administración" className="workspace-administration">
         <Link className="expediente-link" href="/expediente" onClick={() => setMenu(false)}>
           <FolderOpen size={18} strokeWidth={1.7} aria-hidden="true" />
           <span>Expedientes</span>
         </Link>
       </nav>}
-      <nav aria-label="Navegación del proyecto">{projectGroups.map((group, index) => <div className="nav-group" key={group.label}>{index > 0 && <p className="nav-label">{group.label}</p>}{group.sections.map((section) => { const Icon = icons[section]; const current = Boolean(project) && route.section === section; return <button key={section} onClick={() => project ? navigate(section) : setPicker(true)} className={current ? 'active' : ''} aria-current={current ? 'page' : undefined}><Icon size={18} strokeWidth={1.7} /><span>{section}</span>{current && <i />}</button> })}</div>)}</nav>
+      <nav aria-label="Navegación del proyecto">{projectGroups.map((group, index) => <div className="nav-group" key={group.label}>{index > 0 && <p className="nav-label">{group.label}</p>}{group.sections.map((section) => { const Icon = icons[section]; const current = Boolean(project) && route.section === section; return <button key={section} onClick={() => project ? navigate(section) : setPicker(true)} className={current ? 'active' : ''} aria-current={current ? 'page' : undefined}><span className="nav-icon" aria-hidden="true"><Icon size={18} strokeWidth={1.7} /></span><span>{section}</span>{current && <i />}</button> })}</div>)}</nav>
       <div className="sidebar-bottom"><button className="help-link" onClick={() => setHelp(true)}><CircleHelp size={17} />Guía de acompañamiento<ArrowUpRight size={14} /></button><div className="profile"><span className="profile-avatar"><UserButton appearance={{ elements: { avatarBox: { width: '38px', height: '38px' }, userButtonTrigger: { padding: 0 } } }} /></span><div className="profile-details"><strong title={me.email}>{me.email}</strong><small>{me.role}</small></div></div></div>
     </aside>
     <main className="main-area">
@@ -279,10 +264,9 @@ export function ProjectWorkspace() {
             {query && <button className="icon-btn search-clear" aria-label="Limpiar búsqueda del proyecto" onClick={() => setQuery('')}><X size={15} /></button>}
             {searching && <div className="search-results"><p className="search-scope">Objetivos, evidencias, ambiciones y secciones</p>{searchContent()}</div>}
           </div>
-          <Link href="/bandeja" className="icon-btn notifications" aria-label="Abrir bandeja"><Bell size={19} aria-hidden="true" /></Link><span className="top-divider" /><UserButton />
+          <Link href="/bandeja" className="icon-btn notifications" aria-label="Abrir bandeja"><Bell size={19} aria-hidden="true" /></Link>
         </div>
       </header>
-      <div className="project-context">{projectContext()}</div>
       <div className="page" id="main-content" tabIndex={-1}>
         {workspaceContent()}
       </div>

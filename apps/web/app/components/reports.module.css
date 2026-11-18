@@ -3,9 +3,9 @@
 .list { display: grid; gap: .85rem; margin: 0; padding: 0; list-style: none; }
 .source { display: grid; gap: .35rem; padding: .8rem; border: 1px solid var(--line); border-radius: .5rem; }
 .source p { margin: 0; }
-.link { width: fit-content; color: #515154; text-decoration: underline; text-underline-offset: .2em; }
-.link:focus-visible, .references summary:focus-visible { outline: 2px solid #515154; outline-offset: 3px; }
-.references { color: #6e6e73; font-size: .75rem; }
+.link { width: fit-content; color: var(--sia-text); text-decoration: underline; text-underline-offset: .2em; }
+.link:focus-visible, .references summary:focus-visible { outline: 2px solid var(--sia-text); outline-offset: 3px; }
+.references { color: var(--sia-muted); font-size: .75rem; }
 .references summary { width: fit-content; cursor: pointer; }
 .references dl { margin: .5rem 0 0; }
 .references dt { font-weight: 600; }
@@ -26,3 +26,7 @@
 @media (max-width: 760px) {
   .loadingReportInfo { width: 100%; }
 }
+
+
+.source { padding: 16px; border-radius: 12px; background: var(--sia-surface-soft); }
+.link { color: var(--sia-accent); }
