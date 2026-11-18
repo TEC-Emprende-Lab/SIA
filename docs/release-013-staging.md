@@ -1,9 +1,11 @@
 # Release de la migración 013 en staging
 
 Registro resumido de la aplicación de Finanzas en staging. **No certifica producción ni
-la validación funcional por roles.** La evidencia original proviene de la rama
-`fix/alembic-012-013-readiness` (commits `155d503` y `aaf48f4`), que no está fusionada
-en `main`; se conserva aquí para no perder trazabilidad.
+la validación funcional por roles.** La [evidencia original][archivo] se conserva en
+la etiqueta `archive/alembic-012-013-readiness` (commits `155d503` y `aaf48f4`).
+El puente `012/013` fue temporal: no incorporarlo a la API que requiere `013`.
+
+[archivo]: https://github.com/TEC-Emprende-Lab/SIA/blob/aaf48f4bb973251f5aa72f02667b6689cec510d5/docs/release-inmutable-013.md
 
 ## Alcance
 
@@ -49,6 +51,26 @@ en `main`; se conserva aquí para no perder trazabilidad.
 3. Recorrer Finanzas y los módulos existentes con los tres roles, sin usar datos de
    producción.
 4. Documentar backups, restauración y rollback con evidencia independiente.
+
+## Verificar la imagen y la recuperación en próximos despliegues
+
+Esta lista recupera criterios del ensayo original; no confirma que el proceso ya esté
+automatizado ni autoriza un despliegue.
+
+1. **Identificar la imagen.** Registrar el commit aprobado, la plataforma y el digest
+   del manifiesto OCI. Para una imagen multiplataforma, registrar también el manifiesto
+   de la plataforma elegida. Verificar la procedencia firmada del constructor de CI;
+   una etiqueta con el SHA de Git no demuestra qué se construyó.
+2. **Ensayar la recuperación.** Confirmar la base de destino y evitar migraciones
+   concurrentes. Verificar la restauración en un entorno aislado y guardar el
+   respaldo fuera del servidor con la clave bajo custodia separada. Conservar
+   la imagen anterior y comprobar su compatibilidad con el esquema antes de
+   considerarla una opción de reversión.
+3. **Promover el mismo artefacto.** Si el despliegue incluye una migración, usar la
+   misma imagen por digest y plataforma para migrar y servir la API. Registrar el
+   ID de despliegue y comprobar que el ID de imagen del contenedor coincide con el
+   digest de configuración OCI del manifiesto seleccionado, no con el digest del
+   manifiesto. Validar la revisión de Alembic y `/readyz` antes de publicar la Web.
 
 Ver también [finanzas-migracion](finanzas-migracion.md),
 [finanzas-verificacion](finanzas-verificacion.md) y
