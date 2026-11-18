@@ -193,6 +193,9 @@ try {
     export default {}
     export { useMe, setRole } from './panels.mjs'
     export const LoadMore = () => null
+    export const LoadingRows = () => null
+    export const LoadingState = () => null
+    export const SkeletonBar = () => null
     export const usePagedList = () => ({ state: { status: 'forbidden', message: 'No autorizado para este ámbito' } })
     export const formatDateTime = () => ''
     export const channelUrl = () => ''
