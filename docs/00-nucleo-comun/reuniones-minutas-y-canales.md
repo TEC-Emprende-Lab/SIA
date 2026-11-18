@@ -6,6 +6,20 @@ Las reuniones se realizan en herramientas externas, como Zoom o Google Meet. SIA
 
 No se prioriza almacenar grabaciones o videos de reuniones por su costo. La retencion o referencia excepcional de grabaciones esta `TBD`.
 
+**Historia transversal «Consultar una reunión sin editarla» (sin identificador
+previo):** la ficha muestra sus datos y permite abrir minuta y acuerdos sin
+mostrar los formularios de edición o revocación de la reunión. Gestor y
+Coordinadora abren cada formulario de forma explícita y pueden cancelarlo sin
+enviar cambios. Las reuniones revocadas siguen visibles en lectura. No cambian
+la observación obligatoria, la auditoría ni los permisos de la API.
+
+**Historia transversal «Consultar el calendario del ciclo» (sin identificador
+previo):** cualquier participante autorizado puede alternar entre semana y mes,
+navegar por fecha y consultar las reuniones de un día en hora de Costa Rica. Las
+semanas comienzan en lunes. El calendario utiliza las reuniones guardadas del
+ciclo y excluye las revocadas, que siguen disponibles en el historial. La
+consulta no crea reuniones ni modifica los permisos de administración.
+
 ## Minutas
 
 Una minuta puede redactarse manualmente o generarse como borrador desde una transcripcion disponible. Toda minuta generada con IA requiere revision humana de Gestor o Coordinadora antes de publicarse. La IA no inventa acuerdos, responsables ni fechas.
