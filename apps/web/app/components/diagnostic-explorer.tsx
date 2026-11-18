@@ -8,7 +8,7 @@ import styles from './diagnostic-explorer.module.css'
 const faces = ['top', 'right', 'back', 'left', 'front', 'bottom']
 const viewpoints = [{ x: -90, y: 0 }, { x: 0, y: -90 }, { x: 0, y: -180 }, { x: 0, y: 90 }, { x: 0, y: 0 }, { x: 90, y: 0 }]
 const icons = [Compass, Layers, Users, Megaphone, Package, Scale]
-const palette = ['#dedee3', '#d2d2d7', '#b8b8bd', '#e8e8ed', '#f5f5f7', '#c5c5ca']
+const palette = ['#d6e5cb', '#c8d9ce', '#e6e9db', '#cbdedb', '#ebdfcb', '#d6ddd0']
 const home = { x: -24, y: -34 }
 const nearestTurn = (target: number, current: number) => target + Math.round((current - target) / 360) * 360
 

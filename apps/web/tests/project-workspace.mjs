@@ -146,7 +146,7 @@ try {
     setRole(role)
     const html = renderToStaticMarkup(createElement(ProjectWorkspace))
     assert.match(html, /class="sr-only" role="status">Cargando proyectos…<\/span><div aria-hidden="true"><div class="project-page-loading">/)
-    assert.match(html, /class="project-context"><div aria-hidden="true">/)
+    assert.match(html, /class="workspace-placeholder" aria-hidden="true">/)
     assert(!html.includes('Aún no tienes proyectos asignados'))
     const administration = html.match(/<nav aria-label="Administración"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
     const projectNav = html.match(/<nav aria-label="Navegación del proyecto"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
