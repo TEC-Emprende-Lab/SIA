@@ -12,8 +12,8 @@ export function ProjectWelcome({ unavailable, hasProjects, canManage, onPick, on
   return (
     <section className="workspace-welcome" aria-labelledby="workspace-welcome-title">
       <span className="welcome-icon" aria-hidden="true"><FolderOpen size={28} strokeWidth={1.5} /></span>
-      <p className="eyebrow">Tu espacio de acompañamiento</p>
-      <h1 id="workspace-welcome-title">{unavailable ? 'Este proyecto no está disponible' : hasProjects ? 'Elige dónde continuar' : canManage ? 'Todo comienza con un proyecto' : 'Tu próximo proyecto aparecerá aquí'}</h1>
+      <p className="eyebrow">Proyectos</p>
+      <h1 id="workspace-welcome-title">{unavailable ? 'Este proyecto no está disponible' : hasProjects ? 'Abre un proyecto' : canManage ? 'Registra tu primer proyecto' : 'Aún no tienes proyectos asignados'}</h1>
       <p className="welcome-description">{unavailable ? 'No encontramos ese ciclo en los proyectos autorizados para tu cuenta. Puedes elegir otro proyecto o volver a consultar.' : hasProjects ? 'Abre un ciclo para ver su diagnóstico, organizar el trabajo y conversar con el equipo.' : canManage ? 'Registra un emprendimiento y su ciclo de programa desde Expedientes. Si ya existe un expediente, puedes continuar su registro allí.' : 'Cuando tengas una asignación vigente a un emprendimiento con un ciclo de programa, podrás consultar su trabajo desde este espacio.'}</p>
       <div className="welcome-actions">
         {hasProjects && <button className="btn primary" onClick={onPick}>Elegir proyecto <ArrowUpRight size={16} /></button>}

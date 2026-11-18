@@ -10,6 +10,11 @@
     "typecheck": "pnpm --filter @sia/web typecheck && pnpm --filter @sia/contracts typecheck",
     "contract:check": "pnpm --filter @sia/contracts check"
   },
+  "pnpm": {
+    "overrides": {
+      "@clerk/shared@4": "4.44.1"
+    }
+  },
   "devDependencies": {
     "openapi-typescript": "^7.12.0"
   }

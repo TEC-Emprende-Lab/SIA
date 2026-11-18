@@ -1,9 +1,10 @@
 'use client'
 
-import { useAuth } from '@clerk/nextjs'
+import { SignOutButton, useAuth } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { Bell, FolderOpen, Home, Mail, Users, type LucideIcon } from 'lucide-react'
 
 import {
   identityForbiddenMessage,
@@ -15,15 +16,17 @@ import {
 import { canOpenSection, navigationGroups, ROLE_SCOPE, sectionForPath } from '../lib/navigation'
 import styles from './shell.module.css'
 import { SessionHeader } from './session-header'
+import { SiaBrand } from './sia-brand'
+import { PublicHome } from './public-home'
 
 const ReadyIdentityContext = createContext<Me | null>(null)
 
-const NAVIGATION_ICONS: Record<string, string> = {
-  Inicio: '⌂',
-  Expediente: '▣',
-  Bandeja: '◉',
-  Invitaciones: '✉',
-  Usuarios: '♙',
+const NAVIGATION_ICONS: Record<string, LucideIcon> = {
+  Inicio: Home,
+  Expediente: FolderOpen,
+  Bandeja: Bell,
+  Invitaciones: Mail,
+  Usuarios: Users,
 }
 
 export function useMe(): Me {
@@ -67,6 +70,7 @@ function IdentityStatus({ state }: { state: Exclude<IdentityState, { status: 'lo
     return (
       <SessionNotice>
         <p>{identityForbiddenMessage()}</p>
+        <SignOutButton redirectUrl="/sign-in"><button className="btn secondary">Usar otra cuenta</button></SignOutButton>
       </SessionNotice>
     )
   }
@@ -78,33 +82,7 @@ function IdentityStatus({ state }: { state: Exclude<IdentityState, { status: 'lo
 }
 
 export function SignedOutNotice() {
-  return (
-    <main className={styles.guest}>
-      <section className={styles.guestHero}>
-        <p className={styles.guestEyebrow}>Catalitec de TEC Emprende Lab</p>
-        <h1>SIA acompaña el avance que sí deja evidencia.</h1>
-        <p className={styles.guestLead}>
-          Un espacio para organizar el trabajo de cada emprendimiento, sus acuerdos y los aprendizajes de cada ciclo.
-        </p>
-        <div className={styles.guestSteps}>
-          <Link className={styles.guestAction} href="/sign-in">Iniciar sesión</Link>
-          <Link className={`${styles.guestAction} ${styles.guestActionSecondary}`} href="/sign-up">Registrarse</Link>
-          <Link className={`${styles.guestAction} ${styles.guestActionSecondary}`} href="/sign-in?redirect_url=/expediente">Abrir proyecto autorizado</Link>
-        </div>
-      </section>
-      <aside className={styles.guestCard}>
-        <div className={styles.guestMark} aria-hidden="true">S</div>
-        <p className={styles.guestCardEyebrow}>Sistema de Incubación y Acompañamiento</p>
-        <h2>Tu espacio de trabajo está listo.</h2>
-        <p>
-          Inicia sesión para consultar los emprendimientos y ciclos que tienes asignados.
-        </p>
-        <p className={styles.guestNote}>
-          El primer acceso requiere una invitación vigente con el mismo correo verificado.
-        </p>
-      </aside>
-    </main>
-  )
+  return <PublicHome />
 }
 
 export function WorkspaceHome() {
@@ -202,13 +180,7 @@ export function AuthenticatedShell({ children, chrome = true }: { children: Reac
           Saltar al contenido
         </a>
         <aside className={styles.nav}>
-          <Link href="/" className={styles.wordmark} aria-label="Inicio de SIA">
-            <span className={styles.brandMark}>S</span>
-            <span>
-              <strong>SIA</strong>
-              <small>TEC EMPRENDE LAB</small>
-            </span>
-          </Link>
+          <SiaBrand />
           <div className={styles.identity}>
             <span className={styles.identityAvatar} aria-hidden="true">{state.me.email.slice(0, 1).toUpperCase()}</span>
             <div>
@@ -220,7 +192,7 @@ export function AuthenticatedShell({ children, chrome = true }: { children: Reac
           <nav aria-label="Navegación SIA">
             <div className={styles.links}>
               <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} className={styles.link}>
-                <span aria-hidden="true">{NAVIGATION_ICONS.Inicio}</span>
+                <Home size={17} strokeWidth={1.6} aria-hidden="true" />
                 Inicio
               </Link>
             </div>
@@ -230,6 +202,7 @@ export function AuthenticatedShell({ children, chrome = true }: { children: Reac
                 <div className={styles.links}>
                   {group.sections.map((item) => {
                     const current = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                    const Icon = NAVIGATION_ICONS[item.label] ?? FolderOpen
                     return (
                       <Link
                         key={item.href}
@@ -237,7 +210,7 @@ export function AuthenticatedShell({ children, chrome = true }: { children: Reac
                         className={styles.link}
                         aria-current={current ? 'page' : undefined}
                       >
-                        <span aria-hidden="true">{NAVIGATION_ICONS[item.label] ?? '▣'}</span>
+                        <Icon size={17} strokeWidth={1.6} aria-hidden="true" />
                         {item.label}
                       </Link>
                     )
@@ -255,7 +228,7 @@ export function AuthenticatedShell({ children, chrome = true }: { children: Reac
             </div>
             <div className={styles.topActions}>
               <Link href="/bandeja" className={styles.notificationLink} aria-label="Abrir bandeja">
-                ◉<span>Bandeja</span>
+                <Bell size={17} strokeWidth={1.6} aria-hidden="true" /><span>Bandeja</span>
               </Link>
               <span className={styles.rolePill}>{role}</span>
             </div>

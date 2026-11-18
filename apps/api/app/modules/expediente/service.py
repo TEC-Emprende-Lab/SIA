@@ -21,6 +21,7 @@ from app.modules.expediente.policy import (
     ensure_can_assign_role,
     ensure_can_manage_entrepreneurship,
 )
+from app.schemas.expediente import ActiveAssignmentOut
 
 
 def _is_assignment_duplicate(exc: IntegrityError, *, cycle: bool) -> bool:
@@ -325,6 +326,38 @@ async def list_cycles(
             )
         ).all()
     )
+
+
+async def list_active_assignments(
+    db: AsyncSession,
+    actor: User,
+    scope: Entrepreneurship | ProgramCycle,
+    limit: int,
+    offset: int,
+) -> list[ActiveAssignmentOut]:
+    if actor.role not in {"Coordinadora", "Gestor"}:
+        raise HTTPException(status_code=403, detail="No autorizado para consultar el equipo")
+    model: type[EntrepreneurshipAssignment] | type[ProgramCycleAssignment]
+    if isinstance(scope, ProgramCycle):
+        await ensure_can_access_cycle(db, actor, scope)
+        model = ProgramCycleAssignment
+        belongs_to_scope = model.program_cycle_id == scope.id
+    else:
+        await ensure_can_manage_entrepreneurship(db, actor, scope.id)
+        model = EntrepreneurshipAssignment
+        belongs_to_scope = model.entrepreneurship_id == scope.id
+    rows = await db.execute(
+        select(model.id, User.email, model.role, model.created_at)
+        .join(User, User.id == model.user_id)
+        .where(belongs_to_scope, model.revoked_at.is_(None), User.role == model.role)
+        .order_by(model.created_at, model.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    return [
+        ActiveAssignmentOut(id=row.id, email=row.email, role=row.role, created_at=row.created_at)
+        for row in rows
+    ]
 
 
 async def revoke_assignment(

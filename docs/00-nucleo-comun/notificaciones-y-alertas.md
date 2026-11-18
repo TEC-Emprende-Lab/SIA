@@ -12,3 +12,9 @@ resuelven con autorización backend; hoy las menciones son el disparador impleme
 La periodicidad de seguimiento, las reglas de escalamiento, el criterio de cierre y las metricas definitivas del dashboard estan `TBD`. Una alerta de informe vencido recuerda su preparacion; no crea, aprueba ni emite un informe automaticamente.
 
 Las alertas y notificaciones registran tipo, emprendimiento o ciclo relacionado, destinatario, fecha de creacion y lectura o resolucion cuando corresponda.
+
+**Historia transversal «Consultar mi bandeja» (sin identificador previo):** como
+usuario autenticado, puedo abrir mi bandeja personal desde la campana o desde
+Expedientes sin tener que elegir un ciclo. Si no tengo alertas ni notificaciones,
+la pantalla muestra una bandeja vacía. No cambia el filtrado de destinatario ni
+el alcance aplicado por la API.

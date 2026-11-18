@@ -26,12 +26,14 @@ from app.modules.expediente.service import (
     get_cycle,
     get_enrollment,
     get_entrepreneurship,
+    list_active_assignments,
     list_cycles,
     list_enrollments,
     list_entrepreneurships,
     revoke_assignment,
 )
 from app.schemas.expediente import (
+    ActiveAssignmentOut,
     AssignmentCreate,
     AssignmentOut,
     EntrepreneurshipCreate,
@@ -94,6 +96,19 @@ async def post_enrollment(
     )
 
 
+@router.get("/{entrepreneurship_id}/assignments", response_model=list[ActiveAssignmentOut])
+async def get_entrepreneurship_assignments(
+    entrepreneurship_id: UUIDString,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> list[ActiveAssignmentOut]:
+    return await list_active_assignments(
+        db, user, await get_entrepreneurship(db, entrepreneurship_id), limit, offset
+    )
+
+
 @router.post("/{entrepreneurship_id}/assignments", response_model=AssignmentOut, status_code=201)
 async def post_entrepreneurship_assignment(
     entrepreneurship_id: UUIDString,
@@ -119,6 +134,17 @@ async def post_cycle(
     enrollment = await get_enrollment(db, enrollment_id)
     await ensure_can_manage_entrepreneurship(db, user, enrollment.entrepreneurship_id)
     return await create_cycle(db, user, enrollment, payload.name)
+
+
+@router.get("/cycles/{cycle_id}/assignments", response_model=list[ActiveAssignmentOut])
+async def get_cycle_assignments(
+    cycle_id: UUIDString,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> list[ActiveAssignmentOut]:
+    return await list_active_assignments(db, user, await get_cycle(db, cycle_id), limit, offset)
 
 
 @router.post("/cycles/{cycle_id}/assignments", response_model=AssignmentOut, status_code=201)

@@ -13,6 +13,7 @@ import { MeetingsPanel } from './comunicacion-views'
 import { EntrepreneurshipTable } from './entrepreneurship-table'
 import { CycleWorkspaceTabs, ProjectWorkspaceTabs } from './project-workspace-tabs'
 import { SeguimientoPanel } from './seguimiento-views'
+import { canViewTeam } from '../lib/administracion'
 import {
   Dialog,
   DialogContent,
@@ -892,6 +893,16 @@ function CycleWorkspace({
   entrepreneurshipName: string
   program: string
 }) {
+  const me = useMe()
+  const tabs = [
+    { value: 'resumen', label: 'Resumen', content: <SeguimientoPanel cycleId={cycle.id} entrepreneurshipId={entrepreneurshipId} program={program} view="summary" /> },
+    { value: 'seguimiento', label: 'Objetivos y actividades', content: <SeguimientoPanel cycleId={cycle.id} program={program} /> },
+    { value: 'reuniones', label: 'Reuniones', content: <MeetingsPanel cycleId={cycle.id} program={program} /> },
+    { value: 'canales', label: 'Canales', content: <ChannelsPanel entrepreneurshipId={entrepreneurshipId} cycleId={cycle.id} /> },
+  ]
+  if (canViewTeam(me.role)) {
+    tabs.push({ value: 'equipo', label: 'Equipo', content: <AssignmentPanel scope={{ kind: 'cycle', id: cycle.id }} /> })
+  }
   return (
     <div className={styles.cycleWorkspaceContent}>
       <DetailHero
@@ -901,15 +912,7 @@ function CycleWorkspace({
         monogram={cycle.name}
       />
       <Facts rows={[{ term: 'Programa', value: program }, { term: 'Creado', value: formatDateTime(cycle.created_at) }]} />
-      <ProjectWorkspaceTabs
-        tabs={[
-          { value: 'resumen', label: 'Resumen', content: <SeguimientoPanel cycleId={cycle.id} entrepreneurshipId={entrepreneurshipId} program={program} view="summary" /> },
-          { value: 'seguimiento', label: 'Objetivos y actividades', content: <SeguimientoPanel cycleId={cycle.id} program={program} /> },
-          { value: 'reuniones', label: 'Reuniones', content: <MeetingsPanel cycleId={cycle.id} program={program} /> },
-          { value: 'canales', label: 'Canales', content: <ChannelsPanel entrepreneurshipId={entrepreneurshipId} cycleId={cycle.id} /> },
-          { value: 'equipo', label: 'Equipo', content: <AssignmentPanel scope={{ kind: 'cycle', id: cycle.id }} /> },
-        ]}
-      />
+      <ProjectWorkspaceTabs tabs={tabs} />
     </div>
   )
 }

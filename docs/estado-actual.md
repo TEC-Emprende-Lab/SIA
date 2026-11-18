@@ -1,7 +1,21 @@
 # Estado actual verificable
 
-**Corte del repositorio: 2026-11-04. Revisión documental: 2026-11-06.** Este documento
-describe el estado observado en el repositorio local sincronizado con el remoto, no una
+## Actualización de código — 2026-11-18
+
+- [PR #51](https://github.com/TEC-Emprende-Lab/SIA/pull/51): Equipo por ámbito,
+  orientación de Chat y primer acceso con Google, Bandeja sin ciclo y Finanzas
+  móvil. Se verificó en staging con Coordinadora, Gestor y Emprendedor; la Web
+  servía `9c70d24` y la API `e53ef3a`. Se revocaron las asignaciones temporales.
+- [PR #52](https://github.com/TEC-Emprende-Lab/SIA/pull/52): calendario semanal
+  y mensual, y formularios de Reuniones separados de la lectura. Solo cambia la Web.
+- El esquema `013` se verificó en ambos entornos; la nueva API de staging no
+  requiere migraciones. La aceptación de un ciclo completo y la prueba de
+  restauración siguen pendientes.
+
+## Corte histórico — 2026-11-10
+
+**Corte del repositorio publicado: 2026-11-04. Lectura de entornos: 2026-11-10.** Este documento
+describe el estado observado en los entornos y en el remoto, no una
 certificación de que el MVP esté terminado. En caso de conflicto sobre requisitos,
 prevalecen los documentos de programa y el núcleo común según `AGENTS.md`.
 
@@ -13,12 +27,12 @@ consultarse el SHA correspondiente en GitHub Actions.
 ## Referencias del corte
 
 - `develop`: `e07e6dc` (`fix(web): alinear perfil y traducir acceso`).
-- `main`: `6eae158` (`Merge pull request #49 from TEC-Emprende-Lab/develop`).
-- `main` contiene el mismo producto que `develop` en este corte.
+- `main` publicado: `6eae158` (`Merge pull request #49 from TEC-Emprende-Lab/develop`).
+- `origin/main` posterior, no desplegado: `95b6f77` (2026-11-06, documentación).
 - Integraciones recientes: Finanzas de Prototipado (PR #44/#45), pantallas vacías y
   acceso a Expedientes (PR #42/#43/#47) y perfil/idioma (PR #49).
-- No se modificaron base de datos, entornos ni configuración durante esta revisión
-  documental.
+- La lectura del 2026-11-10 no escribió datos ni cambió configuración. El detalle está
+  en [recorrido operativo](recorrido-operativo-2026-11-10.md).
 
 ## Implementado en código
 
@@ -46,24 +60,31 @@ consultarse el SHA correspondiente en GitHub Actions.
   [finanzas-verificacion](finanzas-verificacion.md)).
 - Las correcciones de perfil/idioma y Expedientes del 2026-11-04 reportan suite Web,
   lint, TypeScript y build locales correctos. No sustituyen el recorrido autenticado.
-- Staging `https://sia.dev.neuroboard.app`: login Google → Clerk → SIA verificado el
-  2026-10-28 con rol Coordinadora. El registro de [release 013](release-013-staging.md)
-  documenta la aplicación de la migración `013` y la comprobación de `/readyz`; la
-  verificación funcional por roles sigue pendiente.
-- Producción `https://sia.neuroboard.app`: el 2026-10-28 solo se comprobó login y rol;
-  no se crearon datos ni se validaron módulos.
+- Staging `https://sia.dev.neuroboard.app`: el 2026-11-10, Coordinadora abrió el ciclo
+  QA del 2026-10-28 y Finanzas. Seguimiento con avance 0 %, resumen financiero 200 en
+  CRC y PDF 200. Clerk sigue en la instancia Development. El registro de
+  [release 013](release-013-staging.md) documenta la migración en staging; esta lectura
+  no ejecutó `alembic current`.
+- Producción `https://sia.neuroboard.app`: el 2026-11-10, Coordinadora entró con
+  `clerk.neuroboard.app`. Emprendimientos, resumen de finanzas y PDF respondieron 200
+  y estaban vacíos. Expedientes ofrece el alta por nombre; Invitaciones ofrece
+  Coordinadora, Gestor y Emprendedor. No se envió ningún formulario.
 
 ## Límites y siguientes verificaciones
 
-- Un smoke HTTP, CI verde o una prueba local no sustituyen una sesión autenticada ni
-  certifican permisos en staging o producción.
-- Faltan recorridos publicados por rol (Coordinadora, Gestor y Emprendedor) para
-  documentos, informes/PDF, diagnóstico, ambiciones, Kanban con arrastre, carpetas y
-  movimiento de evidencias, minutas/acuerdos y Finanzas de punta a punta.
-- Quedan pendientes la verificación independiente de migraciones en staging, la
-  observabilidad, los backups, el rollback y un endpoint de versión/SHA desplegado.
-- Configurar y verificar `SIA_STORAGE_*` para archivos privados y respaldos financieros;
-  Redis para Finanzas; y el worker desplegado con generación real de PDF.
+- Un smoke HTTP o una lectura de Coordinadora no certifica Gestor, Emprendedor ni un
+  ciclo completo.
+- Faltan recorridos de Gestor y Emprendedor para documentos, informes técnicos,
+  diagnóstico, ambiciones, Kanban con arrastre, carpetas de evidencias, minutas y
+  Finanzas de punta a punta. La Fase 9 sigue abierta: con eso no se opera un grupo real
+  de punta a punta.
+- `alembic current` no se leyó el 2026-11-10. Los dos Postgres están healthy y no tienen
+  respaldos programados. Sentinel está apagado. Hay imágenes locales anteriores de la
+  Web de producción; no se probó el rollback.
+- `SIA_STORAGE_*` y Redis están declarados en las APIs, y Garage está healthy. No se
+  cargó ni descargó un archivo en esta lectura. Los workers publicados son del
+  2026-10-28, anteriores a la imagen de finanzas; el PDF de finanzas lo respondió la
+  API, no ese worker.
 - IA real de minutas, Resend, Socket.IO/Redis, adjuntos de chat, grabaciones y taxonomía
   final de canales siguen pendientes o `TBD`.
 - Finanzas conserva como `TBD` el catálogo oficial de partidas, reserva/comprometido/

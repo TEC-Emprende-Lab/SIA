@@ -1,12 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowRight, Check, Copy, Download, Plus, RefreshCw } from 'lucide-react'
+import { ArrowRight, Check, Copy, Download, Plus } from 'lucide-react'
 import { useMe } from './authenticated-shell'
 import { ProjectHeading } from './project-reference-ui'
 import { PurchaseDetail, PurchaseForm, ItemForm } from './finanzas-editors'
 import { Changes, Duplicates, Portfolio, Reconcile } from './finanzas-reviews'
-import { FinanceEmpty, FinanceError, FinanceLoading, FinanceNotice, FinancePages, FinanceStatus, financeFailure, useFinanceData } from './finanzas-ui'
+import { FinanceEmpty, FinanceError, FinanceHeaderActions, FinanceLoading, FinanceNotice, FinancePages, FinanceStatus, financeFailure, useFinanceData } from './finanzas-ui'
 import { financeRequest, financeUrl, downloadFinancePdf, money, sumFinanceAmounts, STATUS, type Purchase, type Definitions, type Summary } from '../lib/finanzas'
 import styles from './finanzas.module.css'
 
@@ -47,7 +47,7 @@ export function FinanzasView({ cycleId, entrepreneurshipId, program }: { cycleId
   return <div className={styles.workspace}>
     <header className={styles.header}>
       <div><ProjectHeading title="Finanzas y compras" /><p>Presupuesto, trámites y respaldos del ciclo, en un mismo lugar.</p></div>
-      <div className={styles.actions}><button className="btn secondary" onClick={refresh} disabled={loading} aria-label="Actualizar finanzas"><RefreshCw size={16} aria-hidden="true" /><span>{loading && summary ? 'Actualizando…' : 'Actualizar'}</span></button><button className="btn primary" disabled={!canCreate || !definitions} title={!canCreate ? 'Primero se debe registrar una partida aprobada.' : undefined} onClick={() => setForm('new')}><Plus size={16} aria-hidden="true" />Nuevo trámite</button></div>
+      <FinanceHeaderActions loading={loading} ready={Boolean(summary && definitions)} hasBudget={canCreate} coordinate={coordinate} refresh={refresh} addItem={() => setNewItem(true)} create={() => setForm('new')} />
     </header>
     {error && <FinanceError message={error} retry={refresh} />}
     {success && <FinanceNotice tone="success">{success}</FinanceNotice>}
@@ -55,8 +55,8 @@ export function FinanzasView({ cycleId, entrepreneurshipId, program }: { cycleId
       <dl className={styles.summary} aria-label="Resumen financiero"><div><dt>Presupuesto asignado</dt><dd>{money(total('allocated'))}</dd><small>Total de las partidas en colones</small></div><div><dt>Ejecutado</dt><dd>{money(total('executed'))}</dd><small>Pagos y movimientos confirmados</small></div><div><dt>En proceso</dt><dd>{money(total('pending'))}</dd><small>No equivale a una reserva ni a un pago</small></div></dl>
       <nav className={styles.tabs} aria-label="Vistas financieras">{tabs.map(tab => <button key={tab} className={styles.tab} aria-pressed={view === tab} onClick={() => { setView(tab); setSuccess('') }}>{tab}</button>)}</nav>
       {view === 'Presupuesto' && <>
-        <section className={styles.surface}><div className={styles.sectionHeading}><div><h2>Partidas del ciclo</h2><p>Consulta la ejecución y el saldo de cada partida aprobada.</p></div>{coordinate && <button className="btn secondary" onClick={() => setNewItem(true)}><Plus size={15} aria-hidden="true" />Registrar partida</button>}</div>
-          {!summary.items.length ? <FinanceEmpty title="Primero, registra el presupuesto">{coordinate ? 'Agrega una partida del presupuesto aprobado para comenzar a registrar trámites.' : 'La Coordinadora debe registrar al menos una partida del presupuesto aprobado para que puedas crear trámites.'}{coordinate && <button className="btn primary" onClick={() => setNewItem(true)}>Registrar primera partida</button>}</FinanceEmpty> : <>
+        <section className={styles.surface}><div className={styles.sectionHeading}><div><h2>Partidas del ciclo</h2><p>Consulta la ejecución y el saldo de cada partida aprobada.</p></div>{coordinate && canCreate && <button className="btn secondary" onClick={() => setNewItem(true)}><Plus size={15} aria-hidden="true" />Registrar partida</button>}</div>
+          {!summary.items.length ? <p className={styles.hint}>Todavía no hay partidas registradas en este ciclo.</p> : <>
             <div className={styles.scroll} tabIndex={0} role="region" aria-label="Presupuesto por partida"><table className={styles.table}><thead><tr><th scope="col">Partida</th><th scope="col" className={styles.numeric}>Asignado</th><th scope="col" className={styles.numeric}>Ejecutado</th><th scope="col" className={styles.numeric}>En proceso</th><th scope="col" className={styles.numeric}>Saldo sobre ejecutado</th><th scope="col">Consumo</th></tr></thead><tbody>{summary.items.map(item => <tr key={item.id}><td>{item.name}</td><td className={styles.numeric}>{money(item.allocated)}</td><td className={styles.numeric}>{money(item.executed)}</td><td className={styles.numeric}>{money(item.pending)}</td><td className={styles.numeric}><span className={Number(item.balance_after_execution) < 0 ? styles.negative : undefined}>{money(item.balance_after_execution)}</span></td><td>{item.consumed_percent}%<progress className={styles.progress} max="100" aria-label={`Consumo de ${item.name}`} value={Math.min(100, Number(item.consumed_percent))} /></td></tr>)}</tbody></table></div>
             <p className={styles.hint}>El saldo sobre ejecutado es asignado menos ejecutado. No representa fondos libres para gastar.</p>
           </>}

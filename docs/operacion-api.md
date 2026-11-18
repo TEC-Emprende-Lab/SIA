@@ -1,9 +1,9 @@
 # Operación del núcleo API
 
-**Evidencia posterior al corte histórico:** [login y recorrido del 2026-10-28](recorrido-login-2026-10-28.md).
-Google y rol Coordinadora comprobados en staging y producción; datos QA y recorrido
-parcial solo en staging. Incluye límites y la mejora solicitada de pantallas vacías.
-Las secciones siguientes conservan sus fechas y no se presentan como estado actual.
+**Evidencia vigente:** [recorrido operativo del 2026-11-10](recorrido-operativo-2026-11-10.md).
+Coordinadora entró en staging y producción; Finanzas respondió resumen y PDF. Producción
+no tiene emprendimientos visibles. El [login del 2026-10-28](recorrido-login-2026-10-28.md)
+queda como evidencia anterior. Las secciones fechadas no se presentan como estado actual.
 
 ## Alcance y trazabilidad
 
@@ -14,22 +14,24 @@ Cadena de migraciones vigente: `001–013`. `008` incorpora carpetas de evidenci
 registra en [release 013](release-013-staging.md); no se certifica aquí su verificación
 funcional ni la de producción.
 
-Estado revisado el **2026-11-04**, sobre `develop` `e07e6dc` y `main` `6eae158`.
+Estado revisado el **2026-11-10** sobre los entornos publicados: Web de `develop`
+`e07e6dc` y de `main` `6eae158`. Las APIs no salen de ese Git; sirven la misma imagen
+de registro local desde el 2026-10-29/30.
 Incluye identidad/invitaciones, expediente, seguimiento, comunicación, cola persistente,
 informes técnicos, PDF por worker, documentos privados y Finanzas de Prototipado.
 Trazabilidad: US-PRO-001/002/003/004/005/006/007–010 y US-PM-001/002/003.
 Última verificación operativa general: **2026-10-29**, release de Finanzas
 ([verificación](finanzas-verificacion.md)).
-Último recorrido autenticado: **2026-10-28**, login y parcial en
-`https://sia.dev.neuroboard.app` ([registro](recorrido-login-2026-10-28.md)); el
-recorrido por roles del 2026-10-12 se conserva como evidencia histórica.
+Último recorrido autenticado: **2026-11-10**, Coordinadora en staging y producción
+([registro](recorrido-operativo-2026-11-10.md)). El recorrido del 2026-10-28 y el de
+roles del 2026-10-12 se conservan como evidencia anterior.
 La evidencia consolidada del corte está en [estado actual](estado-actual.md).
 Las reglas de acceso proceden de `00-nucleo-comun/actores-roles-y-permisos.md`.
 La implementación y aceptación de seguimiento están detalladas en
 [`apps/api/app/modules/seguimiento/README.md`](../apps/api/app/modules/seguimiento/README.md).
 
-Esto valida controles locales del núcleo backend actual. No certifica que el MVP completo,
-la UI en sesión real ni los servicios externos estén terminados.
+Esto describe el núcleo publicado. La sesión del 2026-11-10 no cierra el MVP, los roles
+Gestor y Emprendedor ni los servicios de correo, IA y tiempo real.
 
 ## Verificación reproducible del worker PDF
 
@@ -455,32 +457,41 @@ Esa evidencia no está fusionada en `main`, no demuestra los roles autenticados 
 certifica producción. Las imágenes usadas estaban en un registro local sin autenticación
 y el respaldo carecía de custodia externa.
 
+## Verificación de entornos — 2026-11-10
+
+Lectura con sesión de Coordinadora, sin escrituras. Staging mostró el ciclo QA con
+avance 0 % y Finanzas en CRC; el resumen general cubre 9 ciclos. Producción respondió
+emprendimientos y finanzas en vacío, con el formulario de alta por nombre y la pantalla
+de invitaciones para Coordinadora, Gestor y Emprendedor. Los PDF de finanzas
+respondieron 200 en los dos entornos. Postgres, Redis y Garage estaban healthy. No hay
+respaldos programados ni métricas del servidor. El detalle y los límites están en el
+[recorrido operativo](recorrido-operativo-2026-11-10.md).
+
 ## Pendientes vigentes
 
-- Recorrer el rol Gestor en staging y el arrastre del Kanban en sesión autenticada. Google
-  OAuth real se recorrió el 2026-10-28; falta el Gestor. La contraseña de la cuenta de
-  prueba de Coordinadora no coincide con Clerk; no reintentarla.
-- Confirmar en staging `alembic current` = `013 (head)`, `alembic check` sin diferencias,
-  los request logs y el SHA o digest servido. Repetir el release en producción con su
-  propio plan, respaldo y aprobación; el despliegue del prototipo no equivale a esta API.
-- Configurar y verificar `SIA_STORAGE_*` para cargar y entregar archivos privados; sin ello
-  el módulo responde 503. Evidencias y respaldos financieros pueden usar `documents`; los
-  adjuntos de chat todavía no.
-- PDF de informe: el consumidor y la cola están implementados, pero requieren almacenamiento
-  configurado y una prueba operativa del worker desplegado. IA real y correo no están integrados.
-- Finanzas de Prototipado está implementada (migración `013`). Siguen `TBD` o pendientes el
-  catálogo oficial de partidas, reserva/comprometido/disponible operativo, umbrales de
-  alerta, permisos adicionales de Gestor, límites de adjuntos y la API FUNDATEC.
+- Recorrer Gestor y Emprendedor, y el arrastre del Kanban. La Fase 9 sigue abierta: la
+  invitación no envía correo, Equipo no lista a los integrantes del ciclo y Puesta en
+  marcha sigue bloqueada. No reintentar la contraseña antigua de la cuenta de prueba.
+- Leer `alembic current` en staging y producción. El 2026-11-10 el terminal no conectó.
+  Las consultas de finanzas en 200 no sustituyen esa lectura. Programar y probar un
+  respaldo de cada Postgres; hoy la lista está vacía.
+- Probar una carga y una descarga con `SIA_STORAGE_*`. Las claves están declaradas y
+  Garage está healthy. Los adjuntos de chat todavía no usan `documents`.
+- PDF de informe técnico: los workers publicados son del 2026-10-28. El PDF de finanzas
+  lo genera la API y sí respondió. IA real y correo no están integrados.
+- Finanzas de Prototipado respondió el 2026-11-10 para Coordinadora. Siguen `TBD` o
+  pendientes el catálogo oficial de partidas, reserva/comprometido/disponible operativo,
+  umbrales de alerta, permisos adicionales de Gestor, límites de adjuntos y la API
+  FUNDATEC. En staging, `available` volvió `null`.
 - Menciones seleccionables y elegir otra persona del ciclo siguen `TBD`: no hay listado
   autorizado de personas del ámbito.
 - Escalas de diagnóstico, catálogo oficial de entregables, evidencia mínima, transiciones y
   criterios de salida, condiciones de autocompletado y campos adicionales de programa: `TBD`.
 - Alta de Puesta en marcha: verificar sus condiciones de entrada requiere fuentes persistentes
   aún no definidas; el alta administrativa devuelve 409, no presupone su cumplimiento.
-- Verificar en staging las migraciones `008–013`, los backups, la observabilidad y el
-  rollback. La suite y el build de `apps/web` ya forman parte de CI. El recorrido de
-  Coordinadora y Emprendedor en Resumen, revisión de evidencias y Kanban quedó registrado
-  el 2026-10-12.
+- Verificar observabilidad y un rollback. La Web de producción conserva imágenes
+  anteriores y no se revirtió. La suite y el build de `apps/web` ya forman parte de CI.
+  Las dos APIs despliegan por imagen compartida, no por el commit de la rama.
 
 Los registros de 2026-09 y 2026-10-06 son evidencia histórica: sus hashes, conteos y
-limitaciones no sustituyen el corte de 2026-11-04 ni acreditan un despliegue autenticado.
+limitaciones no sustituyen la lectura del 2026-11-10.

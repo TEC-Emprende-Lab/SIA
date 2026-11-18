@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 
 import { useMe } from './authenticated-shell'
 import shell from './expediente.module.css'
 import styles from './comunicacion.module.css'
 import { LoadMore } from './load-more'
+import { MeetingCalendar } from './meeting-calendar'
 import { formatDateTime, localDateTimeValue } from '../lib/expediente'
 import { usePagedList } from '../lib/use-paged-list'
 import {
@@ -78,10 +79,23 @@ export function MeetingsPanel({ cycleId, program }: { cycleId: string; program: 
 function MeetingsCycle({ cycleId }: { cycleId: string }) {
   const me = useMe()
   const manage = canManageMeetings(me.role)
-  const meetings = usePagedList((limit, offset) => meetingsUrl(cycleId, '', { limit, offset }), fetchMeetings)
+  const [view, setView] = useState<'calendar' | 'history'>('calendar')
+  const [calendarRevision, setCalendarRevision] = useState(0)
+  let historyPage: ((limit: number, offset: number) => string) | null = null
+  if (view === 'history') historyPage = (limit, offset) => meetingsUrl(cycleId, '', { limit, offset })
+  const meetings = usePagedList(historyPage, fetchMeetings)
   const state = meetings.state
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<ActionError>(null)
+
+  function reloadMeetings() {
+    meetings.reload()
+    setCalendarRevision((value) => value + 1)
+  }
+
+  function renderMeeting(meeting: Meeting) {
+    return <MeetingCard key={meeting.id} cycleId={cycleId} meeting={meeting} manage={manage} userId={me.id} onChanged={reloadMeetings} />
+  }
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
     if (pendingId) {
@@ -95,26 +109,34 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
       setActionError({ id, message: result.message })
       return
     }
-    meetings.reload()
+    reloadMeetings()
   }
 
-  if (state.status === 'loading') {
-    return <p className={shell.meta}>Cargando reuniones…</p>
-  }
-  if (state.status !== 'ready') {
-    return (
-      <section className={shell.section}>
-        <h2>Reuniones</h2>
+  function renderHistory() {
+    if (state.status === 'loading') return <p className={shell.meta} role="status">Cargando reuniones…</p>
+    if (state.status !== 'ready') {
+      return <>
         <p className={shell.formError} role="alert">
           {state.message}
         </p>
-        {state.status === 'error' ? (
+        {state.status === 'error' && (
           <button type="button" className={shell.buttonSecondary} onClick={meetings.reload}>
             Reintentar
           </button>
-        ) : null}
-      </section>
-    )
+        )}
+      </>
+    }
+    return <>
+      {state.data.length === 0 && <p className={shell.meta}>No hay reuniones en este ciclo.</p>}
+      <div className={styles.stack}>{state.data.map(renderMeeting)}</div>
+      <LoadMore
+        hasMore={meetings.hasMore}
+        loading={meetings.loadingMore}
+        error={meetings.moreError}
+        onLoad={() => void meetings.loadMore()}
+        label="Cargar más reuniones"
+      />
+    </>
   }
 
   return (
@@ -124,26 +146,12 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
         Fecha, participantes y referencia de la herramienta externa. La minuta publicada queda fija; una corrección es
         otra minuta.
       </p>
-      {state.data.length === 0 ? <p className={shell.meta}>No hay reuniones en este ciclo.</p> : null}
-      <div className={styles.stack}>
-        {state.data.map((meeting) => (
-          <MeetingCard
-            key={`${meeting.id}:${meeting.revision}`}
-            cycleId={cycleId}
-            meeting={meeting}
-            manage={manage}
-            userId={me.id}
-            onChanged={meetings.reload}
-          />
-        ))}
+      <div className={shell.actions} role="group" aria-label="Cómo ver las reuniones">
+        <button type="button" className={shell.buttonSecondary} aria-pressed={view === 'calendar'} onClick={() => setView('calendar')}>Calendario</button>
+        <button type="button" className={shell.buttonSecondary} aria-pressed={view === 'history'} onClick={() => setView('history')}>Historial</button>
       </div>
-      <LoadMore
-        hasMore={meetings.hasMore}
-        loading={meetings.loadingMore}
-        error={meetings.moreError}
-        onLoad={() => void meetings.loadMore()}
-        label="Cargar más reuniones"
-      />
+      {view === 'calendar' && <MeetingCalendar key={cycleId} cycleId={cycleId} revision={calendarRevision} renderMeeting={renderMeeting} />}
+      {view === 'history' && renderHistory()}
       {manage ? (
         <MeetingForm
           id="meeting-new"
@@ -176,10 +184,31 @@ function MeetingCard({
   onChanged: () => void
 }) {
   const [open, setOpen] = useState(false)
+  const [action, setAction] = useState<'edit' | 'revoke' | null>(null)
+  const actionTrigger = useRef<HTMLButtonElement | null>(null)
+  const readingTrigger = useRef<HTMLButtonElement | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<ActionError>(null)
   const active = meeting.revoked_at === null
   const canWrite = manage && active
+  const readingId = `meeting-reading-${meeting.id}`
+  const actionsId = `meeting-action-${meeting.id}`
+
+  function toggleAction(next: 'edit' | 'revoke', trigger: HTMLButtonElement) {
+    actionTrigger.current = trigger
+    setActionError(null)
+    if (action === next) {
+      setAction(null)
+    } else {
+      setAction(next)
+    }
+  }
+
+  function cancelAction() {
+    setAction(null)
+    setActionError(null)
+    actionTrigger.current?.focus()
+  }
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
     if (pendingId) {
@@ -193,6 +222,8 @@ function MeetingCard({
       setActionError({ id, message: result.message })
       return
     }
+    setAction(null)
+    readingTrigger.current?.focus()
     onChanged()
   }
 
@@ -215,21 +246,30 @@ function MeetingCard({
           </a>
         </p>
       ) : null}
-      <div className={shell.actions}>
+      <div className={`${shell.actions} ${styles.meetingReadingActions}`}>
         <button
           type="button"
           className={shell.buttonSecondary}
+          ref={readingTrigger}
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
+          aria-controls={readingId}
         >
           {open ? 'Ocultar minuta y acuerdos' : 'Ver minuta y acuerdos'}
         </button>
       </div>
-      {open ? (
-        <MeetingChildren cycleId={cycleId} meeting={meeting} canWrite={canWrite} manage={manage} userId={userId} />
-      ) : null}
-      {canWrite ? (
-        <>
+      {canWrite && (
+        <div className={`${shell.actions} ${styles.meetingManagement}`} role="group" aria-label="Acciones de la reunión">
+          <button type="button" className={shell.buttonSecondary} aria-expanded={action === 'edit'} aria-controls={actionsId} disabled={pendingId !== null} onClick={(event) => toggleAction('edit', event.currentTarget)}>
+            Editar reunión
+          </button>
+          <button type="button" className={shell.buttonSecondary} aria-expanded={action === 'revoke'} aria-controls={actionsId} disabled={pendingId !== null} onClick={(event) => toggleAction('revoke', event.currentTarget)}>
+            Revocar reunión
+          </button>
+        </div>
+      )}
+      <div id={actionsId} hidden={!canWrite || action === null}>
+        {canWrite && action === 'edit' && (
           <MeetingForm
             id={`meeting-${meeting.id}`}
             title="Editar reunión"
@@ -237,6 +277,7 @@ function MeetingCard({
             pending={pendingId === `meeting-${meeting.id}`}
             error={actionError}
             initial={meeting}
+            onCancel={cancelAction}
             onSubmit={(body) =>
               run(`meeting-${meeting.id}`, async () =>
                 requestComunicacion(meetingsUrl(cycleId, meeting.id), parseMeeting, {
@@ -246,13 +287,16 @@ function MeetingCard({
               )
             }
           />
+        )}
+        {canWrite && action === 'revoke' && (
           <ObservationForm
             id={`revoke-${meeting.id}`}
             title="Revocar reunión"
-            submitLabel="Revocar"
+            submitLabel="Confirmar revocación"
             hint="La reunión revocada se conserva. No admite minutas ni acuerdos nuevos."
             pending={pendingId === `revoke-${meeting.id}`}
             error={actionError}
+            onCancel={cancelAction}
             onSubmit={(observation) =>
               run(`revoke-${meeting.id}`, async () =>
                 requestComunicacion(meetingsUrl(cycleId, meeting.id), parseMeeting, {
@@ -262,8 +306,13 @@ function MeetingCard({
               )
             }
           />
-        </>
-      ) : null}
+        )}
+      </div>
+      <div id={readingId} hidden={!open}>
+        {open && (
+          <MeetingChildren cycleId={cycleId} meeting={meeting} canWrite={canWrite} manage={manage} userId={userId} />
+        )}
+      </div>
     </article>
   )
 }
@@ -595,6 +644,7 @@ function MeetingForm({
   pending,
   error,
   initial,
+  onCancel,
   onSubmit,
 }: {
   id: string
@@ -603,6 +653,7 @@ function MeetingForm({
   pending: boolean
   error: ActionError
   initial?: Meeting
+  onCancel?: () => void
   onSubmit: (body: {
     title: string
     scheduled_at: string
@@ -704,6 +755,7 @@ function MeetingForm({
         <button className={shell.button} type="submit" disabled={pending}>
           {pending ? 'Guardando…' : submitLabel}
         </button>
+        {onCancel && <button className={shell.buttonSecondary} type="button" disabled={pending} onClick={onCancel}>Cancelar</button>}
       </div>
     </form>
   )
@@ -790,6 +842,7 @@ function ObservationForm({
   hint,
   pending,
   error,
+  onCancel,
   onSubmit,
 }: {
   id: string
@@ -798,6 +851,7 @@ function ObservationForm({
   hint?: string
   pending: boolean
   error: ActionError
+  onCancel?: () => void
   onSubmit: (observation: string) => void
 }) {
   const [localError, setLocalError] = useState<string | null>(null)
@@ -830,6 +884,7 @@ function ObservationForm({
         <button className={shell.buttonSecondary} type="submit" disabled={pending}>
           {pending ? 'Guardando…' : submitLabel}
         </button>
+        {onCancel && <button className={shell.buttonSecondary} type="button" disabled={pending} onClick={onCancel}>Cancelar</button>}
       </div>
     </form>
   )

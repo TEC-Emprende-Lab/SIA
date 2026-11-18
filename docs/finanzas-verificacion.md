@@ -92,9 +92,9 @@ en `/tmp/opencode/finance-preview/`.
 ## Antes de activar
 
 1. Revisar decisiones y TBD pendientes con Coordinadora.
-2. Staging: la revisión `013` se aplicó el 2026-10-30; confirmar `alembic current`,
-   `alembic check` y el digest servido según [release 013](release-013-staging.md).
-   Producción sigue pendiente de su propio plan, respaldo y aprobación.
+2. Staging: la revisión `013` se aplicó el 2026-10-30; confirmar `alembic current`
+   y `alembic check` según [release 013](release-013-staging.md). El 2026-11-10 las
+   consultas de finanzas respondieron en los dos entornos; esa lectura no ejecutó Alembic.
 3. Reconstruir API/worker con lockfile actualizado (pypdf) y Web.
 4. Configurar Redis y almacenamiento privado. Sin Redis, finanzas falla cerrado
    con 503; no se realizan mutaciones.

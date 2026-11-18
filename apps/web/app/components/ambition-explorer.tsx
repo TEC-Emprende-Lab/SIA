@@ -33,14 +33,14 @@ export function AmbitionExplorer({ ambitions, objectives, activities, areas, cre
   }
   return <div className={styles.workspace}>
     <header className={styles.heading}>
-      <div><h1>Ambiciones</h1><p>Una dirección clara para lo que viene.</p></div>
+      <div><h1>Ambiciones</h1><p>Las metas del emprendimiento y su relación con los objetivos de cada ciclo.</p></div>
       {createAction}
     </header>
     <div className={styles.introduction}>
       <p>Lo que quieres lograr a largo plazo, conectado con el trabajo de hoy.</p>
       <div className={styles.path} aria-label="Una ambición orienta objetivos, que se desagregan en actividades"><span><Compass size={18} /> Ambición</span><ArrowRight size={16} /><span><Target size={18} /> Objetivos</span><ArrowRight size={16} /><span><ListChecks size={18} /> Actividades</span></div>
     </div>
-    {ambitions.length === 0 ? <section className={styles.empty}><Compass size={36} aria-hidden="true" /><h2>Tu siguiente gran idea empieza aquí</h2><p>Crea tu primera ambición con «Nueva ambición». Puede existir por sí sola; cuando tengas un plan, podrás vincularla a objetivos.</p></section> : <>
+    {ambitions.length === 0 ? <section className={styles.empty}><Compass size={36} aria-hidden="true" /><h2>Aún no hay ambiciones</h2><p>Crea tu primera ambición con «Nueva ambición». Puede existir por sí sola; cuando tengas un plan, podrás vincularla a objetivos.</p></section> : <>
       <div className={styles.toolbar}>
         <label className={styles.search}><Search size={18} aria-hidden="true" /><input type="search" aria-label="Buscar ambiciones" placeholder="Buscar una ambición…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
         <label className={styles.filter}>Mostrar<select aria-label="Filtrar ambiciones" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">Todas</option><option value="linked">Con objetivos</option><option value="unlinked">Sin objetivos en este ciclo</option></select></label>

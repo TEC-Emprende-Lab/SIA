@@ -14,6 +14,7 @@ import type { SiaRole } from './identity'
 export type Invitation = Omit<components['schemas']['InvitationOut'], 'token'>
 export type SiaUser = components['schemas']['UserOut']
 export type Assignment = components['schemas']['AssignmentOut']
+export type ActiveAssignment = components['schemas']['ActiveAssignmentOut']
 export type AssignableRole = components['schemas']['AssignmentCreate']['role']
 
 export const INVITATION_PAGE_SIZE = 50
@@ -42,6 +43,10 @@ const ASSIGNABLE: Record<SiaRole, readonly AssignableRole[]> = {
 
 export function assignableRoles(role: string): readonly AssignableRole[] {
   return role in ASSIGNABLE ? ASSIGNABLE[role as SiaRole] : []
+}
+
+export function canViewTeam(role: string): boolean {
+  return role === 'Coordinadora' || role === 'Gestor'
 }
 
 export function invitationState(invitation: Invitation, now = Date.now()): 'usada' | 'vencida' | 'vigente' {
@@ -151,6 +156,22 @@ export function parseAssignment(value: unknown): Assignment | null {
     return null
   }
   return { id, user_id: userId, role, created_at: createdAt, revoked_at: revokedAt }
+}
+
+export function parseActiveAssignments(value: unknown): ActiveAssignment[] | null {
+  return parseList(value, (item) => {
+    if (!isRecord(item)) {
+      return null
+    }
+    const id = requiredString(item.id)
+    const email = requiredString(item.email)
+    const role = requiredString(item.role)
+    const createdAt = requiredString(item.created_at)
+    if (!id || !email || !role || !createdAt) {
+      return null
+    }
+    return { id, email, role, created_at: createdAt }
+  })
 }
 
 function detailMessage(payload: unknown, fallback: string): string {

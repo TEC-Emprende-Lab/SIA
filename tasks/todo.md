@@ -4,6 +4,20 @@
 > este archivo conservan historia y no certifican por sí solas implementación, despliegue
 > ni aceptación funcional.
 
+## Lectura de staging y producción — 2026-11-10
+
+Sin cambios de código, reglas ni datos. Referencias: US-PRO-001 y US-PRO-003, y la
+matriz de roles. Evidencia en [recorrido operativo](../docs/recorrido-operativo-2026-11-10.md).
+
+- [x] Coordinadora en staging y producción: salud HTTP, resumen y PDF de finanzas.
+- [x] Producción vacía: alta de emprendimiento por nombre visible y no enviada;
+  invitaciones con roles Coordinadora, Gestor y Emprendedor.
+- [x] Confirmar Postgres, Redis y Garage healthy, y la ausencia de respaldos programados.
+- [ ] Fase 9: Gestor, Emprendedor, arrastre, archivos, PDF del worker y un ciclo de
+  entrada a cierre. La invitación no envía correo y Equipo no lista integrantes.
+- [ ] Respaldos de las dos bases, lectura de `alembic current` y rollback probado antes
+  de cargar un grupo real.
+
 ## Finanzas y compras de Prototipado — 2026-10-29
 
 Implementación y release de US-PRO-003/004/007–010; ver

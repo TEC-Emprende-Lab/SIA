@@ -45,16 +45,37 @@ export function ChannelsPanel({ entrepreneurshipId, cycleId }: { entrepreneurshi
     if (!openId && firstChannel) setOpenId(firstChannel.id)
   }, [openId, firstChannel])
 
+  let unavailable = null
+  if (state.status === 'forbidden') {
+    let guidance = 'Si esperabas tener acceso, vuelve a consultar los canales. Si el problema continúa, avisa al equipo de soporte de SIA.'
+    if (me.role === 'Gestor' || me.role === 'Emprendedor') {
+      guidance = 'Los canales compartidos requieren una asignación al emprendimiento. Si solo tienes acceso al ciclo, pide a la Coordinadora que revise tu asignación.'
+    }
+    unavailable = (
+      <div className={shell.section}>
+        <div role="alert">
+          <h3>Chat compartido no disponible</h3>
+          <p className={shell.meta}>{guidance}</p>
+        </div>
+        <button type="button" className={shell.buttonSecondary} onClick={channels.reload}>Volver a consultar</button>
+      </div>
+    )
+  } else if (state.status === 'missing' || state.status === 'error') {
+    unavailable = (
+      <>
+        <p className={shell.formError} role="alert">{state.message}</p>
+        {state.status === 'error' && <button type="button" className={shell.buttonSecondary} onClick={channels.reload}>Reintentar</button>}
+      </>
+    )
+  }
+
   return <section className={styles.chatSection} aria-labelledby={headingId}>
     <header className={styles.chatIntro}>
       <div><p className={styles.kicker}>ESPACIO DEL EQUIPO</p><h2 id={headingId}>Conversaciones</h2><p>Mensajes organizados para que el equipo avance con contexto.</p></div>
       <p className={styles.syncNote}><RefreshCw aria-hidden="true" /> Se actualiza al abrir un canal</p>
     </header>
     {state.status === 'loading' ? <ChatStatus message="Cargando conversaciones…" /> : null}
-    {state.status === 'forbidden' || state.status === 'missing' || state.status === 'error' ? <>
-      <p className={shell.formError} role="alert">{state.message}</p>
-      {state.status === 'error' ? <button type="button" className={shell.buttonSecondary} onClick={channels.reload}>Reintentar</button> : null}
-    </> : null}
+    {unavailable}
     {state.status === 'ready' && orderedChannels.length === 0 ? <ChatStatus message="Todavía no hay canales disponibles." /> : null}
     {state.status === 'ready' && orderedChannels.length > 0 ? <div className={styles.chatLayout}>
       <nav className={styles.channelRail} aria-label="Canales del emprendimiento">

@@ -17,14 +17,61 @@ try {
     .replaceAll("'../lib/comunicacion'", "'./comunicacion.mjs'")
     .replaceAll("'../lib/expediente'", "'./expediente.mjs'")
     .replaceAll("'../lib/project-summary'", "'./project-summary.mjs'")
+    .replaceAll("'./meeting-calendar'", "'./meeting-stubs.mjs'")
     .replaceAll("'./project-reference-ui'", "'./project-reference-ui.mjs'")
+    .replaceAll("'./authenticated-shell'", "'./meeting-stubs.mjs'")
+    .replaceAll("'./load-more'", "'./meeting-stubs.mjs'")
+    .replaceAll("'../lib/use-paged-list'", "'./meeting-stubs.mjs'")
+    .replace("import shell from './expediente.module.css';", 'const shell = new Proxy({}, { get: (_, key) => String(key) });')
+    .replace("import styles from './comunicacion.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
     .replace("import styles from './summary-communication.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
-  for (const name of ['comunicacion', 'expediente', 'project-summary']) {
+  for (const name of ['comunicacion', 'expediente', 'project-summary', 'meeting-calendar']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/lib/${name}.ts`, import.meta.url), 'utf8')))
   }
-  for (const name of ['project-reference-ui', 'summary-communication']) {
+  for (const name of ['project-reference-ui', 'summary-communication', 'comunicacion-views']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/components/${name}.tsx`, import.meta.url), 'utf8')))
   }
+  await writeFile(join(temporary, 'meeting-stubs.mjs'), `
+    let role, data
+    export function setMeetingFixture(nextRole, nextData) { role = nextRole; data = nextData }
+    export function useMe() { return { id: 'u1', role } }
+    export function usePagedList() { return { state: { status: 'ready', data } } }
+    export function LoadMore() { return null }
+    export function MeetingCalendar({ renderMeeting }) { return data.map(renderMeeting) }
+  `)
+  const { MeetingsPanel } = await import(pathToFileURL(join(temporary, 'comunicacion-views.mjs')))
+  const { setMeetingFixture } = await import(pathToFileURL(join(temporary, 'meeting-stubs.mjs')))
+  const meetingCardFixture = { id: 'm1', cycle_id: 'c1', title: 'Reunión de prueba', scheduled_at: '2026-10-29T13:00:00Z', participants: ['Equipo'], reference_url: null, revision: 1, revoked_at: null }
+  for (const role of ['Coordinadora', 'Gestor', 'Emprendedor']) {
+    setMeetingFixture(role, [meetingCardFixture, { ...meetingCardFixture, id: 'm2', title: 'Reunión anterior', revoked_at: '2026-10-30T00:00:00Z' }])
+    const html = renderToStaticMarkup(createElement(MeetingsPanel, { cycleId: 'c1', program: 'Prototipado' }))
+    assert.match(html, /aria-expanded="false" aria-controls="meeting-reading-m1">Ver minuta y acuerdos/)
+    assert.match(html, /Reunión anterior.*Revocada/)
+    assert.doesNotMatch(html, /name="observation"|Confirmar revocación|Guardar reunión|aria-controls="meeting-action-m2"/)
+    if (role === 'Emprendedor') {
+      assert.doesNotMatch(html, /Editar reunión|Revocar reunión|Registrar reunión/)
+    } else {
+      assert.match(html, /aria-expanded="false" aria-controls="meeting-action-m1"[^>]*>Editar reunión/)
+      assert.match(html, /aria-expanded="false" aria-controls="meeting-action-m1"[^>]*>Revocar reunión/)
+    }
+  }
+  console.log('✓ Meeting cards render read-first and restrict edit and revoke controls to active meetings and management roles')
+  const { calendarDays, meetingDateKey, meetingsByCalendarDay, shiftCalendar } = await import(pathToFileURL(join(temporary, 'meeting-calendar.mjs')))
+  assert.deepEqual(calendarDays('2026-11-01', 'week'), ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'])
+  assert.equal(calendarDays('2026-11-01', 'month').length, 42)
+  assert.equal(calendarDays('2027-02-17', 'month').length, 28)
+  assert.equal(shiftCalendar('2026-12-31', 'month', 1), '2027-01-01')
+  assert.equal(shiftCalendar('2027-01-01', 'week', -1), '2026-12-25')
+  assert.equal(meetingDateKey(new Date('2026-11-19T05:59:00Z')), '2026-11-18')
+  assert.equal(meetingDateKey(new Date('2026-11-19T06:00:00Z')), '2026-11-19')
+  const roster = meetingsByCalendarDay([
+    { ...meetingCardFixture, id: 'late', scheduled_at: '2026-11-19T05:50:00Z' },
+    { ...meetingCardFixture, id: 'early', scheduled_at: '2026-11-18T15:00:00Z' },
+    { ...meetingCardFixture, id: 'revoked', scheduled_at: '2026-11-18T15:00:00Z', revoked_at: '2026-11-17T15:00:00Z' },
+  ])
+  assert.deepEqual([...roster.keys()], ['2026-11-18'])
+  assert.deepEqual(roster.get('2026-11-18').map((item) => item.id), ['early', 'late'])
+  console.log('✓ Calendar starts weeks on Monday, crosses period boundaries, and groups only active meetings in Costa Rica time')
   const { loadSummaryMeetings, loadSummaryAgreements, loadSummaryAlerts, upcomingMeetings, agreementDate } = await import(pathToFileURL(join(temporary, 'project-summary.mjs')))
   const { SummaryCommunicationContent } = await import(pathToFileURL(join(temporary, 'summary-communication.mjs')))
 

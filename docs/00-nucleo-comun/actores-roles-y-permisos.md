@@ -13,6 +13,12 @@ La autorizacion depende del rol y de la relacion con el emprendimiento o ciclo. 
 
 El acceso usa exclusivamente Google OAuth mediante Clerk. El primer acceso requiere una invitacion vigente, no utilizada y asociada al mismo correo verificado. Las invitaciones, roles y relaciones de negocio se almacenan y validan en PostgreSQL mediante FastAPI.
 
+**Historia transversal «Entrar con una invitación» (sin identificador previo):**
+la portada ofrece «Crear mi acceso con Google» como camino principal para una
+persona invitada y «Ya tengo acceso» para quien ya entró antes. Cada formulario
+explica qué cuenta usar y enlaza al otro camino. La interfaz no sustituye la
+validación de la invitación ni asigna roles por sí sola.
+
 ## Matriz comun
 
 | Accion | Coordinadora | Gestor asignado | Emprendedor |
