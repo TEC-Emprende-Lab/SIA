@@ -23,6 +23,7 @@ try {
     .replaceAll("'./load-more'", "'./meeting-stubs.mjs'")
     .replaceAll("'./ui/confirm-action'", "'./meeting-stubs.mjs'")
     .replaceAll("'./ui/loading-state'", "'./loading-state.mjs'")
+    .replaceAll("'next/link'", "'./link-stub.mjs'")
     .replaceAll("'../lib/use-paged-list'", "'./meeting-stubs.mjs'")
     .replace("import shell from './expediente.module.css';", 'const shell = new Proxy({}, { get: (_, key) => String(key) });')
     .replace("import styles from './comunicacion.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
@@ -31,15 +32,20 @@ try {
   for (const name of ['comunicacion', 'expediente', 'project-summary', 'meeting-calendar']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/lib/${name}.ts`, import.meta.url), 'utf8')))
   }
-  for (const name of ['project-reference-ui', 'summary-communication', 'comunicacion-views']) {
+  for (const name of ['project-reference-ui', 'summary-communication', 'comunicacion-views', 'bandeja-views']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/components/${name}.tsx`, import.meta.url), 'utf8')))
   }
   await writeFile(join(temporary, 'loading-state.mjs'), compile(await readFile(new URL('../app/components/ui/loading-state.tsx', import.meta.url), 'utf8')))
+  await writeFile(join(temporary, 'link-stub.mjs'), compile('export default function Link(props) { return <a {...props} /> }'))
   await writeFile(join(temporary, 'meeting-stubs.mjs'), `
-    let role, data
+    let role, data, inbox
     export function setMeetingFixture(nextRole, nextData) { role = nextRole; data = nextData }
+    export function setInboxFixture(alerts, notifications) { inbox = { alerts, notifications } }
     export function useMe() { return { id: 'u1', role } }
-    export function usePagedList() { return { state: { status: 'ready', data } } }
+    export function usePagedList(page) {
+      const state = inbox?.[page?.name.replace('Page', '')] ?? { status: 'ready', data }
+      return { state, reload() {} }
+    }
     export function LoadMore() { return null }
     export function ConfirmAction() { return null }
     export function MeetingCalendar({ renderMeeting }) { return data.map(renderMeeting) }
@@ -86,6 +92,21 @@ try {
   const meeting = { ...common, id: 'm1', cycle_id: 'c1', title: 'Prueba con usuarios', participants: ['Equipo de prueba'], scheduled_at: '2026-10-06T15:00:00Z', reference_url: null }
   const agreement = { ...common, id: 'a1', meeting_id: 'm1', description: 'Documentar los aprendizajes', responsible_id: 'u1', due_date: '2026-10-10', next_steps: 'Reunir los resultados de las entrevistas.' }
   const alert = { id: 'al1', created_at: now, entrepreneurship_id: 'e1', cycle_id: 'c1', recipient_id: 'u1', kind: 'mention', detail: 'Revisar el mensaje del equipo.', resolved_at: null }
+  const { BandejaView } = await import(pathToFileURL(join(temporary, 'bandeja-views.mjs')))
+  const { setInboxFixture } = await import(pathToFileURL(join(temporary, 'meeting-stubs.mjs')))
+  const inboxRecords = { status: 'ready', data: [{ id: 'n1', alert_id: alert.id, created_at: now, read_at: null }] }
+  setInboxFixture({ status: 'loading' }, inboxRecords)
+  const inboxPending = renderToStaticMarkup(createElement(BandejaView))
+  assert.match(inboxPending, /Cargando detalles de alertas/)
+  assert.match(inboxPending, /Marcar como leída/)
+  setInboxFixture({ status: 'error', message: 'Consulta temporalmente no disponible' }, inboxRecords)
+  const inboxPartial = renderToStaticMarkup(createElement(BandejaView))
+  assert.match(inboxPartial, /Reintentar detalles/)
+  assert.match(inboxPartial, /Marcar como leída/)
+  assert.doesNotMatch(inboxPartial, /No hay alertas|Ver expediente/)
+  setInboxFixture({ status: 'ready', data: [alert] }, inboxRecords)
+  assert.match(renderToStaticMarkup(createElement(BandejaView)), /Revisar el mensaje del equipo/)
+  console.log('✓ Inbox keeps notifications visible while independent alert details load or fail')
   const reply = (body, status = 200) => new Response(JSON.stringify(body), { status })
   const requests = []
   const oldMeetings = Array.from({ length: 100 }, (_, index) => ({ ...meeting, id: `old-${index}`, scheduled_at: '2026-09-01T15:00:00Z' }))
