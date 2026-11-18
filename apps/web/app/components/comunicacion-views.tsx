@@ -10,7 +10,7 @@ import { MeetingCalendar } from './meeting-calendar'
 import { ConfirmAction } from './ui/confirm-action'
 import { LoadingRows } from './ui/loading-state'
 import { formatDateTime, localDateTimeValue } from '../lib/expediente'
-import { usePagedList } from '../lib/use-paged-list'
+import { usePagedList, type PagedState } from '../lib/use-paged-list'
 import {
   awareDateTime,
   canManageMeetings,
@@ -388,42 +388,15 @@ function MeetingChildren({
     setGeneration((value) => value + 1)
   }
 
-  const failed = [minutes.state, agreements.state].find(
-    (state) => state.status !== 'loading' && state.status !== 'ready',
-  )
-  if (failed) {
-    return (
-      <div className={styles.stack}>
-        <p className={shell.formError} role="alert">
-          {failed.message}
-        </p>
-        <button
-          type="button"
-          className={shell.buttonSecondary}
-          onClick={() => {
-            minutes.reload()
-            agreements.reload()
-          }}
-        >
-          Reintentar
-        </button>
-      </div>
-    )
-  }
-  if (minutes.state.status !== 'ready' || agreements.state.status !== 'ready') {
-    return <>
-      <p role="status" className={styles.meetingNotice}>{notice}</p>
-      <LoadingRows label="Cargando minuta y acuerdos…" rows={2} />
-    </>
-  }
   return (
     <div className={styles.stack}>
       <p role="status" className={styles.meetingNotice}>{notice}</p>
-      <MinutesBlock
+      <MeetingResource state={minutes.state} title="Minutas" label="Cargando minutas…" retry={minutes.reload}>
+      {(items) => <MinutesBlock
         key={`minutes-${generation}`}
         cycleId={cycleId}
         meeting={meeting}
-        minutes={minutes.state.data}
+        minutes={items}
         canWrite={canWrite}
         manage={manage}
         pendingId={pendingId}
@@ -439,12 +412,14 @@ function MeetingChildren({
             label="Cargar más minutas"
           />
         }
-      />
-      <AgreementsBlock
+      />}
+      </MeetingResource>
+      <MeetingResource state={agreements.state} title="Acuerdos" label="Cargando acuerdos…" retry={agreements.reload}>
+      {(items) => <AgreementsBlock
         key={`agreements-${generation}`}
         cycleId={cycleId}
         meeting={meeting}
-        agreements={agreements.state.data}
+        agreements={items}
         canWrite={canWrite}
         userId={userId}
         pendingId={pendingId}
@@ -459,9 +434,28 @@ function MeetingChildren({
             label="Cargar más acuerdos"
           />
         }
-      />
+      />}
+      </MeetingResource>
     </div>
   )
+}
+
+function MeetingResource<T>({ state, title, label, retry, children }: {
+  state: PagedState<T>
+  title: string
+  label: string
+  retry: () => void
+  children: (items: T[]) => ReactNode
+}) {
+  if (state.status === 'ready') return children(state.data)
+  return <section className={styles.stack} aria-label={title}>
+    <h4>{title}</h4>
+    {state.status === 'loading' && <LoadingRows label={label} rows={2} />}
+    {state.status !== 'loading' && <>
+      <p className={shell.formError} role="alert">{state.message}</p>
+      {state.status === 'error' && <button type="button" className={shell.buttonSecondary} onClick={retry}>Reintentar</button>}
+    </>}
+  </section>
 }
 
 function MinutesBlock({
