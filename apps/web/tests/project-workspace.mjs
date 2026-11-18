@@ -58,6 +58,11 @@ try {
   console.log('✓ Empty, forbidden and malformed responses never produce seed projects')
 
   const require = createRequire(import.meta.url)
+  const loadingSource = await readFile(new URL('../app/components/ui/loading-state.tsx', import.meta.url), 'utf8')
+  const loadingCode = ts.transpileModule(loadingSource, { compilerOptions: { module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
+    .replace(/from ["']react\/jsx-runtime["']/, `from ${JSON.stringify(pathToFileURL(require.resolve('react/jsx-runtime')).href)}`)
+    .replace(/import styles from ["']\.\/interaction-states\.module\.css["'];/, "const styles = { bar: 'skeleton-bar', rows: 'skeleton-rows', row: 'skeleton-row' }")
+  await writeFile(join(temporary, 'loading-state.mjs'), loadingCode)
   const welcomeSource = await readFile(new URL('../app/components/project-welcome.tsx', import.meta.url), 'utf8')
   const welcomeCode = ts.transpileModule(welcomeSource, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
     .replace(/from ["'](react\/jsx-runtime|next\/link|lucide-react)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
@@ -115,6 +120,7 @@ try {
       if (name === '../lib/expediente') return "from './expediente.mjs'"
       if (name === '../lib/administracion') return "from './administracion.mjs'"
       if (name === './project-welcome') return "from './welcome.mjs'"
+      if (name === './ui/loading-state') return "from './loading-state.mjs'"
       if (name.startsWith('.') || name === '@clerk/nextjs') return "from './panels.mjs'"
       return `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`
     })
@@ -124,6 +130,9 @@ try {
   for (const role of ['Coordinadora', 'Gestor', 'Emprendedor']) {
     setRole(role)
     const html = renderToStaticMarkup(createElement(ProjectWorkspace))
+    assert.match(html, /class="sr-only" role="status">Cargando proyectos…<\/span><div aria-hidden="true"><div class="project-page-loading">/)
+    assert.match(html, /class="project-context"><div aria-hidden="true">/)
+    assert(!html.includes('Aún no tienes proyectos asignados'))
     const administration = html.match(/<nav aria-label="Administración"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
     const projectNav = html.match(/<nav aria-label="Navegación del proyecto"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
     assert(projectNav)
@@ -137,6 +146,7 @@ try {
   }
   console.log('✓ Coordinadora and Gestor can reach Expedientes before any project loads; Emprendedor has no management link')
   console.log('✓ Team navigation and the active assignment contract respect the role and response shape')
+  console.log('✓ The pending workspace announces loading and hides its decorative placeholders')
 
   const configSource = await readFile(new URL('../next.config.ts', import.meta.url), 'utf8')
   await writeFile(join(temporary, 'config.mjs'), ts.transpileModule(configSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText)
