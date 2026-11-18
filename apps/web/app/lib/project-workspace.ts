@@ -22,26 +22,42 @@ export function readProjectSection(hash: string): { section: ProjectSection; id?
   }
 }
 
-async function allPages<T>(path: string, parser: (value: unknown) => T[] | null): Promise<T[]> {
+const PROJECT_READ_BATCH = 6
+
+async function allPages<T>(path: string, parser: (value: unknown) => T[] | null, signal?: AbortSignal): Promise<T[]> {
   const items: T[] = []
   for (let offset = 0; ; offset += 50) {
-    const result = await requestExpediente(expedienteUrl(path, { limit: 50, offset }), parser)
+    signal?.throwIfAborted()
+    const result = await requestExpediente(expedienteUrl(path, { limit: 50, offset }), parser, undefined, signal)
     if (!result.ok) throw new Error(result.message)
     items.push(...result.data)
     if (result.data.length < 50) return items
   }
 }
 
-export async function loadProjects(): Promise<Project[]> {
-  const entrepreneurships = await allPages('', parseEntrepreneurshipList)
-  const nested = await Promise.all(entrepreneurships.map(async (entrepreneurship) => {
-    const enrollments = await allPages(`/${entrepreneurship.id}/enrollments`, parseEnrollmentList)
-    return (await Promise.all(enrollments.map(async (enrollment) => {
+async function readInBatches<T, R>(items: T[], load: (item: T) => Promise<R>, signal?: AbortSignal): Promise<R[]> {
+  const results: R[] = []
+  for (let index = 0; index < items.length; index += PROJECT_READ_BATCH) {
+    signal?.throwIfAborted()
+    results.push(...await Promise.all(items.slice(index, index + PROJECT_READ_BATCH).map(load)))
+  }
+  return results
+}
+
+export async function loadProjects(signal?: AbortSignal): Promise<Project[]> {
+  const entrepreneurships = await allPages('', parseEntrepreneurshipList, signal)
+  const enrollmentsByProject = await readInBatches(entrepreneurships, async (entrepreneurship) => {
+    const enrollments = await allPages(`/${entrepreneurship.id}/enrollments`, parseEnrollmentList, signal)
+    return enrollments.map((enrollment) => {
       if (enrollment.entrepreneurship_id !== entrepreneurship.id) throw new Error('La inscripción no pertenece al proyecto consultado.')
-      const cycles = await allPages(`/enrollments/${enrollment.id}/cycles`, parseCycleList)
-      if (cycles.some((cycle) => cycle.enrollment_id !== enrollment.id)) throw new Error('El ciclo no pertenece a la inscripción consultada.')
-      return cycles.map((cycle) => ({ cycle, enrollment, entrepreneurship }))
-    }))).flat()
-  }))
-  return nested.flat()
+      return { enrollment, entrepreneurship }
+    })
+  }, signal)
+
+  const cyclesByEnrollment = await readInBatches(enrollmentsByProject.flat(), async ({ enrollment, entrepreneurship }) => {
+    const cycles = await allPages(`/enrollments/${enrollment.id}/cycles`, parseCycleList, signal)
+    if (cycles.some((cycle) => cycle.enrollment_id !== enrollment.id)) throw new Error('El ciclo no pertenece a la inscripción consultada.')
+    return cycles.map((cycle) => ({ cycle, enrollment, entrepreneurship }))
+  }, signal)
+  return cyclesByEnrollment.flat()
 }

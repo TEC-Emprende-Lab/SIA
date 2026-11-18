@@ -268,6 +268,8 @@ try {
 
   const paged = Array.from({ length: 51 }, (_, index) => ({ ...entrepreneurship, id: `e${index}` }))
   let secondPage = false
+  let inFlight = 0
+  let peakInFlight = 0
   globalThis.fetch = async (input) => {
     const url = new URL(input, 'http://localhost')
     if (url.pathname.endsWith('/entrepreneurships')) {
@@ -275,7 +277,13 @@ try {
       if (offset === 50) secondPage = true
       return reply(paged.slice(offset, offset + 50))
     }
-    if (url.pathname.endsWith('/e50/enrollments')) return reply([{ ...enrollment, entrepreneurship_id: 'e50' }])
+    if (url.pathname.endsWith('/enrollments')) {
+      inFlight += 1
+      peakInFlight = Math.max(peakInFlight, inFlight)
+      await Promise.resolve()
+      inFlight -= 1
+      if (url.pathname.endsWith('/e50/enrollments')) return reply([{ ...enrollment, entrepreneurship_id: 'e50' }])
+    }
     if (url.pathname.endsWith('/en1/cycles')) return reply([cycle])
     return reply([])
   }
@@ -283,6 +291,7 @@ try {
   assert(secondPage)
   assert.equal(projects.length, 1)
   assert.equal(projects[0].entrepreneurship.id, 'e50')
+  assert.equal(peakInFlight, 6)
   console.log('✓ Picker reads all authorized pages before deciding project availability')
 
   const { parseReport, parseReports } = await import(pathToFileURL(join(temporary, 'reports.mjs')))

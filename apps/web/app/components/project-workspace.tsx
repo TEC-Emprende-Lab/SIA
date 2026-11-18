@@ -74,22 +74,22 @@ export function ProjectWorkspace() {
     return () => window.removeEventListener('keydown', close)
   }, [])
   useEffect(() => {
-    let active = true
+    const controller = new AbortController()
     setLoaded(false)
     setError('')
-    void loadProjects().then((items) => {
-      if (!active) return
+    void loadProjects(controller.signal).then((items) => {
+      if (controller.signal.aborted) return
       const requested = new URLSearchParams(window.location.search).get('project')
       setProjects(items)
       setProjectId(requested ?? (items.length === 1 ? items[0]!.cycle.id : ''))
       if (!requested && items.length > 1) setPicker(true)
       setLoaded(true)
     }).catch((reason: unknown) => {
-      if (!active) return
+      if (controller.signal.aborted) return
       setError(reason instanceof Error ? reason.message : 'No se pudieron consultar los proyectos.')
       setLoaded(true)
     })
-    return () => { active = false }
+    return () => controller.abort()
   }, [retry])
   const project = projects.find((item) => item.cycle.id === projectId)
   const cycleId = project?.cycle.id
