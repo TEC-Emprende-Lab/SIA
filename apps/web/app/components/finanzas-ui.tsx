@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import { AlertCircle, CheckCircle2, FileText, Info, RefreshCw } from 'lucide-react'
+import { AlertCircle, CheckCircle2, FileText, Info, Plus, RefreshCw } from 'lucide-react'
 import { financeRequest, STATUS } from '../lib/finanzas'
 import styles from './finanzas.module.css'
 
@@ -38,6 +38,37 @@ export function FinanceError({ message, retry }: { message: string; retry?: () =
 
 export function FinanceLoading({ label = 'Consultando información financiera…' }: { label?: string }) {
   return <div className={styles.loading} role="status"><span>{label}</span><div className={styles.skeleton} aria-hidden="true" /><div className={styles.skeleton} aria-hidden="true" /></div>
+}
+
+export function FinanceHeaderActions({ loading, ready, hasBudget, coordinate, refresh, addItem, create }: {
+  loading: boolean
+  ready: boolean
+  hasBudget: boolean
+  coordinate: boolean
+  refresh: () => void
+  addItem: () => void
+  create: () => void
+}) {
+  let primary = null
+  let hint = ''
+  if (ready && hasBudget) {
+    primary = <button type="button" className="btn primary" onClick={create}><Plus size={16} aria-hidden="true" />Nuevo trámite</button>
+  } else if (ready && coordinate) {
+    primary = <button type="button" className="btn primary" onClick={addItem}><Plus size={16} aria-hidden="true" />Registrar primera partida</button>
+    hint = 'Registra una partida del presupuesto aprobado para habilitar los trámites.'
+  } else if (ready) {
+    hint = 'La Coordinadora debe registrar una partida aprobada antes de que puedas crear un trámite.'
+  }
+  let refreshLabel = 'Actualizar'
+  if (loading && ready) refreshLabel = 'Actualizando…'
+
+  return <div className={styles.headerActions}>
+    <div className={styles.actions}>
+      {primary}
+      <button type="button" className="btn secondary" onClick={refresh} disabled={loading} aria-label="Actualizar finanzas"><RefreshCw size={16} aria-hidden="true" />{refreshLabel}</button>
+    </div>
+    {hint && <p className={styles.hint}>{hint}</p>}
+  </div>
 }
 
 export function FinanceEmpty({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {

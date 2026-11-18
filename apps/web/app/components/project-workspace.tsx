@@ -18,6 +18,7 @@ import { ProjectWelcome } from './project-welcome'
 import { loadProjects, PROJECT_GROUPS, readProjectSection, type Project, type ProjectSection } from '../lib/project-workspace'
 import { parseObjectiveList, parseEvidenceList, parseAmbitionList, requestSeguimiento, seguimientoUrl } from '../lib/seguimiento'
 import { canRegisterExpediente } from '../lib/expediente'
+import { canViewTeam } from '../lib/administracion'
 
 const icons = { Resumen: LayoutDashboard, 'Diagnóstico 360°': Compass, Ambiciones: Flag, 'Objetivos y actividades': Target, Evidencias: FolderOpen, Evolución: GitCompareArrows, Informes: FileText, Reuniones: CalendarDays, 'Finanzas y compras': Wallet, Chat: MessageSquare, Equipo: Users }
 const initials = (name: string) => name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()
@@ -110,7 +111,12 @@ export function ProjectWorkspace() {
   }
   const name = project?.entrepreneurship.name ?? 'Espacio del proyecto'
   const canManageProjects = canRegisterExpediente(me.role)
-  const matches = [...records, ...PROJECT_GROUPS.flatMap((group) => group.sections.map((section) => ({ title: section, section })))].filter((item) => item.title.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))).slice(0, 7)
+  const showTeam = canViewTeam(me.role)
+  const projectGroups = PROJECT_GROUPS.map((group) => ({
+    ...group,
+    sections: group.sections.filter((section) => section !== 'Equipo' || showTeam),
+  }))
+  const matches = [...records, ...projectGroups.flatMap((group) => group.sections.map((section) => ({ title: section, section })))].filter((item) => item.title.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))).slice(0, 7)
   function content() {
     if (!project) return null
     const trackingViews = { Resumen: 'summary', 'Diagnóstico 360°': 'diagnostics', Ambiciones: 'ambitions', 'Objetivos y actividades': 'work', Evidencias: 'evidence', Evolución: 'evolution' } as const
@@ -118,12 +124,15 @@ export function ProjectWorkspace() {
     if (route.section === 'Reuniones') return <><ProjectHeading eyebrow="Conversaciones que impulsan" title="Reuniones" /><MeetingsPanel cycleId={project.cycle.id} program={project.enrollment.program} /></>
     if (route.section === 'Chat') return <><ProjectHeading eyebrow="Cerca, incluso a la distancia" title="Chat" /><ChannelsPanel entrepreneurshipId={project.entrepreneurship.id} cycleId={project.cycle.id} /></>
     if (route.section === 'Alertas') return <><ProjectHeading eyebrow="Lo que necesita atención" title="Alertas" /><BandejaView /></>
-    if (route.section === 'Equipo') return <>
-      <ProjectHeading eyebrow="Personas que acompañan" title="Equipo" />
-      {me.role === 'Emprendedor'
-        ? <section className="panel empty"><p>La consulta de integrantes del equipo aún no está disponible en esta pantalla.</p></section>
-        : <AssignmentPanel scope={{ kind: 'cycle', id: project.cycle.id }} />}
-    </>
+    if (route.section === 'Equipo') {
+      if (!showTeam) {
+        return <section className="panel"><h1>Acceso no disponible</h1><p>Tu rol no puede consultar las asignaciones.</p></section>
+      }
+      return <>
+        <ProjectHeading title="Equipo" />
+        <AssignmentPanel scope={{ kind: 'cycle', id: project.cycle.id }} />
+      </>
+    }
     if (route.section === 'Informes') return <ReportsView cycleId={project.cycle.id} focusId={route.id} />
     if (route.section === 'Finanzas y compras') return <FinanzasView cycleId={project.cycle.id} entrepreneurshipId={project.entrepreneurship.id} program={project.enrollment.program} />
     return <><ProjectHeading eyebrow="Recursos para avanzar" title={route.section} /><section className="panel"><p className="muted">Las reglas y el backend de finanzas y compras están pendientes de definición. No se muestran datos de demostración.</p></section></>
@@ -140,11 +149,11 @@ export function ProjectWorkspace() {
           <span>Expedientes</span>
         </Link>
       </nav>}
-      <nav aria-label="Navegación del proyecto">{PROJECT_GROUPS.map((group, index) => <div className="nav-group" key={group.label}>{index > 0 && <p className="nav-label">{group.label}</p>}{group.sections.map((section) => { const Icon = icons[section]; const current = Boolean(project) && route.section === section; return <button key={section} onClick={() => project ? navigate(section) : setPicker(true)} className={current ? 'active' : ''} aria-current={current ? 'page' : undefined}><Icon size={18} strokeWidth={1.7} /><span>{section}</span>{current && <i />}</button> })}</div>)}</nav>
+      <nav aria-label="Navegación del proyecto">{projectGroups.map((group, index) => <div className="nav-group" key={group.label}>{index > 0 && <p className="nav-label">{group.label}</p>}{group.sections.map((section) => { const Icon = icons[section]; const current = Boolean(project) && route.section === section; return <button key={section} onClick={() => project ? navigate(section) : setPicker(true)} className={current ? 'active' : ''} aria-current={current ? 'page' : undefined}><Icon size={18} strokeWidth={1.7} /><span>{section}</span>{current && <i />}</button> })}</div>)}</nav>
       <div className="sidebar-bottom"><button className="help-link" onClick={() => setHelp(true)}><CircleHelp size={17} />Guía de acompañamiento<ArrowUpRight size={14} /></button><div className="profile"><span className="profile-avatar"><UserButton appearance={{ elements: { avatarBox: { width: '38px', height: '38px' }, userButtonTrigger: { padding: 0 } } }} /></span><div className="profile-details"><strong title={me.email}>{me.email}</strong><small>{me.role}</small></div></div></div>
     </aside>
     <main className="main-area">
-      <header className="topbar"><div className="breadcrumb"><button className="icon-btn mobile-menu" aria-label="Abrir navegación" onClick={() => setMenu(true)}><Menu size={21} /></button><button className="breadcrumb-home" onClick={() => setPicker(true)}><Home size={15} /><span>Proyectos</span></button><ChevronRight size={13} /><span>{name}</span><ChevronRight size={13} /><b>{project ? route.section : 'Inicio'}</b></div><div className="top-actions"><div className="global-search"><label><Search size={17} /><input aria-label="Buscar en el proyecto" placeholder="Buscar en el proyecto…" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} /></label>{query && <button className="icon-btn search-clear" aria-label="Limpiar búsqueda del proyecto" onClick={() => setQuery('')}><X size={15} /></button>}{searching && <div className="search-results"><p className="search-scope">Objetivos, evidencias, ambiciones y secciones</p>{searchLoading && <p role="status">Buscando en el proyecto…</p>}{searchError ? <p role="alert">{searchError}</p> : matches.length ? matches.map((item) => <button key={`${item.section}/${'id' in item ? item.id ?? 'section' : 'section'}`} onClick={() => navigate(item.section, 'id' in item ? item.id : undefined)}><span>{item.title}<small>{item.section}</small></span><ChevronRight size={15} /></button>) : <p>Sin resultados para «{query}».</p>}</div>}</div><button className="icon-btn notifications" aria-label="Ver alertas" onClick={() => navigate('Alertas')}><Bell size={19} /></button><span className="top-divider" /><UserButton /></div></header>
+      <header className="topbar"><div className="breadcrumb"><button className="icon-btn mobile-menu" aria-label="Abrir navegación" onClick={() => setMenu(true)}><Menu size={21} /></button><button className="breadcrumb-home" onClick={() => setPicker(true)}><Home size={15} /><span>Proyectos</span></button><ChevronRight size={13} /><span>{name}</span><ChevronRight size={13} /><b>{project ? route.section : 'Inicio'}</b></div><div className="top-actions"><div className="global-search"><label><Search size={17} /><input aria-label="Buscar en el proyecto" placeholder="Buscar en el proyecto…" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} /></label>{query && <button className="icon-btn search-clear" aria-label="Limpiar búsqueda del proyecto" onClick={() => setQuery('')}><X size={15} /></button>}{searching && <div className="search-results"><p className="search-scope">Objetivos, evidencias, ambiciones y secciones</p>{searchLoading && <p role="status">Buscando en el proyecto…</p>}{searchError ? <p role="alert">{searchError}</p> : matches.length ? matches.map((item) => <button key={`${item.section}/${'id' in item ? item.id ?? 'section' : 'section'}`} onClick={() => navigate(item.section, 'id' in item ? item.id : undefined)}><span>{item.title}<small>{item.section}</small></span><ChevronRight size={15} /></button>) : <p>Sin resultados para «{query}».</p>}</div>}</div><Link href="/bandeja" className="icon-btn notifications" aria-label="Abrir bandeja"><Bell size={19} aria-hidden="true" /></Link><span className="top-divider" /><UserButton /></div></header>
       <div className="project-context"><div><span className="project-symbol">{project ? initials(name) : '—'}</span><span><strong>{name}</strong><small>{project?.enrollment.program ?? 'Selecciona tu proyecto'}{project && project.cycle.name !== name ? `, ${project.cycle.name}` : null}</small></span></div></div>
       <div className="page" id="main-content" tabIndex={-1}>
         {!loaded ? <p className="loading" role="status">Cargando proyectos…</p> : error ? <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>  : !project ? <ProjectWelcome unavailable={Boolean(projectId)} hasProjects={projects.length > 0} canManage={canManageProjects} onPick={() => setPicker(true)} onRefresh={() => setRetry((value) => value + 1)} /> : <div key={`${project.cycle.id}/${route.section}/${route.id ?? ''}`}>{content()}</div>}

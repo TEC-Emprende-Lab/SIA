@@ -36,6 +36,17 @@ Con Coordinadora, en Prototipado: crear emprendimiento, abrir ciclo, objetivos, 
 
 Decidido. La consulta lee asignaciones activas ya guardadas, de ciclo y de emprendimiento, sin borrar el historial revocado. Coordinadora y Gestor del ámbito la ven. Emprendedor no. Asignar y revocar sigue siendo solo de Coordinadora. La pantalla deja de limitarse a lo registrado en la visita.
 
+**Historia transversal «Consultar equipo vigente» (sin identificador previo):**
+como Coordinadora o Gestor del ámbito, quiero consultar las asignaciones vigentes
+al volver al proyecto o expediente para saber quién conserva acceso. La Web
+solo muestra acciones de asignar y revocar a Coordinadora; la API mantiene las
+reglas de escritura que ya fija la matriz común para Gestor. La consulta de un
+ciclo no incluye ciclos hermanos ni asignaciones directas al emprendimiento;
+estas últimas se consultan en su Expediente con el alcance directo correspondiente.
+La aceptación requiere que una asignación guardada aparezca en una nueva visita,
+que la revocación la retire de la lista sin borrar el historial, y que Emprendedor
+y Gestor fuera del ámbito reciban una denegación de la API.
+
 ### 2. Alta de Puesta en marcha
 
 Decidido. Coordinadora deja constancia de las tres condiciones ya escritas: modelo de negocio definido, prototipo validado y evidencia de pruebas o aceptación de mercado. Con esa constancia se puede abrir el ciclo. Canvas, objetivos, actividades, evidencias, reuniones e informes del programa siguen como están. Presupuesto de Puesta en marcha no entra.

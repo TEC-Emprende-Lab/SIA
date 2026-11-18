@@ -9,10 +9,10 @@ export function PublicHome() {
       <h1>El espacio de trabajo<br />{' '}<span>de tu emprendimiento.</span></h1>
       <p className={styles.guestLead}>Objetivos, avances y acuerdos de cada ciclo.<span>Toda la información de tu proyecto, con el equipo que te acompaña.</span></p>
       <div className={styles.guestSteps}>
-        <Link className={styles.guestAction} href="/sign-in">Iniciar sesión <ArrowRight size={17} /></Link>
-        <Link className={styles.guestActionSecondary} href="/sign-up">Tengo una invitación</Link>
+        <Link className={styles.guestAction} href="/sign-up">Crear mi acceso con Google <ArrowRight size={17} aria-hidden="true" /></Link>
+        <Link className={styles.guestActionSecondary} href="/sign-in">Ya tengo acceso</Link>
       </div>
-      <p className={styles.guestNote}>Ingresa con el correo al que recibiste tu invitación.</p>
+      <p className={styles.guestNote}>Para entrar por primera vez necesitas una invitación vigente. Usa la cuenta de Google que recibió la invitación.</p>
     </section>
     <section className={styles.guestOverview} aria-label="Tu trabajo en SIA">
       <p>Un registro continuo de cada proyecto</p>

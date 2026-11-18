@@ -456,6 +456,69 @@ async def test_cycle_only_gestor_revokes_only_own_entrepreneurs(db, expediente_c
     assert [row["id"] for row in listed.json()] == [sibling.id]
 
 
+async def test_team_lists_saved_active_assignments_only_in_authorized_scope(db, expediente_client):
+    from datetime import UTC, datetime
+
+    from app.modules.expediente.service import (
+        assign_to_cycle,
+        assign_to_entrepreneurship,
+        create_cycle,
+        create_enrollment,
+        create_entrepreneurship,
+    )
+
+    coord = await create_user(db, "team-coord", "Coordinadora")
+    gestor = await create_user(db, "team-scoped", "Gestor")
+    direct = await create_user(db, "team-direct", "Gestor")
+    member = await create_user(db, "team-member", "Emprendedor")
+    enterprise = await create_entrepreneurship(db, coord, "Team")
+    enrollment = await create_enrollment(db, coord, enterprise.id, "Prototipado", datetime.now(UTC))
+    own = await create_cycle(db, coord, enrollment, "Own")
+    sibling = await create_cycle(db, coord, enrollment, "Sibling")
+    global_assignment = await assign_to_entrepreneurship(
+        db, coord, enterprise.id, direct.id, "Gestor"
+    )
+    own_gestor = await assign_to_cycle(db, coord, own, gestor.id, "Gestor")
+    own_member = await assign_to_cycle(db, coord, own, member.id, "Emprendedor")
+    await assign_to_cycle(db, coord, sibling, member.id, "Emprendedor")
+
+    def auth(actor: User) -> dict[str, str]:
+        return {"Authorization": f"Bearer {token_for(actor)}"}
+
+    client = expediente_client
+    enterprise_path = f"/entrepreneurships/{enterprise.id}/assignments"
+    own_path = f"/entrepreneurships/cycles/{own.id}/assignments"
+    sibling_path = f"/entrepreneurships/cycles/{sibling.id}/assignments"
+    assert (await client.get(own_path)).status_code == 401
+    for path in (enterprise_path, own_path):
+        assert (await client.get(path, headers=auth(member))).status_code == 403
+    for path in (enterprise_path, sibling_path):
+        assert (await client.get(path, headers=auth(gestor))).status_code == 403
+
+    for actor in (coord, direct):
+        response = await client.get(enterprise_path, headers=auth(actor))
+        assert response.status_code == 200
+        assert [row["id"] for row in response.json()] == [global_assignment.id]
+
+    for actor in (coord, direct, gestor):
+        response = await client.get(own_path, headers=auth(actor))
+        assert response.status_code == 200
+        assert {row["id"] for row in response.json()} == {own_gestor.id, own_member.id}
+        assert {row["email"] for row in response.json()} == {gestor.email, member.email}
+        assert all(set(row) == {"id", "role", "email", "created_at"} for row in response.json())
+
+    first = await client.get(f"{own_path}?limit=1", headers=auth(gestor))
+    second = await client.get(f"{own_path}?limit=1&offset=1", headers=auth(gestor))
+    assert {first.json()[0]["id"], second.json()[0]["id"]} == {own_gestor.id, own_member.id}
+    revoked = await client.delete(f"{own_path}/{own_member.id}", headers=auth(coord))
+    assert revoked.status_code == 200
+    assert revoked.json()["revoked_at"] is not None
+    reread = await client.get(own_path, headers=auth(gestor))
+    assert [row["id"] for row in reread.json()] == [own_gestor.id]
+    await db.refresh(own_member)
+    assert own_member.revoked_at is not None
+
+
 @pytest.mark.parametrize("cycle_scope", [False, True])
 async def test_unrelated_integrity_errors_are_not_reported_as_duplicates(
     db, monkeypatch, cycle_scope

@@ -71,3 +71,10 @@ class AssignmentOut(BaseModel):
     role: str
     created_at: datetime
     revoked_at: datetime | None
+
+
+class ActiveAssignmentOut(BaseModel):
+    id: str
+    email: str
+    role: str
+    created_at: datetime

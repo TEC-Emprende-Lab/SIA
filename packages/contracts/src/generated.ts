@@ -150,7 +150,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Entrepreneurship Assignments */
+        get: operations["get_entrepreneurship_assignments_entrepreneurships__entrepreneurship_id__assignments_get"];
         put?: never;
         /** Post Entrepreneurship Assignment */
         post: operations["post_entrepreneurship_assignment_entrepreneurships__entrepreneurship_id__assignments_post"];
@@ -185,7 +186,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Cycle Assignments */
+        get: operations["get_cycle_assignments_entrepreneurships_cycles__cycle_id__assignments_get"];
         put?: never;
         /** Post Cycle Assignment */
         post: operations["post_cycle_assignment_entrepreneurships_cycles__cycle_id__assignments_post"];
@@ -1393,6 +1395,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveAssignmentOut */
+        ActiveAssignmentOut: {
+            /** Id */
+            id: string;
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** ActivityCompletion */
         ActivityCompletion: {
             /** Expected Revision */
@@ -3272,6 +3288,42 @@ export interface operations {
             };
         };
     };
+    get_entrepreneurship_assignments_entrepreneurships__entrepreneurship_id__assignments_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                entrepreneurship_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveAssignmentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_entrepreneurship_assignment_entrepreneurships__entrepreneurship_id__assignments_post: {
         parameters: {
             query?: never;
@@ -3369,6 +3421,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProgramCycleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_cycle_assignments_entrepreneurships_cycles__cycle_id__assignments_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                cycle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveAssignmentOut"][];
                 };
             };
             /** @description Validation Error */

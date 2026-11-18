@@ -2,11 +2,9 @@
 .header { padding: 20px clamp(24px, 5vw, 72px); }
 .formSide { display: grid; flex: 1; align-items: center; justify-items: center; padding: 20px 24px 28px; }
 .formWrap { width: min(100%, 420px); min-width: 0; }
-.eyebrow { margin: 0 0 10px; color: #6e6e73; font-size: 12px; }
 .formWrap h1 { margin: 0; color: #1d1d1f; font-size: 32px; font-weight: 600; letter-spacing: -.04em; line-height: 1.15; }
 .description { margin: 12px 0 24px; color: #6e6e73; font-size: 14px; line-height: 1.6; }
-.footer { display: flex; justify-content: space-between; gap: 20px; padding: 18px clamp(24px, 5vw, 72px); border-top: 1px solid #e8e8ed; color: #86868b; font-size: 11px; line-height: 1.5; }
-.footer span:first-child { max-width: 430px; }
+.footer { padding: 16px clamp(24px, 5vw, 72px); border-top: 1px solid #e8e8ed; color: #515154; font-size: 12px; line-height: 1.5; }
 .formWrap :global(.cl-rootBox), .formWrap :global(.cl-cardBox) { width: 100%; max-width: 100%; overflow: visible; border: 0; border-radius: 0; box-shadow: none; }
 .formWrap :global(.cl-card) { width: 100%; gap: 20px; overflow: visible; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
 .formWrap :global(.cl-header) { display: none; }
