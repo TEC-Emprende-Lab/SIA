@@ -2,7 +2,9 @@
 
 US-PRO-003/004/007–010. Decisiones y límites:
 [finanzas-operacion.md](../../../../../docs/02-prototipado/finanzas-operacion.md).
-Réplica funcional adaptada, no conexión ni importación del sistema anterior.
+Réplica funcional adaptada, no conexión ni importación del sistema anterior. La
+aplicación de `013` en staging se registra en
+[release 013](../../../../../docs/release-013-staging.md); producción sigue pendiente.
 
 ## Operación
 

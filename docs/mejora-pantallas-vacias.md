@@ -1,8 +1,9 @@
-# Mejora pendiente de pantallas vacías
+# Mejora de pantallas vacías y recorridos sin salida
 
 Solicitud del usuario el **2026-10-28**, durante el
 [recorrido de login y sistema](recorrido-login-2026-10-28.md).
-Estado: **primera tanda implementada localmente; pendiente de publicar y recorrer en staging**.
+Estado: **primera tanda publicada en `develop`/`main` el 2026-11-04; falta el recorrido
+autenticado en staging**.
 Este documento registra la necesidad y criterios propuestos; no modifica requisitos
 funcionales, permisos ni MVP.
 
@@ -29,7 +30,7 @@ La suite incluye render por capacidades de Coordinadora/Gestor/Emprendedor y sel
 no disponible. El componente de entrada se inspeccionó con CSS compilado a 390 y
 1440 px, sin desbordamiento horizontal y con foco visible por teclado. Es una vista
 aislada sin identidad ni datos, no un recorrido autenticado de los cambios.
-El recorrido de staging de referencia corresponde a la versión anterior.
+El recorrido de staging de referencia (2026-10-28) corresponde a la versión anterior.
 
 Pendientes de esta mejora: verificar los cambios publicados con API/Clerk reales y
 continuar las acciones de vacíos de Resumen, Ambiciones, Informes, Reuniones y bandeja.
@@ -47,10 +48,10 @@ Prototipado y Nuevo ciclo. La configuración debe conservar accesibles `/expedie
 y los detalles de emprendimiento e inscripción. Solo el enlace de un ciclo abre el
 espacio de proyecto correspondiente.
 
-La comprobación HTTP del 4 de noviembre detectó que producción y staging aún devuelven
-al inicio al consultar `/expediente`. El cambio en Git por sí solo no acredita su
-publicación. Se debe verificar el enlace y completar el recorrido autorizado en
-staging antes de promover la versión a producción.
+La comprobación HTTP del 4 de noviembre, previa a la integración, detectó que producción
+y staging devolvían al inicio al consultar `/expediente`. El cambio ya está en `main`;
+falta verificar el enlace publicado y completar el recorrido autorizado en staging.
+Que el código esté fusionado no acredita por sí solo el comportamiento desplegado.
 
 La suite Web, lint, TypeScript y build pasaron localmente. La prueba de navegación
 renderiza el menú real para los tres roles y verifica las redirecciones mediante
@@ -90,8 +91,8 @@ evidencia. El Resumen presenta varios «No hay…» sin guiar el primer paso de 
   por ejemplo, evidencia requiere actividad y Evolución requiere dos diagnósticos
   aprobados. La orientación debe enlazar al módulo correcto.
 - Con filtros sin resultados, ofrecer limpiar los filtros; con fallo de carga,
-  explicar el problema y permitir reintentar. Con finanzas no implementadas, conservar
-  el aviso de disponibilidad y no simular presupuestos ni ofrecer altas inexistentes.
+  explicar el problema y permitir reintentar. Finanzas de Prototipado ya está implementada;
+  no simular movimientos ni presupuestos cuando la consulta falle o falte un permiso.
 - Mantener estilo visual consistente, texto breve en español, jerarquía clara y acciones
   accesibles por teclado y en móvil. No llenar vacíos con datos ficticios en producción.
 
@@ -108,12 +109,13 @@ evidencia. El Resumen presenta varios «No hay…» sin guiar el primer paso de 
 La mejora de presentación deriva de «interfaz simple, consistente y comprensible» de
 [visión y alcance](00-nucleo-comun/vision-y-alcance.md). Conserva la matriz de
 [roles y permisos](00-nucleo-comun/actores-roles-y-permisos.md).
-El contenido por módulo se vincula a US-PRO-001/002/004/005/006, US-PM-001/002/003 y
-US-COM-001/002 según corresponda. Historia específica de onboarding/estados vacíos: `TBD`;
-no se crea un identificador funcional nuevo ni se da por aceptada una historia existente.
+El contenido por módulo se vincula a US-PRO-001/002/004/005/006 y US-PRO-003/007–010
+(Finanzas), US-PM-001/002/003 y US-COM-001/002 según corresponda. Historia específica de
+onboarding/estados vacíos: `TBD`; no se crea un identificador funcional nuevo ni se da por
+aceptada una historia existente.
 
-- [ ] Diseñar y revisar vacíos con y sin permiso de alta.
-- [ ] Reutilizar las operaciones backend y navegación existentes.
+- [x] Diseñar y revisar vacíos con y sin permiso de alta.
+- [x] Reutilizar las operaciones backend y navegación existentes.
 - [ ] Verificar colecciones vacías, selección pendiente, filtros sin resultados,
   errores de red y recuperación, sin confundir sus mensajes.
 - [ ] Probar acciones por teclado y móvil, con Coordinadora y roles de alcance limitado.

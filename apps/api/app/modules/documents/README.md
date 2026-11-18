@@ -17,7 +17,9 @@ Tabla `documents` y entrega por URL firmada. Trazabilidad: US-PRO-001/002, US-PM
 ## Qué no hace
 
 - No define límites de MIME ni de tamaño: siguen `TBD`. Un archivo vacío se rechaza.
-- No adjunta archivos al chat, no guarda facturas y no renderiza el PDF del informe.
+- No adjunta archivos al chat ni renderiza el PDF del informe. Los respaldos y
+  facturas financieras sí pueden referenciar `documents` desde el módulo de Finanzas
+  (migración `013`).
 - Sin endpoint, bucket y credenciales (`SIA_STORAGE_*`) la carga responde 503.
   En Compose, MinIO crea el bucket `sia-private`. La API sube a `http://minio:9000`
   y firma la descarga con `SIA_STORAGE_PUBLIC_ENDPOINT` (`http://localhost:9000`),

@@ -60,9 +60,9 @@ pnpm build
 
 El prototipo usa Node 24, pnpm 9.15.9 y lockfile propio fuera del workspace raíz. `--ignore-workspace` coincide con la corrección de CI `a5f1796`.
 
-Para API y contratos, seguir [Reproducir validaciones](docs/operacion-api.md#reproducir-validaciones): ya existen pruebas de API, dominio, autorización, integración y concurrencia PostgreSQL, Ruff, mypy y controles de drift OpenAPI/TypeScript. La raíz ejecuta lint/typecheck de web y contratos; no incluye el prototipo. Ejecutar solo controles aplicables al cambio; una actualización documental verifica enlaces y `git diff --check` sin repetir suites de aplicación innecesariamente.
+Para API y contratos, seguir [Reproducir validaciones](docs/operacion-api.md#reproducir-validaciones): ya existen pruebas de API, dominio, autorización, integración y concurrencia PostgreSQL, Ruff, mypy y controles de drift OpenAPI/TypeScript. La CI ejecuta además el worker con su imagen y la suite y el build de `apps/web`. La raíz ejecuta lint/typecheck de web y contratos; no incluye el prototipo. Ejecutar solo controles aplicables al cambio; una actualización documental verifica enlaces y `git diff --check` sin repetir suites de aplicación innecesariamente.
 
-Estado revisado al 2026-10-06: ambos workflows están verdes sobre `develop` `7e0947e`; la Web de staging responde en `https://sia.dev.neuroboard.app`. El recorrido parcial de Coordinadora y Emprendedor del 2026-10-12 está en la [guía operativa](docs/operacion-api.md#verificación-de-staging--2026-10-12). La validación de staging exigida para liberar sigue siendo un paso independiente: un merge, CI verde o ese recorrido parcial no cierran la Fase 8 ni la Fase 9.
+Estado revisado al 2026-11-04: `main` en `6eae158` y `develop` en `e07e6dc`; la Web de staging responde en `https://sia.dev.neuroboard.app`. El [registro de release 013](docs/release-013-staging.md) documenta la aplicación de la migración de Finanzas en staging. Un merge, CI verde o ese registro no sustituyen la validación autenticada por roles y no cierran la Fase 8 ni la Fase 9.
 
 ## Reglas de datos y seguridad
 

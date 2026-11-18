@@ -53,9 +53,9 @@ paquete de la API y usa ese comando.
 ## Pruebas
 
 `tests/test_informes.py` (SQLite; `INFORMES_TEST_DATABASE_URL` para PostgreSQL):
-composición trazable + finanzas pendiente, solo gestores aprueban, aprobación
-inmutable + encolado del PDF, corrección vinculada, worker éxito/idle y
-reintento, período inválido y autenticación.
+composición trazable + finanzas sin ejecuciones marcadas pendientes, solo gestores
+aprueban, aprobación inmutable + encolado del PDF, corrección vinculada, worker
+éxito/idle y reintento, período inválido y autenticación.
 
 ## Decisiones pendientes (TBD)
 

@@ -1,5 +1,19 @@
 # Estado actual verificable
 
+## Actualización de código — 2026-11-18
+
+- [PR #51](https://github.com/TEC-Emprende-Lab/SIA/pull/51): Equipo por ámbito,
+  orientación de Chat y primer acceso con Google, Bandeja sin ciclo y Finanzas
+  móvil. Se verificó en staging con Coordinadora, Gestor y Emprendedor; la Web
+  servía `9c70d24` y la API `e53ef3a`. Se revocaron las asignaciones temporales.
+- [PR #52](https://github.com/TEC-Emprende-Lab/SIA/pull/52): calendario semanal
+  y mensual, y formularios de Reuniones separados de la lectura. Solo cambia la Web.
+- El esquema `013` se verificó en ambos entornos; la nueva API de staging no
+  requiere migraciones. La aceptación de un ciclo completo y la prueba de
+  restauración siguen pendientes.
+
+## Corte histórico — 2026-11-10
+
 **Corte del repositorio publicado: 2026-11-04. Lectura de entornos: 2026-11-10.** Este documento
 describe el estado observado en los entornos y en el remoto, no una
 certificación de que el MVP esté terminado. En caso de conflicto sobre requisitos,

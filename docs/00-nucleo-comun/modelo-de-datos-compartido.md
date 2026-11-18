@@ -32,7 +32,7 @@ Este modelo conceptual define entidades comunes y no prescribe un motor adiciona
 
 ## Finanzas e informes
 
-Las entidades financieras comunes se especifican en los programas que las habilitan: presupuesto, partida, compra, factura, documento y cambio presupuestario. Finanzas sigue pendiente. Un informe técnico se persiste como `TechnicalReport`: cada fila es una versión trazable del período, con composición de fuentes, revisión, vínculo de corrección y referencia privada al PDF cuando se genera.
+Las entidades financieras comunes se especifican en los programas que las habilitan: presupuesto, partida, compra, factura, documento y cambio presupuestario. Finanzas de Prototipado está implementada (migración `013`, [detalle](../02-prototipado/finanzas-operacion.md)); Puesta en marcha sigue sin habilitación financiera. Un informe técnico se persiste como `TechnicalReport`: cada fila es una versión trazable del período, con composición de fuentes, revisión, vínculo de corrección y referencia privada al PDF cuando se genera.
 
 ## Auditoria
 
