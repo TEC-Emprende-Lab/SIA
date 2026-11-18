@@ -28,6 +28,7 @@ export function LoadMore({
   return (
     <>
       {loading && <SkeletonRows rows={1} />}
+      {error && <div className={styles.paginationFeedback}><ActionFeedback tone="error">{error}</ActionFeedback></div>}
       {showButton && (
         <div className={styles.actions}>
           <button type="button" className={styles.buttonSecondary} aria-disabled={loading} onClick={() => {
@@ -39,7 +40,6 @@ export function LoadMore({
           </button>
         </div>
       )}
-      {error && <div className={styles.paginationFeedback}><ActionFeedback tone="error">{error}</ActionFeedback></div>}
       {end && <p className={styles.meta} role="status">No hay más resultados.</p>}
       <span className="sr-only" role="status">{loading && 'Cargando más resultados…'}</span>
     </>

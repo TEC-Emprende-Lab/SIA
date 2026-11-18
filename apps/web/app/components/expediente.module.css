@@ -48,7 +48,7 @@
 .fact { padding: 16px 0; border-bottom: 1px solid var(--line); }
 .fact dt { color: #6e6e73; font-size: 12px; letter-spacing: 0; text-transform: none; }
 .formError { color: #b42318; background: #fff7f6; }
-.paginationFeedback { margin-block-start: 8px; }
+.paginationFeedback { margin-block: 8px; }
 
 .saveFeedback {
   margin: 0;
