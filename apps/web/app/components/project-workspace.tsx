@@ -8,6 +8,7 @@ import { useMe } from './authenticated-shell'
 import { SeguimientoPanel } from './seguimiento-views'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { LoadingRows, LoadingState, SkeletonBar } from './ui/loading-state'
+import { ActionFeedback } from './ui/action-feedback'
 import { ProjectHeading } from './project-reference-ui'
 import { ProjectWelcome } from './project-welcome'
 import { loadProjects, PROJECT_GROUPS, readProjectSection, type Project, type ProjectSection } from '../lib/project-workspace'
@@ -40,8 +41,8 @@ class ProjectModuleBoundary extends Component<{ children: ReactNode; title: stri
     if (!this.state.failed) return this.props.children
     return <>
       <ProjectHeading title={this.props.title} />
-      <div className="notice error" role="alert">
-        <p>No se pudo abrir esta sección. Puedes continuar en otro módulo o recargar la página.</p>
+      <div className="project-recovery">
+        <ActionFeedback tone="error">No se pudo abrir esta sección. Puedes continuar en otro módulo o recargar la página.</ActionFeedback>
         <button type="button" className="btn secondary" onClick={() => window.location.reload()}>Recargar página</button>
       </div>
     </>
@@ -196,7 +197,10 @@ export function ProjectWorkspace() {
     return <div><span className="project-symbol">{symbol}</span><span><strong>{name}</strong><small>{subtitle}</small></span></div>
   }
   function projectLoadError() {
-    return <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>
+    return <div className="project-recovery">
+      <ActionFeedback tone="error">{error}</ActionFeedback>
+      <button type="button" className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button>
+    </div>
   }
   function workspaceContent() {
     if (!loaded) {

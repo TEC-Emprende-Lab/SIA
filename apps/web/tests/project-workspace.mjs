@@ -116,6 +116,7 @@ try {
     export const ReportsView = () => null
     export const FinanzasView = () => null
     export const ProjectHeading = () => null
+    export const ActionFeedback = () => null
     export const Dialog = () => null
     export const DialogContent = () => null
     export const DialogDescription = () => null

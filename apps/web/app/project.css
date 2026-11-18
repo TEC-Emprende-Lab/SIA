@@ -104,6 +104,8 @@ a, button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 .page { max-width: 1380px; padding: 24px 40px 64px; }
 .project-page-loading { display: grid; gap: 16px; padding-block: 16px 24px; }
 .project-page-loading > span:first-child { width: min(80%, 20rem); height: 32px; }
+.project-recovery { display: grid; gap: 8px; justify-items: start; }
+.project-recovery button { min-height: 44px; }
 .page-heading { align-items: flex-end; margin-bottom: 32px; }
 .page-heading p.muted { margin-top: 12px; font-size: 14px; color: #6e6e73; }
 .eyebrow { font-size: 11px; font-weight: 500; color: #6e6e73; letter-spacing: .02em; text-transform: none; }
