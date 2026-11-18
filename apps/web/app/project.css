@@ -80,10 +80,13 @@ a, button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 .profile strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 500; }
 .profile small { color: #6e6e73; font-size: 11px; }
 .topbar { min-height: 64px; padding-inline: 40px; border-color: var(--line); }
-.breadcrumb { gap: 10px; color: #86868b; font-size: 12px; }
+.breadcrumb { min-width: 0; gap: 10px; color: #6e6e73; font-size: 12px; }
+.breadcrumb > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .breadcrumb b { color: #1d1d1f; }
 .global-search input { width: 190px; font-size: 12px; }
 .global-search { position: relative; }
+.global-search label { flex-direction: row; margin: 0; }
+.global-search:focus-within { outline: 2px solid #68642d; outline-offset: 4px; border-radius: 4px; }
 .search-results button { min-height: 44px; color: var(--ink); overflow-wrap: anywhere; }
 .search-results button:focus-visible { outline: 2px solid #68642d; outline-offset: -2px; }
 .project-search-feedback { display: grid; gap: 8px; padding: 8px; }
