@@ -137,8 +137,43 @@ function PurchaseList({ cycle, definitions, open, version, create }: { cycle: st
     </div>
     {hasFilters && <button className="btn ghost" onClick={clear}>Limpiar filtros</button>}
     {error && <FinanceError message={error} />}
-    {list.error ? <FinanceError message={list.error} retry={list.retry} /> : list.loading ? <FinanceLoading label="Consultando trámites…" /> : !list.data?.length ? <FinanceEmpty title={hasFilters ? 'Sin resultados con estos filtros' : 'Tu primer trámite empieza aquí'} action={hasFilters ? <button className="btn secondary" onClick={clear}>Ver todos los trámites</button> : create ? <button className="btn primary" onClick={create}><Plus size={15} aria-hidden="true" />Crear primer trámite</button> : undefined}>{hasFilters ? 'Prueba otro período, tipo o estado. Los registros no se han eliminado.' : 'Registra la información, revisa las verificaciones y guarda un borrador para adjuntar sus respaldos.'}</FinanceEmpty> : <div className={styles.scroll} role="region" aria-label="Listado de trámites" tabIndex={0}><table className={styles.table}><thead><tr><th scope="col">Proveedor / tipo</th><th scope="col">Documento</th><th scope="col" className={styles.numeric}>Monto CRC</th><th scope="col">Estado</th><th scope="col">Verificaciones</th><th scope="col">Detalle</th></tr></thead><tbody>{list.data.map(p => <tr key={p.id}><td className={styles.supplier}><strong>{p.supplier}</strong><small>{definitions.types[p.kind]}</small></td><td>{p.invoice_number || 'Pendiente de registrar'}{p.fundatec_number && <small>FUNDATEC {p.fundatec_number}</small>}</td><td className={styles.numeric}>{money(p.amount)}</td><td><FinanceStatus status={p.status} /></td><td>{Object.values(p.checklist).filter(Boolean).length}/{Object.keys(p.checklist).length}<small>verificados</small></td><td><button className="btn secondary" onClick={() => open(p)} aria-label={`Ver trámite de ${p.supplier}`}>Ver trámite<ArrowRight size={14} aria-hidden="true" /></button></td></tr>)}</tbody></table></div>}
-    <FinancePages offset={offset} count={list.data?.length ?? 0} loading={list.loading} change={setOffset} />
+    {list.error && <FinanceError message={list.error} retry={list.retry} />}
+    {list.loading && !list.error && <FinanceLoading label="Consultando trámites…" layout="table" />}
+    {!list.loading && !list.error && <>
+      <PurchaseResults items={list.data ?? []} definitions={definitions} open={open} hasFilters={hasFilters} clear={clear} create={create} />
+      <FinancePages offset={offset} count={list.data?.length ?? 0} loading={false} change={setOffset} />
+    </>}
     <details className={styles.disclosure}><summary>Reporte mensual y texto de validaciones</summary><div className={styles.filters}><label>Mes completo<input type="month" value={month} onChange={event => { const value = event.target.value; setMonth(value); if (!value) { clear(); return } const [year, selectedMonth] = value.split('-').map(Number); if (!year || !selectedMonth) return; setFilters(current => ({ ...current, start: `${value}-01`, end: `${value}-${new Date(year, selectedMonth, 0).getDate()}` })); setOffset(0); setCopied(false) }} /></label><button className="btn secondary" disabled={copying} onClick={() => void copySession()}>{copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}{copying ? 'Preparando…' : copied ? 'Texto copiado' : 'Copiar validaciones del período'}</button></div><p>El PDF incluye todos los resultados de los filtros y usa la fecha de registro. El texto copiable usa la fecha de validación interna y solo el período seleccionado; no acredita un pago de FUNDATEC.</p>{copied && <span role="status">El texto de validaciones se copió al portapapeles.</span>}</details>
   </section>
+}
+
+function PurchaseResults({ items, definitions, open, hasFilters, clear, create }: {
+  items: Purchase[]
+  definitions: Definitions
+  open: (purchase: Purchase) => void
+  hasFilters: boolean
+  clear: () => void
+  create?: () => void
+}) {
+  if (!items.length) {
+    if (hasFilters) return <FinanceEmpty title="Sin resultados con estos filtros" action={<button className="btn secondary" onClick={clear}>Ver todos los trámites</button>}>
+      Prueba otro período, tipo o estado. Los registros no se han eliminado.
+    </FinanceEmpty>
+    return <FinanceEmpty title="Tu primer trámite empieza aquí" action={create && <button className="btn primary" onClick={create}><Plus size={15} aria-hidden="true" />Crear primer trámite</button>}>
+      Registra la información, revisa las verificaciones y guarda un borrador para adjuntar sus respaldos.
+    </FinanceEmpty>
+  }
+  return <div className={styles.scroll} role="region" aria-label="Listado de trámites" tabIndex={0}>
+    <table className={styles.table}>
+      <thead><tr><th scope="col">Proveedor / tipo</th><th scope="col">Documento</th><th scope="col" className={styles.numeric}>Monto CRC</th><th scope="col">Estado</th><th scope="col">Verificaciones</th><th scope="col">Detalle</th></tr></thead>
+      <tbody>{items.map(p => <tr key={p.id}>
+        <td className={styles.supplier}><strong>{p.supplier}</strong><small>{definitions.types[p.kind]}</small></td>
+        <td>{p.invoice_number || 'Pendiente de registrar'}{p.fundatec_number && <small>FUNDATEC {p.fundatec_number}</small>}</td>
+        <td className={styles.numeric}>{money(p.amount)}</td>
+        <td><FinanceStatus status={p.status} /></td>
+        <td>{Object.values(p.checklist).filter(Boolean).length}/{Object.keys(p.checklist).length}<small>verificados</small></td>
+        <td><button className="btn secondary" onClick={() => open(p)} aria-label={`Ver trámite de ${p.supplier}`}>Ver trámite<ArrowRight size={14} aria-hidden="true" /></button></td>
+      </tr>)}</tbody>
+    </table>
+  </div>
 }
