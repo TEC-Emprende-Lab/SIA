@@ -6,6 +6,7 @@ import { useState } from 'react'
 import shell from './expediente.module.css'
 import styles from './comunicacion.module.css'
 import { LoadMore } from './load-more'
+import { LoadingRows } from './ui/loading-state'
 import { formatDateTime } from '../lib/expediente'
 import { usePagedList } from '../lib/use-paged-list'
 import {
@@ -82,7 +83,9 @@ export function BandejaView() {
           </button>
         </section>
       ) : alerts.state.status !== 'ready' || notifications.state.status !== 'ready' ? (
-        <p className={shell.meta}>Cargando bandeja…</p>
+        <section className={shell.section} aria-label="Alertas y notificaciones">
+          <LoadingRows label="Cargando bandeja…" />
+        </section>
       ) : (
         <>
           <BandejaList

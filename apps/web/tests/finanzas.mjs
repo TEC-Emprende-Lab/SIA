@@ -72,11 +72,14 @@ try {
   console.log('✓ UI carries human review, scoped revisions and manual confirmation; BFF preserves PDF bytes')
 
   const require = createRequire(import.meta.url)
-  const ui = ts.transpileModule(sources[3], { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
+  const compile = (source) => ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
     .replace(/from ["'](react\/jsx-runtime|react|lucide-react)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
     .replaceAll("'../lib/finanzas'", "'./finanzas.mjs'")
+    .replaceAll("'./ui/loading-state'", "'./loading-state.mjs'")
+    .replace("import styles from './interaction-states.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
     .replace("import styles from './finanzas.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
-  await writeFile(join(dir, 'ui.mjs'), ui)
+  await writeFile(join(dir, 'ui.mjs'), compile(sources[3]))
+  await writeFile(join(dir, 'loading-state.mjs'), compile(await readFile(new URL('../app/components/ui/loading-state.tsx', import.meta.url), 'utf8')))
   const { FinanceStatus, FinanceEmpty, FinanceHeaderActions, FinanceNotice, FinancePages } = await import(pathToFileURL(join(dir, 'ui.mjs')))
   const render = (Component, props) => renderToStaticMarkup(createElement(Component, props))
   assert(render(FinanceStatus, { status: 'executed' }).includes('Ejecutado'))

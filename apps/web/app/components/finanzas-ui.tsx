@@ -4,6 +4,7 @@ import { useEffect, useId, useState, type ReactNode } from 'react'
 import { AlertCircle, CheckCircle2, FileText, Info, Plus, RefreshCw } from 'lucide-react'
 import { financeRequest, STATUS } from '../lib/finanzas'
 import styles from './finanzas.module.css'
+import { LoadingRows } from './ui/loading-state'
 
 export const financeFailure = (reason: unknown) => reason instanceof Error ? reason.message : 'No se pudo completar la operación. Intenta de nuevo.'
 
@@ -36,8 +37,11 @@ export function FinanceError({ message, retry }: { message: string; retry?: () =
   return <div className={styles.error} role="alert"><AlertCircle size={18} aria-hidden="true" /><div><strong>No se pudo completar la operación</strong><p>{message}</p>{retry && <button className="btn secondary" onClick={retry}><RefreshCw size={14} aria-hidden="true" />Intentar de nuevo</button>}</div></div>
 }
 
-export function FinanceLoading({ label = 'Consultando información financiera…' }: { label?: string }) {
-  return <div className={styles.loading} role="status"><span>{label}</span><div className={styles.skeleton} aria-hidden="true" /><div className={styles.skeleton} aria-hidden="true" /></div>
+export function FinanceLoading({ label = 'Consultando información financiera…', layout = 'list' }: {
+  label?: string
+  layout?: 'list' | 'table'
+}) {
+  return <LoadingRows label={label} layout={layout} rows={2} />
 }
 
 export function FinanceHeaderActions({ loading, ready, hasBudget, coordinate, refresh, addItem, create }: {

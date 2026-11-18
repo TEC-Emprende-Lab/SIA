@@ -93,6 +93,9 @@
 .agenda h4 { color: var(--calendar-ink); margin: 0; font-size: .95rem; font-weight: 650; }
 .agenda h4::first-letter { text-transform: uppercase; }
 .feedback { display: grid; gap: 8px; justify-items: start; }
+.day.placeholder { background: var(--calendar-paper); cursor: default; }
+.placeholder > span { margin-top: 8px; }
+.agendaPlaceholder { padding-top: 16px; }
 
 @media (max-width: 660px) {
   .day { align-items: center; min-height: 56px; padding: 4px 0; gap: 2px; }

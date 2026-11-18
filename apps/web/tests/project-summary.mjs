@@ -21,22 +21,27 @@ try {
     .replaceAll("'./project-reference-ui'", "'./project-reference-ui.mjs'")
     .replaceAll("'./authenticated-shell'", "'./meeting-stubs.mjs'")
     .replaceAll("'./load-more'", "'./meeting-stubs.mjs'")
+    .replaceAll("'./ui/confirm-action'", "'./meeting-stubs.mjs'")
+    .replaceAll("'./ui/loading-state'", "'./loading-state.mjs'")
     .replaceAll("'../lib/use-paged-list'", "'./meeting-stubs.mjs'")
     .replace("import shell from './expediente.module.css';", 'const shell = new Proxy({}, { get: (_, key) => String(key) });')
     .replace("import styles from './comunicacion.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
     .replace("import styles from './summary-communication.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
+    .replace("import styles from './interaction-states.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
   for (const name of ['comunicacion', 'expediente', 'project-summary', 'meeting-calendar']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/lib/${name}.ts`, import.meta.url), 'utf8')))
   }
   for (const name of ['project-reference-ui', 'summary-communication', 'comunicacion-views']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/components/${name}.tsx`, import.meta.url), 'utf8')))
   }
+  await writeFile(join(temporary, 'loading-state.mjs'), compile(await readFile(new URL('../app/components/ui/loading-state.tsx', import.meta.url), 'utf8')))
   await writeFile(join(temporary, 'meeting-stubs.mjs'), `
     let role, data
     export function setMeetingFixture(nextRole, nextData) { role = nextRole; data = nextData }
     export function useMe() { return { id: 'u1', role } }
     export function usePagedList() { return { state: { status: 'ready', data } } }
     export function LoadMore() { return null }
+    export function ConfirmAction() { return null }
     export function MeetingCalendar({ renderMeeting }) { return data.map(renderMeeting) }
   `)
   const { MeetingsPanel } = await import(pathToFileURL(join(temporary, 'comunicacion-views.mjs')))
@@ -52,7 +57,7 @@ try {
       assert.doesNotMatch(html, /Editar reunión|Revocar reunión|Registrar reunión/)
     } else {
       assert.match(html, /aria-expanded="false" aria-controls="meeting-action-m1"[^>]*>Editar reunión/)
-      assert.match(html, /aria-expanded="false" aria-controls="meeting-action-m1"[^>]*>Revocar reunión/)
+      assert.match(html, /aria-haspopup="dialog"[^>]*>Revocar reunión/)
     }
   }
   console.log('✓ Meeting cards render read-first and restrict edit and revoke controls to active meetings and management roles')
@@ -195,6 +200,7 @@ try {
   assert(partial.includes('HTTP 403'))
   assert(partial.includes('role="alert"'))
   assert(partial.includes('role="status"'))
+  assert.match(partial, /role="status">Consultando datos autorizados…<\/span><div aria-hidden="true">/)
   assert(!partial.includes('No hay acuerdos'))
   const capped = render({ meetings: ready(Array.from({ length: 8 }, (_, index) => ({ ...meeting, id: `m${index}`, title: `Meeting ${index}` }))) })
   assert(capped.includes('5 de 8'))

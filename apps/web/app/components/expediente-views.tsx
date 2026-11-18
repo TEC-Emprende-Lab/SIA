@@ -47,6 +47,7 @@ import {
 } from '../lib/expediente'
 import { usePagedList } from '../lib/use-paged-list'
 import { LoadMore } from './load-more'
+import { LoadingRows } from './ui/loading-state'
 
 const fetchEnrollments = (url: string) => requestExpediente(url, parseEnrollmentList)
 const fetchCycles = (url: string) => requestExpediente(url, parseCycleList)
@@ -90,12 +91,12 @@ function useExpediente<T>(
   return { state, retry }
 }
 
-function LoadingLine({ children }: { children: string }) {
-  return (
-    <p className={styles.meta} aria-live="polite">
-      {children}
-    </p>
-  )
+function LoadingLine({ children, rows = 2, layout = 'list' }: {
+  children: string
+  rows?: number
+  layout?: 'list' | 'table'
+}) {
+  return <LoadingRows label={children} rows={rows} layout={layout} />
 }
 
 function ResourceFallback({
@@ -379,7 +380,7 @@ export function ExpedienteListView() {
         <header className={styles.header}>
           <h1>Expediente</h1>
         </header>
-        <LoadingLine>Cargando emprendimientos…</LoadingLine>
+        <LoadingLine layout="table" rows={4}>Cargando emprendimientos…</LoadingLine>
       </div>
     )
   }

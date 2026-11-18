@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import shell from './expediente.module.css'
 import styles from './meeting-calendar.module.css'
+import { LoadingState, SkeletonBar } from './ui/loading-state'
 import type { Meeting } from '../lib/comunicacion'
 import { loadSummaryMeetings, type SummaryState } from '../lib/project-summary'
 import {
@@ -28,6 +29,7 @@ export function MeetingCalendar({ cycleId, revision, renderMeeting }: {
   const [mode, setMode] = useState<CalendarMode>('month')
   const [state, setState] = useState<SummaryState<Meeting>>({ status: 'loading' })
   const [retry, setRetry] = useState(0)
+  const [loadedRevision, setLoadedRevision] = useState(revision)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -35,6 +37,7 @@ export function MeetingCalendar({ cycleId, revision, renderMeeting }: {
       if (controller.signal.aborted) return
       if (result.ok) setState({ status: 'ready', data: result.data })
       else setState({ status: 'error', message: result.message, httpStatus: result.status })
+      setLoadedRevision(revision)
     })
     return () => controller.abort()
   }, [cycleId, revision, retry])
@@ -66,7 +69,15 @@ export function MeetingCalendar({ cycleId, revision, renderMeeting }: {
         </div>
       </div>
     </div>
-    {state.status === 'loading' && <p className={styles.note} role="status">Cargando el calendario…</p>}
+    {state.status === 'loading' && <LoadingState label="Cargando el calendario…">
+      <div className={styles.grid} data-mode={mode}>
+        {weekdays.map((day) => <span key={day} className={styles.weekday}>{day}</span>)}
+        {days.map((day) => <div key={day} className={`${styles.day} ${styles.placeholder}`}>
+          <SkeletonBar size="short" />
+        </div>)}
+      </div>
+      <div className={styles.agendaPlaceholder}><SkeletonBar /></div>
+    </LoadingState>}
     {state.status === 'error' && <div className={styles.feedback}>
       <p className={shell.formError} role="alert">No se pudieron cargar las reuniones. {state.message}</p>
       <button type="button" className={shell.buttonSecondary} onClick={() => {
@@ -75,6 +86,7 @@ export function MeetingCalendar({ cycleId, revision, renderMeeting }: {
       }}>Reintentar</button>
     </div>}
     {state.status === 'ready' && <>
+      {loadedRevision !== revision && <p className={styles.note} role="status">Actualizando reuniones…</p>}
       <div className={styles.grid} data-mode={mode}>
         {weekdays.map((day) => <span key={day} className={styles.weekday} aria-hidden="true">{day}</span>)}
         {days.map((day) => {

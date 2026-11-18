@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 
 import { StatusPanel, useMe } from './authenticated-shell'
 import styles from './expediente.module.css'
 import extra from './comunicacion.module.css'
+import { ConfirmAction } from './ui/confirm-action'
+import { LoadingRows } from './ui/loading-state'
 import { formatDateTime } from '../lib/expediente'
 import {
   assignableRoles,
@@ -175,7 +177,7 @@ export function InvitacionesView() {
       ) : null}
       <section className={styles.section} aria-labelledby="invitaciones-lista">
         <h2 id="invitaciones-lista">Registro</h2>
-        {state.status === 'loading' ? <p className={styles.meta}>Cargando invitaciones…</p> : null}
+        {state.status === 'loading' && <LoadingRows label="Cargando invitaciones…" />}
         {state.status === 'forbidden' ? (
           <StatusPanel status="forbidden" heading="h2" title="Acceso no disponible" description={state.message} />
         ) : null}
@@ -264,7 +266,7 @@ export function UsuariosView() {
         <h1>Usuarios</h1>
       </header>
       <p className={styles.intro}>Personas que ya iniciaron sesión con una invitación aceptada.</p>
-      {state.status === 'loading' ? <p className={styles.meta}>Cargando usuarios…</p> : null}
+      {state.status === 'loading' && <LoadingRows label="Cargando usuarios…" />}
       {state.status === 'forbidden' ? (
         <StatusPanel status="forbidden" heading="h2" title="Acceso no disponible" description={state.message} />
       ) : null}
@@ -316,18 +318,24 @@ export function AssignmentPanel({ scope }: { scope: AssignmentScope }) {
   return (
     <section className={styles.section} aria-labelledby={`asignaciones-${scope.id}`}>
       <h2 id={`asignaciones-${scope.id}`}>{title}</h2>
-      <AssignmentRoster key={path} path={path} canManage={canListUsers(me.role)} />
+      <AssignmentRoster key={path} path={path} scope={scope.kind} canManage={canListUsers(me.role)} />
     </section>
   )
 }
 
-function AssignmentRoster({ path, canManage }: { path: string; canManage: boolean }) {
+function AssignmentRoster({ path, scope, canManage }: { path: string; scope: AssignmentScope['kind']; canManage: boolean }) {
   const [list, setList] = useState<ListState<ActiveAssignment>>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [offset, setOffset] = useState(0)
   const [revoking, setRevoking] = useState<string | null>(null)
+  const [selection, setSelection] = useState<ActiveAssignment | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
+  const status = useRef<HTMLParagraphElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const returnToStatus = useRef(false)
+  let consequence = 'Esta asignación al ciclo dejará de dar acceso. Otras asignaciones no cambian.'
+  if (scope === 'entrepreneurship') consequence = 'Esta asignación al emprendimiento dejará de dar acceso. Otras asignaciones no cambian.'
   const pageSize = 50
 
   useEffect(() => {
@@ -371,16 +379,23 @@ function AssignmentRoster({ path, canManage }: { path: string; canManage: boolea
     setRevoking(null)
     if (!result.ok) {
       setError(result.message)
-      if (result.status === 409) reload()
+      if (result.status === 409) {
+        returnToStatus.current = true
+        setSelection(null)
+        setNotice('La asignación cambió. Consulta la lista actualizada.')
+        reload()
+      }
       return
     }
+    returnToStatus.current = true
+    setSelection(null)
     setNotice(`Se revocó esta asignación de ${item.email}.`)
     reload()
   }
 
   let body = null
   if (list.status === 'loading') {
-    body = <p className={styles.meta} role="status">Consultando asignaciones…</p>
+    body = <LoadingRows label="Consultando asignaciones…" rows={2} />
   } else if (list.status === 'error' || list.status === 'forbidden') {
     body = <>
       <p role="alert" className={styles.formError}>No se pudo consultar el equipo. {list.message}</p>
@@ -403,8 +418,14 @@ function AssignmentRoster({ path, canManage }: { path: string; canManage: boolea
                 className={styles.buttonSecondary}
                 type="button"
                 aria-label={`Revocar la asignación de ${item.email}`}
+                aria-haspopup="dialog"
                 disabled={revoking !== null}
-                onClick={() => void revoke(item)}
+                onClick={(event) => {
+                  trigger.current = event.currentTarget
+                  returnToStatus.current = false
+                  setError(null)
+                  setSelection(item)
+                }}
               >
                 Revocar asignación
               </button>
@@ -425,8 +446,24 @@ function AssignmentRoster({ path, canManage }: { path: string; canManage: boolea
     <>
       <p className={styles.meta}>Solo se muestran las asignaciones vigentes de este ámbito.</p>
       {body}
-      {error && <p className={styles.formError} role="alert">{error}</p>}
-      <p className={styles.meta} role="status">{notice}</p>
+      {!selection && error && <p className={styles.formError} role="alert">{error}</p>}
+      <p className={styles.meta} role="status" tabIndex={-1} ref={status}>{notice}</p>
+      {selection && <ConfirmAction
+        title="Revocar asignación"
+        subject={`${selection.email} (${selection.role})`}
+        description={consequence}
+        confirmLabel="Revocar asignación"
+        pendingLabel="Revocando asignación…"
+        tone="danger"
+        pending={revoking === selection.id}
+        error={error ?? undefined}
+        onCancel={() => setSelection(null)}
+        onConfirm={() => void revoke(selection)}
+        restoreFocus={() => {
+          if (returnToStatus.current) status.current?.focus()
+          else trigger.current?.focus()
+        }}
+      />}
       {canManage && <AssignmentForm path={path} onAssigned={() => {
         setError(null)
         setNotice('Asignación guardada.')
@@ -495,7 +532,7 @@ function AssignmentForm({ path, onAssigned }: { path: string; onAssigned: () => 
   }
 
   if (users.status === 'loading') {
-    return <p className={styles.meta}>Cargando personas…</p>
+    return <LoadingRows label="Cargando personas…" rows={1} />
   }
   if (users.status === 'forbidden' || users.status === 'error') {
     return (
