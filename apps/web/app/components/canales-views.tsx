@@ -7,6 +7,7 @@ import { useMe } from './authenticated-shell'
 import shell from './expediente.module.css'
 import styles from './comunicacion.module.css'
 import { LoadMore } from './load-more'
+import { LoadingRows, LoadingState, SkeletonBar } from './ui/loading-state'
 import { formatDateTime } from '../lib/expediente'
 import { usePagedList } from '../lib/use-paged-list'
 import {
@@ -74,7 +75,7 @@ export function ChannelsPanel({ entrepreneurshipId, cycleId }: { entrepreneurshi
       <div><p className={styles.kicker}>ESPACIO DEL EQUIPO</p><h2 id={headingId}>Conversaciones</h2><p>Mensajes organizados para que el equipo avance con contexto.</p></div>
       <p className={styles.syncNote}><RefreshCw aria-hidden="true" /> Se actualiza al abrir un canal</p>
     </header>
-    {state.status === 'loading' ? <ChatStatus message="Cargando conversaciones…" /> : null}
+    {state.status === 'loading' && <ChannelsLoading />}
     {unavailable}
     {state.status === 'ready' && orderedChannels.length === 0 ? <ChatStatus message="Todavía no hay canales disponibles." /> : null}
     {state.status === 'ready' && orderedChannels.length > 0 ? <div className={styles.chatLayout}>
@@ -91,6 +92,36 @@ export function ChannelsPanel({ entrepreneurshipId, cycleId }: { entrepreneurshi
 }
 
 function ChatStatus({ message }: { message: string }) { return <div className={styles.chatStatus}><Hash aria-hidden="true" /><p>{message}</p></div> }
+
+function ChannelsLoading() {
+  return <LoadingState label="Cargando conversaciones…">
+    <div className={styles.chatLayout}>
+      <div className={styles.channelRail}>
+        <div className={styles.channelRailHeader}><SkeletonBar size="short" /></div>
+        <div className={`${styles.channelList} ${styles.loadingChannels}`}>
+          {standardKinds.map((kind) => <div className={styles.channelNav} key={kind}>
+            <SkeletonBar size="short" /><SkeletonBar />
+          </div>)}
+        </div>
+      </div>
+      <div className={styles.thread}>
+        <div className={styles.threadHeader}>
+          <div className={styles.loadingThreadTitle}><SkeletonBar /><SkeletonBar size="text" /></div>
+        </div>
+        <div className={styles.messageArea}><MessageSkeletons /></div>
+      </div>
+    </div>
+  </LoadingState>
+}
+
+function MessageSkeletons() {
+  return <div className={styles.messageList}>
+    {[false, true, false].map((own, index) => <div className={`${styles.message} ${styles.loadingMessage}`} data-own={own} key={index}>
+      <SkeletonBar size="short" />
+      <div className={styles.loadingMessageBody}><SkeletonBar /><SkeletonBar size="text" /></div>
+    </div>)}
+  </div>
+}
 
 function ChannelNav({ channel, selected, onSelect }: { channel: Channel; selected: boolean; onSelect: () => void }) {
   const [unread, setUnread] = useState<number | null>(null)
@@ -118,10 +149,12 @@ function ChannelThread({ channel, userId, cycleId }: { channel: Channel; userId:
   }; void load(); return () => { cancelled = true } }, [channel.id, pages, attempt])
   async function run(id: string, exec: () => Promise<{ ok: boolean; message?: string }>) { if (pendingId) return false; setPendingId(id); setActionError(null); const result = await exec(); setPendingId(null); if (!result.ok) { setActionError({ id, message: result.message ?? 'No se pudo guardar.' }); return false }; setAttempt((value) => value + 1); return true }
   async function send(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const text = requiredText(content, 'Escribe un mensaje.'); if ('error' in text) { setActionError({ id: 'send', message: text.error }); return }; if (await run('send', () => requestComunicacion(channelUrl(channel.id, 'messages'), parseMessage, { method: 'POST', body: { content: text.text, mentioned_user_ids: [], references } }))) { setFormKey((value) => value + 1); setContent(''); setReferences([]) } }
+  let messageAnnouncement: 'polite' | undefined
+  if (state.status !== 'loading') messageAnnouncement = 'polite'
   return <article className={styles.thread} aria-label={`Conversación: ${channel.name}`}>
     <header className={styles.threadHeader}><div className={styles.threadTitle}><ChannelIcon channel={channel} /><div><h3>{channel.name}</h3><p>{channel.revoked_at ? 'Canal revocado' : 'Canal compartido del emprendimiento'}</p></div></div><button type="button" className={styles.iconButton} onClick={() => setAttempt((value) => value + 1)} aria-label="Actualizar mensajes"><RefreshCw aria-hidden="true" /></button></header>
-    <div className={styles.messageArea} aria-live="polite">
-      {state.status === 'loading' ? <ChatStatus message="Cargando mensajes…" /> : null}
+    <div className={styles.messageArea} aria-live={messageAnnouncement}>
+      {state.status === 'loading' && <LoadingState label="Cargando mensajes…"><MessageSkeletons /></LoadingState>}
       {state.status === 'error' ? <p className={shell.formError} role="alert">{state.message}</p> : null}
       {state.status === 'ready' && state.messages.length === 0 ? <ChatStatus message="Este canal está listo. Sé la primera persona en iniciar la conversación." /> : null}
       {state.status === 'ready' ? <ol className={styles.messageList}>{state.messages.map((message) => <MessageItem key={`${message.id}:${message.revision}`} message={message} own={message.created_by === userId} writable={writable} pendingId={pendingId} actionError={actionError} onEdit={(content, observation) => void run(`edit-${message.id}`, () => requestComunicacion(channelUrl(channel.id, `messages/${message.id}`), parseMessage, { method: 'PUT', body: { content, expected_revision: message.revision, observation } }))} onRevoke={(observation) => void run(`revoke-${message.id}`, () => requestComunicacion(channelUrl(channel.id, `messages/${message.id}`), parseMessage, { method: 'DELETE', body: { expected_revision: message.revision, observation } }))} />)}</ol> : null}
@@ -137,7 +170,25 @@ function ReferencePicker({ cycleId, kind, selected, onPick, onClose }: { cycleId
   const [items, setItems] = useState<(Objective | Activity)[]>([]); const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading'); const [query, setQuery] = useState('')
   useEffect(() => { let active = true; async function load() { if (kind === 'objective') { const result = await requestSeguimiento(seguimientoUrl(cycleId, 'objectives'), parseObjectiveList); if (active) { if (result.ok) { setItems(result.data); setStatus('ready') } else setStatus('error') }; return }; const result = await requestSeguimiento(seguimientoUrl(cycleId, 'activities'), parseActivityList); if (active) { if (result.ok) { setItems(result.data); setStatus('ready') } else setStatus('error') } }; void load(); return () => { active = false } }, [cycleId, kind])
   const visible = items.filter((item) => item.title.toLocaleLowerCase('es-CR').includes(query.toLocaleLowerCase('es-CR')))
-  return <div className={styles.referencePicker} role="dialog" aria-label={`Referenciar ${kind === 'objective' ? 'objetivo' : 'actividad'}`}><div><strong>Referenciar {kind === 'objective' ? 'objetivo' : 'actividad'}</strong><button type="button" onClick={onClose} aria-label="Cerrar selector"><X aria-hidden="true" /></button></div><input autoFocus type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar…" />{status === 'loading' ? <p>Cargando…</p> : null}{status === 'error' ? <p>No se pudo cargar el plan del ciclo.</p> : null}{status === 'ready' ? <ul>{visible.map((item) => <li key={item.id}><button type="button" onClick={() => onPick({ cycle_id: cycleId, kind, target_id: item.id })} disabled={selected.some((reference) => reference.kind === kind && reference.target_id === item.id)}><ReferenceIcon kind={kind} /><span>{item.title}</span>{selected.some((reference) => reference.kind === kind && reference.target_id === item.id) ? <Check aria-label="Ya referenciado" /> : null}</button></li>)}{visible.length === 0 ? <li>No hay coincidencias.</li> : null}</ul> : null}</div>
+  let targetLabel = 'actividad'
+  let loadingLabel = 'Cargando actividades…'
+  if (kind === 'objective') {
+    targetLabel = 'objetivo'
+    loadingLabel = 'Cargando objetivos…'
+  }
+  return <div className={styles.referencePicker} role="dialog" aria-label={`Referenciar ${targetLabel}`}>
+    <div><strong>Referenciar {targetLabel}</strong><button type="button" onClick={onClose} aria-label="Cerrar selector"><X aria-hidden="true" /></button></div>
+    <input autoFocus type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar…" />
+    {status === 'loading' && <div className={styles.referenceLoading}><LoadingRows label={loadingLabel} rows={2} /></div>}
+    {status === 'error' && <p>No se pudo cargar el plan del ciclo.</p>}
+    {status === 'ready' && <ul>
+      {visible.map((item) => {
+        const alreadySelected = selected.some((reference) => reference.kind === kind && reference.target_id === item.id)
+        return <li key={item.id}><button type="button" onClick={() => onPick({ cycle_id: cycleId, kind, target_id: item.id })} disabled={alreadySelected}><ReferenceIcon kind={kind} /><span>{item.title}</span>{alreadySelected && <Check aria-label="Ya referenciado" />}</button></li>
+      })}
+      {visible.length === 0 && <li>No hay coincidencias.</li>}
+    </ul>}
+  </div>
 }
 function MessageItem({ message, own, writable, pendingId, actionError, onEdit, onRevoke }: { message: Message; own: boolean; writable: boolean; pendingId: string | null; actionError: ActionError; onEdit: (content: string, observation: string) => void; onRevoke: (observation: string) => void }) {
   const [localError, setLocalError] = useState<string | null>(null); const revoked = message.revoked_at !== null

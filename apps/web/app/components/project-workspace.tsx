@@ -13,6 +13,7 @@ import { AssignmentPanel } from './administracion-views'
 import { ReportsView } from './reports-view'
 import { FinanzasView } from './finanzas-view'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
+import { LoadingRows, LoadingState, SkeletonBar } from './ui/loading-state'
 import { ProjectHeading } from './project-reference-ui'
 import { ProjectWelcome } from './project-welcome'
 import { loadProjects, PROJECT_GROUPS, readProjectSection, type Project, type ProjectSection } from '../lib/project-workspace'
@@ -23,6 +24,9 @@ import { canViewTeam } from '../lib/administracion'
 const icons = { Resumen: LayoutDashboard, 'Diagnóstico 360°': Compass, Ambiciones: Flag, 'Objetivos y actividades': Target, Evidencias: FolderOpen, Evolución: GitCompareArrows, Informes: FileText, Reuniones: CalendarDays, 'Finanzas y compras': Wallet, Chat: MessageSquare, Equipo: Users }
 const initials = (name: string) => name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()
 type SearchItem = { title: string; section: ProjectSection; id?: string }
+type SearchResult =
+  | { cycleId: string; status: 'ready'; records: SearchItem[] }
+  | { cycleId: string; status: 'error' }
 
 export function ProjectWorkspace() {
   const me = useMe()
@@ -36,9 +40,7 @@ export function ProjectWorkspace() {
   const [picker, setPicker] = useState(false)
   const [help, setHelp] = useState(false)
   const [query, setQuery] = useState('')
-  const [records, setRecords] = useState<SearchItem[]>([])
-  const [searchError, setSearchError] = useState('')
-  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
   useEffect(() => {
     const update = () => { setRoute(readProjectSection(window.location.hash)); setQuery(''); setMenu(false) }
     update()
@@ -73,24 +75,27 @@ export function ProjectWorkspace() {
   const searching = Boolean(query.trim())
   useEffect(() => {
     let active = true
-    setRecords([])
-    setSearchError('')
-    setSearchLoading(false)
+    setSearchResult(null)
     if (!cycleId || !searching) return () => { active = false }
-    setSearchLoading(true)
     void Promise.all([
       requestSeguimiento(seguimientoUrl(cycleId, 'objectives'), parseObjectiveList),
       requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidenceList),
       requestSeguimiento(seguimientoUrl(cycleId, 'ambitions'), parseAmbitionList),
     ]).then(([objectives, evidence, ambitions]) => {
       if (!active) return
-      setSearchLoading(false)
-      if (!objectives.ok || !evidence.ok || !ambitions.ok) { setSearchError('No se pudo consultar la búsqueda del proyecto.'); return }
-      setRecords([
-        ...objectives.data.map((item) => ({ title: item.title, id: item.id, section: 'Objetivos y actividades' as const })),
-        ...evidence.data.map((item) => ({ title: item.title, id: item.id, section: 'Evidencias' as const })),
-        ...ambitions.data.map((item) => ({ title: item.title, id: item.id, section: 'Ambiciones' as const })),
-      ])
+      if (!objectives.ok || !evidence.ok || !ambitions.ok) {
+        setSearchResult({ cycleId, status: 'error' })
+        return
+      }
+      setSearchResult({
+        cycleId,
+        status: 'ready',
+        records: [
+          ...objectives.data.map((item) => ({ title: item.title, id: item.id, section: 'Objetivos y actividades' as const })),
+          ...evidence.data.map((item) => ({ title: item.title, id: item.id, section: 'Evidencias' as const })),
+          ...ambitions.data.map((item) => ({ title: item.title, id: item.id, section: 'Ambiciones' as const })),
+        ],
+      })
     })
     return () => { active = false }
   }, [cycleId, searching])
@@ -116,7 +121,74 @@ export function ProjectWorkspace() {
     ...group,
     sections: group.sections.filter((section) => section !== 'Equipo' || showTeam),
   }))
-  const matches = [...records, ...projectGroups.flatMap((group) => group.sections.map((section) => ({ title: section, section })))].filter((item) => item.title.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))).slice(0, 7)
+  function searchContent() {
+    if (!loaded || (cycleId && searchResult?.cycleId !== cycleId)) {
+      return <div className="project-search-loading"><LoadingRows label="Buscando en el proyecto…" rows={2} /></div>
+    }
+    if (cycleId && searchResult?.status === 'error') {
+      return <p role="alert">No se pudo consultar la búsqueda del proyecto.</p>
+    }
+    const items: SearchItem[] = []
+    if (cycleId && searchResult?.status === 'ready') {
+      items.push(...searchResult.records)
+    }
+    for (const group of projectGroups) {
+      for (const section of group.sections) items.push({ title: section, section })
+    }
+    const normalized = query.trim().toLocaleLowerCase('es')
+    const matches = items.filter((item) => item.title.toLocaleLowerCase('es').includes(normalized)).slice(0, 7)
+    if (matches.length === 0) return <p>Sin resultados para «{query}».</p>
+    return matches.map((item) => (
+      <button key={`${item.section}/${item.id ?? 'section'}`} onClick={() => navigate(item.section, item.id)}>
+        <span>{item.title}<small>{item.section}</small></span><ChevronRight size={15} />
+      </button>
+    ))
+  }
+  function projectContext() {
+    if (!loaded) {
+      return <div aria-hidden="true">
+        <span className="project-symbol" />
+        <div className="project-context-placeholder"><SkeletonBar /><SkeletonBar size="text" /></div>
+      </div>
+    }
+    let symbol = '—'
+    let subtitle = 'Selecciona tu proyecto'
+    if (project) {
+      symbol = initials(name)
+      subtitle = project.enrollment.program
+      if (project.cycle.name !== name) subtitle += `, ${project.cycle.name}`
+    }
+    return <div><span className="project-symbol">{symbol}</span><span><strong>{name}</strong><small>{subtitle}</small></span></div>
+  }
+  function projectLoadError() {
+    return <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>
+  }
+  function workspaceContent() {
+    if (!loaded) {
+      return <LoadingState label="Cargando proyectos…">
+        <div className="project-page-loading"><SkeletonBar /><SkeletonBar size="text" /></div>
+      </LoadingState>
+    }
+    if (error) return projectLoadError()
+    if (!project) return <ProjectWelcome unavailable={Boolean(projectId)} hasProjects={projects.length > 0} canManage={canManageProjects} onPick={() => setPicker(true)} onRefresh={() => setRetry((value) => value + 1)} />
+    return <div key={`${project.cycle.id}/${route.section}/${route.id ?? ''}`}>{content()}</div>
+  }
+  function pickerContent() {
+    if (!loaded) return <LoadingRows label="Consultando proyectos…" rows={3} />
+    if (error) return projectLoadError()
+    if (projects.length === 0) {
+      let message = 'Los proyectos aparecerán cuando tengas una asignación vigente y un ciclo disponible.'
+      if (canManageProjects) message = 'Crea o completa un expediente con un programa y un ciclo. Después actualiza este listado.'
+      return <div className="picker-empty"><FolderOpen size={28} aria-hidden="true" /><h3>Aún no hay ciclos disponibles</h3><p>{message}</p></div>
+    }
+    return projects.map((item) => (
+      <button className="record-row project-choice" aria-pressed={item.cycle.id === projectId} key={item.cycle.id} onClick={() => selectProject(item)}>
+        <span className="workspace-logo">{initials(item.entrepreneurship.name)}</span>
+        <div><strong>{item.entrepreneurship.name}</strong><p>{item.enrollment.program}, {item.cycle.name}</p></div>
+        <ChevronRight size={16} />
+      </button>
+    ))
+  }
   function content() {
     if (!project) return null
     const trackingViews = { Resumen: 'summary', 'Diagnóstico 360°': 'diagnostics', Ambiciones: 'ambitions', 'Objetivos y actividades': 'work', Evidencias: 'evidence', Evolución: 'evolution' } as const
@@ -153,14 +225,30 @@ export function ProjectWorkspace() {
       <div className="sidebar-bottom"><button className="help-link" onClick={() => setHelp(true)}><CircleHelp size={17} />Guía de acompañamiento<ArrowUpRight size={14} /></button><div className="profile"><span className="profile-avatar"><UserButton appearance={{ elements: { avatarBox: { width: '38px', height: '38px' }, userButtonTrigger: { padding: 0 } } }} /></span><div className="profile-details"><strong title={me.email}>{me.email}</strong><small>{me.role}</small></div></div></div>
     </aside>
     <main className="main-area">
-      <header className="topbar"><div className="breadcrumb"><button className="icon-btn mobile-menu" aria-label="Abrir navegación" onClick={() => setMenu(true)}><Menu size={21} /></button><button className="breadcrumb-home" onClick={() => setPicker(true)}><Home size={15} /><span>Proyectos</span></button><ChevronRight size={13} /><span>{name}</span><ChevronRight size={13} /><b>{project ? route.section : 'Inicio'}</b></div><div className="top-actions"><div className="global-search"><label><Search size={17} /><input aria-label="Buscar en el proyecto" placeholder="Buscar en el proyecto…" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} /></label>{query && <button className="icon-btn search-clear" aria-label="Limpiar búsqueda del proyecto" onClick={() => setQuery('')}><X size={15} /></button>}{searching && <div className="search-results"><p className="search-scope">Objetivos, evidencias, ambiciones y secciones</p>{searchLoading && <p role="status">Buscando en el proyecto…</p>}{searchError ? <p role="alert">{searchError}</p> : matches.length ? matches.map((item) => <button key={`${item.section}/${'id' in item ? item.id ?? 'section' : 'section'}`} onClick={() => navigate(item.section, 'id' in item ? item.id : undefined)}><span>{item.title}<small>{item.section}</small></span><ChevronRight size={15} /></button>) : <p>Sin resultados para «{query}».</p>}</div>}</div><Link href="/bandeja" className="icon-btn notifications" aria-label="Abrir bandeja"><Bell size={19} aria-hidden="true" /></Link><span className="top-divider" /><UserButton /></div></header>
-      <div className="project-context"><div><span className="project-symbol">{project ? initials(name) : '—'}</span><span><strong>{name}</strong><small>{project?.enrollment.program ?? 'Selecciona tu proyecto'}{project && project.cycle.name !== name ? `, ${project.cycle.name}` : null}</small></span></div></div>
+      <header className="topbar">
+        <div className="breadcrumb"><button className="icon-btn mobile-menu" aria-label="Abrir navegación" onClick={() => setMenu(true)}><Menu size={21} /></button><button className="breadcrumb-home" onClick={() => setPicker(true)}><Home size={15} /><span>Proyectos</span></button><ChevronRight size={13} /><span>{name}</span><ChevronRight size={13} /><b>{project ? route.section : 'Inicio'}</b></div>
+        <div className="top-actions">
+          <div className="global-search">
+            <label><Search size={17} /><input aria-label="Buscar en el proyecto" placeholder="Buscar en el proyecto…" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+            {query && <button className="icon-btn search-clear" aria-label="Limpiar búsqueda del proyecto" onClick={() => setQuery('')}><X size={15} /></button>}
+            {searching && <div className="search-results"><p className="search-scope">Objetivos, evidencias, ambiciones y secciones</p>{searchContent()}</div>}
+          </div>
+          <Link href="/bandeja" className="icon-btn notifications" aria-label="Abrir bandeja"><Bell size={19} aria-hidden="true" /></Link><span className="top-divider" /><UserButton />
+        </div>
+      </header>
+      <div className="project-context">{projectContext()}</div>
       <div className="page" id="main-content" tabIndex={-1}>
-        {!loaded ? <p className="loading" role="status">Cargando proyectos…</p> : error ? <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>  : !project ? <ProjectWelcome unavailable={Boolean(projectId)} hasProjects={projects.length > 0} canManage={canManageProjects} onPick={() => setPicker(true)} onRefresh={() => setRetry((value) => value + 1)} /> : <div key={`${project.cycle.id}/${route.section}/${route.id ?? ''}`}>{content()}</div>}
+        {workspaceContent()}
       </div>
       <footer className="app-footer"><span>Catalitec<span className="footer-description">Sistema de Incubación y Acompañamiento</span></span><span>Datos del expediente autorizado</span></footer>
     </main>
-    <Dialog open={picker} onOpenChange={setPicker}><DialogContent><DialogHeader><DialogTitle>Tu espacio de incubación</DialogTitle><DialogDescription>Elige el ciclo en el que quieres trabajar. Cada uno conserva su propio seguimiento.</DialogDescription></DialogHeader>{!loaded ? <p role="status">Consultando proyectos…</p> : error ? <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div> : projects.length === 0 ? <div className="picker-empty"><FolderOpen size={28} aria-hidden="true" /><h3>Aún no hay ciclos disponibles</h3><p>{canManageProjects ? 'Crea o completa un expediente con un programa y un ciclo. Después actualiza este listado.' : 'Los proyectos aparecerán cuando tengas una asignación vigente y un ciclo disponible.'}</p></div> : projects.map((item) => <button className="record-row project-choice" aria-pressed={item.cycle.id === projectId} key={item.cycle.id} onClick={() => selectProject(item)}><span className="workspace-logo">{initials(item.entrepreneurship.name)}</span><div><strong>{item.entrepreneurship.name}</strong><p>{item.enrollment.program}, {item.cycle.name}</p></div><ChevronRight size={16} /></button>)}<div className="picker-footer">{canManageProjects && <Link className="btn secondary" href="/expediente">Gestionar expedientes <ArrowUpRight size={15} /></Link>}<button className="btn secondary" disabled={!loaded} onClick={() => setRetry((value) => value + 1)}>Actualizar listado</button></div></DialogContent></Dialog>
+    <Dialog open={picker} onOpenChange={setPicker}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Tu espacio de incubación</DialogTitle><DialogDescription>Elige el ciclo en el que quieres trabajar. Cada uno conserva su propio seguimiento.</DialogDescription></DialogHeader>
+        {pickerContent()}
+        <div className="picker-footer">{canManageProjects && <Link className="btn secondary" href="/expediente">Gestionar expedientes <ArrowUpRight size={15} /></Link>}<button className="btn secondary" disabled={!loaded} onClick={() => setRetry((value) => value + 1)}>Actualizar listado</button></div>
+      </DialogContent>
+    </Dialog>
     <Dialog open={help} onOpenChange={setHelp}><DialogContent><DialogHeader><DialogTitle>Del diagnóstico al siguiente paso</DialogTitle><DialogDescription>Este espacio reúne la mirada estratégica y el trabajo cotidiano de tu proyecto.</DialogDescription></DialogHeader><ol className="help-steps"><li>Registra el diagnóstico por áreas y envíalo a revisión.</li><li>Define objetivos vinculados a un área y, cuando corresponda, a una ambición.</li><li>Completa actividades con evidencia.</li><li>Compara fotografías aprobadas para observar la evolución.</li></ol></DialogContent></Dialog>
   </div>
 }

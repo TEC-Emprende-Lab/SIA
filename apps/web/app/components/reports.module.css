@@ -11,3 +11,11 @@
 .references dt { font-weight: 600; }
 .references dd { margin: 0 0 .4rem; }
 .narrative { white-space: pre-wrap; overflow-wrap: anywhere; }
+.loadingRow > :first-child { width: 24px; height: 24px; }
+.loadingRow > :last-child { width: 16px; }
+.loadingReportInfo { display: grid; gap: 8px; min-width: 0; }
+.loadingReportStatus { width: 64px; }
+
+@media (max-width: 760px) {
+  .loadingReportInfo { width: 100%; }
+}

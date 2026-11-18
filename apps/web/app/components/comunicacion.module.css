@@ -45,3 +45,16 @@
   background: #eff2e7;
   color: #465037;
 }
+
+.loadingChannels .channelNav > :first-child { flex: 0 0 12px; }
+.loadingThreadTitle { display: grid; gap: 8px; width: min(100%, 16rem); }
+.loadingMessage { width: min(80%, 24rem); }
+.loadingMessage[data-own=true] { width: min(64%, 18rem); }
+.loadingMessage > :first-child { flex: 0 0 32px; height: 32px; }
+.loadingMessageBody { display: grid; flex: 1; min-width: 0; gap: 8px; padding-block: 4px; }
+.referencePicker > .referenceLoading { display: block; }
+
+@media (max-width: 720px) {
+  .loadingChannels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .loadingChannels .channelNav { min-width: 0; }
+}

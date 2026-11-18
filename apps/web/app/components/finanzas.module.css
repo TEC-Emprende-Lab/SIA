@@ -36,6 +36,16 @@
 .summary dt { font-size: 13px; color: var(--finance-muted); }
 .summary dd { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 7px 0; overflow-wrap: anywhere; }
 .summary small { font-size: 12px; color: var(--finance-muted); }
+.summaryPlaceholder { display: grid; align-content: center; gap: 8px; min-block-size: 112px; }
+.amountPlaceholder > span { block-size: 24px; inline-size: min(66%, 8rem); }
+.tabsPlaceholder {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 96px));
+  align-items: center;
+  gap: 16px;
+  min-block-size: 48px;
+  border-bottom: 1px solid var(--finance-line);
+}
 .tabs { display: flex; flex-wrap: wrap; gap: 4px 24px; border-bottom: 1px solid var(--finance-line); }
 .tab { border: 0; border-bottom: 2px solid transparent; background: none; padding: 14px 2px; color: var(--finance-muted); font-size: 13px; white-space: nowrap; min-height: 48px; }
 .tab:hover { color: var(--finance-ink); background: #f5f5f7; }

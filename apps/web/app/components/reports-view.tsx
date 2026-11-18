@@ -5,6 +5,7 @@ import { ChevronRight, FileText, Plus } from 'lucide-react'
 import { useMe } from './authenticated-shell'
 import { ProjectHeading } from './project-reference-ui'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
+import { LoadingState, SkeletonBar } from './ui/loading-state'
 import { parseReport, parseReports, reportRequest, reportSubmission, requestReportPdf, type Report } from '../lib/reports'
 import { ReportSources } from './report-sources'
 import { ReportForm } from './report-form'
@@ -30,6 +31,19 @@ function ReportPdfButton({ cycleId, reportId }: { cycleId: string; reportId: str
     <button type="button" className="btn secondary" onClick={() => void prepare()} disabled={pending}>{pending ? 'Preparando enlace…' : 'Preparar enlace privado'}</button>
     {error ? <p role="alert">{error}</p> : <p className="small muted">El enlace se pide al abrirlo y caduca. No se muestra el archivo aquí.</p>}
   </>
+}
+
+function ReportsLoading() {
+  return <LoadingState label="Cargando informes…">
+    <div className="report-list">
+      {[0, 1, 2].map((row) => <div className={`report-row ${styles.loadingRow}`} key={row}>
+        <SkeletonBar size="short" />
+        <div className={styles.loadingReportInfo}><SkeletonBar /><SkeletonBar size="text" /></div>
+        <span className={styles.loadingReportStatus}><SkeletonBar size="text" /></span>
+        <SkeletonBar size="short" />
+      </div>)}
+    </div>
+  </LoadingState>
 }
 
 export function ReportsView({ cycleId, focusId }: { cycleId: string; focusId?: string }) {
@@ -86,7 +100,16 @@ export function ReportsView({ cycleId, focusId }: { cycleId: string; focusId?: s
   return <>
     <ProjectHeading eyebrow="El camino, documentado" title="Informes" description="El avance del proyecto, sus aprendizajes y evidencias, en una fotografía del período." action={manage && <button className="btn primary" disabled={loading || busy} onClick={() => { setError(''); setCreating(true) }}><Plus size={17} />Preparar informe</button>} />
     {error && !creating && !current && <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setAttempt((value) => value + 1)}>Reintentar</button></div>}
-    {loading ? <p className="loading" role="status">Cargando informes…</p> : <div className="report-list">{reports.map((report) => <button className="report-row" key={report.id} onClick={() => setDetail(report.id)}><FileText size={24} /><div><strong>Informe {report.kind}, versión {report.version}</strong><p>{report.period_start} – {report.period_end}</p></div><span className={`badge ${report.status === 'aprobado' ? 'olive' : 'neutral'}`}>{report.status === 'aprobado' ? 'Aprobado' : 'Borrador'}</span><ChevronRight size={16} /></button>)}</div>}
+    {loading && <ReportsLoading />}
+    {!loading && <div className="report-list">{reports.map((report) => {
+      let status = 'Borrador'
+      let badge = 'neutral'
+      if (report.status === 'aprobado') {
+        status = 'Aprobado'
+        badge = 'olive'
+      }
+      return <button className="report-row" key={report.id} onClick={() => setDetail(report.id)}><FileText size={24} /><div><strong>Informe {report.kind}, versión {report.version}</strong><p>{report.period_start} – {report.period_end}</p></div><span className={`badge ${badge}`}>{status}</span><ChevronRight size={16} /></button>
+    })}</div>}
     {!loading && !error && reports.length === 0 && <div className="empty"><h3>Una historia por documentar</h3><p>Aún no hay informes para este proyecto.</p></div>}
     <Dialog open={creating} onOpenChange={(open) => { if (!busy) { setCreating(open); setError('') } }}><DialogContent><DialogHeader><DialogTitle>Preparar informe</DialogTitle><DialogDescription>Se reunirán las fuentes del período y el informe se guardará como borrador.</DialogDescription></DialogHeader><ReportForm busy={busy} error={error} onSubmit={(event) => void save(event)} onCancel={() => { setCreating(false); setError('') }} /></DialogContent></Dialog>
     <Dialog open={Boolean(current)} onOpenChange={(open) => { if (!open && !busy) { setDetail(''); setError('') } }}><DialogContent><DialogHeader><DialogTitle>Informe {current?.kind}, versión {current?.version}</DialogTitle><DialogDescription>{current?.period_start} – {current?.period_end}, {current?.status}</DialogDescription></DialogHeader>{current && <>

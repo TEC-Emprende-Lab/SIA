@@ -18,6 +18,7 @@ import styles from './shell.module.css'
 import { SessionHeader } from './session-header'
 import { SiaBrand } from './sia-brand'
 import { PublicHome } from './public-home'
+import { LoadingState, SkeletonBar } from './ui/loading-state'
 
 const ReadyIdentityContext = createContext<Me | null>(null)
 
@@ -39,6 +40,69 @@ export function useMe(): Me {
 
 function SessionNotice({ children }: { children: ReactNode }) {
   return <main className={styles.notice}>{children}</main>
+}
+
+function SessionSkeleton({ label, chrome }: { label: string; chrome: boolean }) {
+  let layout: Record<'shell' | 'sidebar' | 'content' | 'topbar' | 'page' | 'placeholder', string | undefined> = {
+    shell: 'app-shell',
+    sidebar: 'sidebar',
+    content: 'main-area',
+    topbar: 'topbar',
+    page: 'page',
+    placeholder: 'project-page-loading',
+  }
+  if (chrome) {
+    layout = {
+      shell: styles.shell,
+      sidebar: styles.nav,
+      content: styles.contentArea,
+      topbar: styles.topbar,
+      page: styles.main,
+      placeholder: styles.skeletonContent,
+    }
+  }
+
+  return (
+    <main>
+      <LoadingState label={label}>
+        <div className={layout.shell}>
+          <div className={layout.sidebar}>
+            <div className={styles.skeletonBrand}>
+              <SkeletonBar size="short" />
+              <SkeletonBar />
+            </div>
+            <div className={styles.skeletonNav}>
+              <SkeletonBar />
+              <SkeletonBar size="text" />
+              <SkeletonBar />
+              <SkeletonBar />
+            </div>
+          </div>
+          <div className={layout.content}>
+            <div className={[layout.topbar, styles.skeletonTopbar].filter(Boolean).join(' ')}>
+              <SkeletonBar />
+              <SkeletonBar size="short" />
+            </div>
+            {!chrome && <div className="project-context">
+              <div>
+                <span className="project-symbol" />
+                <div className="project-context-placeholder">
+                  <SkeletonBar />
+                  <SkeletonBar size="text" />
+                </div>
+              </div>
+            </div>}
+            <div className={layout.page}>
+              <div className={layout.placeholder}>
+                <SkeletonBar />
+                <SkeletonBar size="text" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </LoadingState>
+    </main>
+  )
 }
 
 export function StatusPanel({
@@ -144,21 +208,13 @@ export function AuthenticatedShell({ children, chrome = true }: { children: Reac
   }, [sessionReady, isLoaded, isSignedIn])
 
   if (!sessionReady || !isLoaded) {
-    return (
-      <SessionNotice>
-        <p aria-live="polite">Cargando sesión…</p>
-      </SessionNotice>
-    )
+    return <SessionSkeleton label="Cargando sesión…" chrome={chrome} />
   }
   if (!isSignedIn) {
     return <><SessionHeader /><SignedOutNotice /></>
   }
   if (state.status === 'loading') {
-    return (
-      <SessionNotice>
-        <p aria-live="polite">Consultando identidad SIA…</p>
-      </SessionNotice>
-    )
+    return <SessionSkeleton label="Consultando identidad SIA…" chrome={chrome} />
   }
   if (state.status === 'forbidden' || state.status === 'error') {
     return <IdentityStatus state={state} />
