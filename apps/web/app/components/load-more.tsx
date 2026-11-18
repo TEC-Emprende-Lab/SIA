@@ -1,4 +1,5 @@
 import styles from './expediente.module.css'
+import { LoadingRows } from './ui/loading-state'
 
 export function LoadMore({
   hasMore,
@@ -13,20 +14,24 @@ export function LoadMore({
   onLoad: () => void
   label?: string
 }) {
+  let buttonLabel = label
+  if (loading) buttonLabel = 'Cargando…'
+
   return (
     <>
-      {hasMore ? (
+      {loading && <LoadingRows label="Cargando más resultados…" rows={1} />}
+      {hasMore && (
         <div className={styles.actions}>
           <button type="button" className={styles.buttonSecondary} disabled={loading} onClick={onLoad}>
-            {loading ? 'Cargando…' : label}
+            {buttonLabel}
           </button>
         </div>
-      ) : null}
-      {error ? (
+      )}
+      {error && (
         <p className={styles.formError} role="alert">
           {error}
         </p>
-      ) : null}
+      )}
     </>
   )
 }

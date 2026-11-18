@@ -7,6 +7,7 @@ import { ProjectHeading } from './project-reference-ui'
 import { PurchaseDetail, PurchaseForm, ItemForm } from './finanzas-editors'
 import { Changes, Duplicates, Portfolio, Reconcile } from './finanzas-reviews'
 import { FinanceEmpty, FinanceError, FinanceHeaderActions, FinanceLoading, FinanceNotice, FinancePages, FinanceStatus, financeFailure, useFinanceData } from './finanzas-ui'
+import { LoadingState, SkeletonBar, SkeletonRows } from './ui/loading-state'
 import { financeRequest, financeUrl, downloadFinancePdf, money, sumFinanceAmounts, STATUS, type Purchase, type Definitions, type Summary } from '../lib/finanzas'
 import styles from './finanzas.module.css'
 
@@ -44,6 +45,7 @@ export function FinanzasView({ cycleId, entrepreneurshipId, program }: { cycleId
   const canCreate = !!summary?.items.length
   const total = (field: 'allocated' | 'executed' | 'pending') => sumFinanceAmounts(summary?.items.map(item => item[field]) ?? [])
   const tabs: View[] = ['Presupuesto', 'Trámites', 'Cambios', 'Duplicados', ...(manage ? ['Conciliación'] as const : []), 'Cartera autorizada']
+  const initialLoading = loading && !error && (!summary || !definitions)
   return <div className={styles.workspace}>
     <header className={styles.header}>
       <div><ProjectHeading title="Finanzas y compras" /><p>Presupuesto, trámites y respaldos del ciclo, en un mismo lugar.</p></div>
@@ -51,7 +53,9 @@ export function FinanzasView({ cycleId, entrepreneurshipId, program }: { cycleId
     </header>
     {error && <FinanceError message={error} retry={refresh} />}
     {success && <FinanceNotice tone="success">{success}</FinanceNotice>}
-    {!summary || !definitions ? loading && <FinanceLoading /> : <>
+    {initialLoading && <FinanceWorkspaceLoading />}
+    {summary && definitions && <>
+      {error && <p className={styles.hint}>Se muestra la última consulta disponible. Actualiza para ver los importes vigentes.</p>}
       <dl className={styles.summary} aria-label="Resumen financiero"><div><dt>Presupuesto asignado</dt><dd>{money(total('allocated'))}</dd><small>Total de las partidas en colones</small></div><div><dt>Ejecutado</dt><dd>{money(total('executed'))}</dd><small>Pagos y movimientos confirmados</small></div><div><dt>En proceso</dt><dd>{money(total('pending'))}</dd><small>No equivale a una reserva ni a un pago</small></div></dl>
       <nav className={styles.tabs} aria-label="Vistas financieras">{tabs.map(tab => <button key={tab} className={styles.tab} aria-pressed={view === tab} onClick={() => { setView(tab); setSuccess('') }}>{tab}</button>)}</nav>
       {view === 'Presupuesto' && <>
@@ -74,6 +78,28 @@ export function FinanzasView({ cycleId, entrepreneurshipId, program }: { cycleId
       {newItem && <ItemForm cycle={cycleId} close={() => setNewItem(false)} saved={() => { setNewItem(false); setSuccess('Partida registrada. Ya puedes crear un trámite con cargo a ella.'); refresh() }} />}
     </>}
   </div>
+}
+
+function FinanceWorkspaceLoading() {
+  return <LoadingState label="Consultando presupuesto y trámites del ciclo…">
+    <div className={styles.workspace}>
+      <div className={styles.summary}>
+        {['Asignado', 'Ejecutado', 'En proceso'].map((key) => (
+          <div key={key} className={styles.summaryPlaceholder}>
+            <SkeletonBar />
+            <div className={styles.amountPlaceholder}><SkeletonBar /></div>
+            <SkeletonBar size="text" />
+          </div>
+        ))}
+      </div>
+      <div className={styles.tabsPlaceholder}>
+        {['Presupuesto', 'Trámites', 'Cambios'].map((key) => <SkeletonBar key={key} />)}
+      </div>
+      <div className={styles.surface}>
+        <SkeletonRows layout="table" rows={3} />
+      </div>
+    </div>
+  </LoadingState>
 }
 
 function PurchaseList({ cycle, definitions, open, version, create }: { cycle: string; definitions: Definitions; open: (p: Purchase) => void; version: number; create?: () => void }) {

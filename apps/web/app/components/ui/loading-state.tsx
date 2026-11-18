@@ -12,20 +12,23 @@ export function LoadingState({ label, children }: { label: string; children: Rea
   </div>
 }
 
-export function LoadingRows({ label, rows = 3, layout = 'list' }: {
-  label: string
+type RowsProps = {
   rows?: number
   layout?: 'list' | 'table'
-}) {
-  return <LoadingState label={label}>
-    <div className={styles.rows} data-layout={layout}>
-      {Array.from({ length: rows }, (_, index) => (
-        <div className={styles.row} key={index}>
-          <SkeletonBar />
-          <SkeletonBar size="text" />
-          {layout === 'table' && <SkeletonBar size="short" />}
-        </div>
-      ))}
-    </div>
-  </LoadingState>
+}
+
+export function SkeletonRows({ rows = 3, layout = 'list' }: RowsProps) {
+  return <div className={styles.rows} data-layout={layout} aria-hidden="true">
+    {Array.from({ length: rows }, (_, index) => (
+      <div className={styles.row} key={index}>
+        <SkeletonBar />
+        <SkeletonBar size="text" />
+        {layout === 'table' && <SkeletonBar size="short" />}
+      </div>
+    ))}
+  </div>
+}
+
+export function LoadingRows({ label, ...rows }: RowsProps & { label: string }) {
+  return <LoadingState label={label}><SkeletonRows {...rows} /></LoadingState>
 }

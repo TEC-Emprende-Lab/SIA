@@ -36,15 +36,9 @@ export function BandejaView() {
   const notifications = usePagedList(notificationsPage, fetchNotifications)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
-  const failed = [alerts.state, notifications.state].find(
-    (state) => state.status !== 'loading' && state.status !== 'ready',
-  )
-  const failedMessage = failed ? failed.message : null
-
-  function reload() {
-    alerts.reload()
-    notifications.reload()
-  }
+  const alertState = alerts.state
+  const notificationState = notifications.state
+  const alertItems = alertState.status === 'ready' && alertState.data || []
 
   async function markRead(notification: Notification) {
     if (pendingId) {
@@ -73,24 +67,38 @@ export function BandejaView() {
       <p className={shell.intro}>
         Alertas y notificaciones de tu usuario. Se actualizan al abrir esta página.
       </p>
-      {failedMessage ? (
+      {notificationState.status !== 'loading' && notificationState.status !== 'ready' && (
         <section className={shell.section}>
           <p className={shell.formError} role="alert">
-            {failedMessage}
+            No se pudieron cargar las notificaciones. {notificationState.message}
           </p>
-          <button type="button" className={shell.buttonSecondary} onClick={reload}>
-            Reintentar
+          <button type="button" className={shell.buttonSecondary} onClick={notifications.reload}>
+            Reintentar notificaciones
           </button>
         </section>
-      ) : alerts.state.status !== 'ready' || notifications.state.status !== 'ready' ? (
+      )}
+      {notificationState.status === 'loading' && (
         <section className={shell.section} aria-label="Alertas y notificaciones">
           <LoadingRows label="Cargando bandeja…" />
         </section>
-      ) : (
+      )}
+      {notificationState.status === 'ready' && (
         <>
+          {alertState.status === 'loading' && <LoadingRows label="Cargando detalles de alertas…" rows={1} />}
+          {alertState.status !== 'loading' && alertState.status !== 'ready' && (
+            <section className={shell.section}>
+              <p className={shell.formError} role="alert">
+                No se pudieron cargar los detalles de las alertas. Puedes consultar las notificaciones. {alertState.message}
+              </p>
+              <button type="button" className={shell.buttonSecondary} onClick={alerts.reload}>
+                Reintentar detalles
+              </button>
+            </section>
+          )}
           <BandejaList
-            alerts={alerts.state.data}
-            notifications={notifications.state.data}
+            alerts={alertItems}
+            notifications={notificationState.data}
+            detailsStatus={alertState.status}
             pendingId={pendingId}
             actionError={actionError}
             onRead={(notification) => void markRead(notification)}
@@ -113,20 +121,28 @@ export function BandejaView() {
 function BandejaList({
   alerts,
   notifications,
+  detailsStatus,
   pendingId,
   actionError,
   onRead,
 }: {
   alerts: Alert[]
   notifications: Notification[]
+  detailsStatus: 'loading' | 'ready' | 'error' | 'forbidden' | 'missing'
   pendingId: string | null
   actionError: string | null
   onRead: (notification: Notification) => void
 }) {
   const alertsById = new Map(alerts.map((item) => [item.id, item]))
-  if (notifications.length === 0 && alerts.length === 0) {
-    return <p className={shell.meta}>No hay alertas ni notificaciones en tu bandeja.</p>
+  if (notifications.length === 0) {
+    if (detailsStatus === 'ready' && alerts.length === 0) {
+      return <p className={shell.meta}>No hay alertas ni notificaciones en tu bandeja.</p>
+    }
+    return <p className={shell.meta}>No hay notificaciones en tu bandeja.</p>
   }
+  let missingDetail = 'El detalle no vino en esta consulta.'
+  if (detailsStatus === 'loading') missingDetail = 'Cargando detalle…'
+  else if (detailsStatus !== 'ready') missingDetail = 'El detalle no está disponible.'
   return (
     <div className={styles.stack}>
       {actionError ? (
@@ -146,7 +162,7 @@ function BandejaList({
                 <strong>{alert ? kindLabel(alert.kind) : 'Notificación'}</strong>
                 <span className={shell.meta}>{formatDateTime(notification.created_at)}</span>
               </div>
-              <p className={styles.prose}>{alert ? alert.detail : 'El detalle no vino en esta consulta.'}</p>
+              <p className={styles.prose}>{alert?.detail ?? missingDetail}</p>
               {alert ? (
                 <p className={shell.meta}>
                   <Link href={`/expediente/${alert.entrepreneurship_id}`}>Ver expediente</Link>
