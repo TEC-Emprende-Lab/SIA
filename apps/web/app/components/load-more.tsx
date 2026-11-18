@@ -39,7 +39,7 @@ export function LoadMore({
           </button>
         </div>
       )}
-      {error && <ActionFeedback tone="error">{error}</ActionFeedback>}
+      {error && <div className={styles.paginationFeedback}><ActionFeedback tone="error">{error}</ActionFeedback></div>}
       {end && <p className={styles.meta} role="status">No hay más resultados.</p>}
       <span className="sr-only" role="status">{loading && 'Cargando más resultados…'}</span>
     </>
