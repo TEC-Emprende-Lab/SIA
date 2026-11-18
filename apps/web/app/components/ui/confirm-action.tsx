@@ -31,6 +31,8 @@ export function ConfirmAction({
   const observation = useRef<HTMLTextAreaElement>(null)
   const [validation, setValidation] = useState('')
   const errorId = useId()
+  let errorDescription: string | undefined
+  if (validation || error) errorDescription = errorId
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -73,7 +75,7 @@ export function ConfirmAction({
               {description}
             </Dialog.Description>
           </header>
-          <form className={styles.confirmForm} onSubmit={submit}>
+          <form className={styles.confirmForm} onSubmit={submit} noValidate>
             {requireObservation && (
               <label className={styles.observation}>
                 Observación <span className="sr-only">(obligatoria)</span>
@@ -82,7 +84,7 @@ export function ConfirmAction({
                   required
                   readOnly={pending}
                   aria-invalid={Boolean(validation)}
-                  aria-describedby={(validation || error) && errorId || undefined}
+                  aria-describedby={errorDescription}
                   onChange={() => setValidation('')}
                 />
               </label>
