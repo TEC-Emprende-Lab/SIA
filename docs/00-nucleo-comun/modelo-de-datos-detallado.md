@@ -1,10 +1,10 @@
 # Modelo de datos detallado (ER)
 
-> **Estado — 2026-10-12.** Este documento cierra el [borrador de análisis](borrador-modelo-bd.md) (que quedó al 75 %) y lo lleva a un modelo entidad-relación verificable. Complementa —no reemplaza— al [modelo conceptual compartido](modelo-de-datos-compartido.md) y conserva el borrador como notas históricas.
+> **Estado — 2026-11-04.** Este documento cierra el [borrador de análisis](borrador-modelo-bd.md) (que quedó al 75 %) y lo lleva a un modelo entidad-relación verificable. Complementa —no reemplaza— al [modelo conceptual compartido](modelo-de-datos-compartido.md) y conserva el borrador como notas históricas.
 >
-> **Regla de lectura:** la **fuente de verdad** es el código (`apps/api/app/models/*` y migraciones `001–007`). Identidad, expediente, seguimiento, comunicación, notificaciones/alertas, auditoría, cola, informes y documentos privados están implementados en distinta medida; este documento señala sus límites. Finanzas, adjuntos de chat y los `TBD` funcionales siguen siendo diseño, no autorización para inventar reglas.
+> **Regla de lectura:** la **fuente de verdad** es el código (`apps/api/app/models/*` y migraciones `001–013`). Identidad, expediente, seguimiento, comunicación, notificaciones/alertas, auditoría, cola, informes, documentos privados y Finanzas de Prototipado están implementados en distinta medida; este documento señala sus límites. Los adjuntos de chat, la habilitación financiera de Puesta en marcha y los `TBD` funcionales siguen siendo diseño, no autorización para inventar reglas.
 >
-> **Base:** `develop` `44a492e` y `main` `289c731`; ambos incluyen la migración `007_documents`.
+> **Base:** `develop` `e07e6dc` y `main` `6eae158`; ambos incluyen la migración `013_finanzas`. La aplicación en staging se registra en [release 013](../release-013-staging.md).
 >
 > Orden de autoridad en caso de conflicto (según `AGENTS.md`): decisiones del programa aplicable → [actores, roles y permisos](actores-roles-y-permisos.md) → [visión y alcance](vision-y-alcance.md) → historias de usuario.
 
@@ -44,8 +44,8 @@ El borrador terminó con siete decisiones abiertas. Aquí se cierran; las que ya
 | 2 | **Grano emprendimiento vs. ciclo** | **RESUELTO (regla general).** Ancla por defecto en `entrepreneurship_id` (nunca cruza). Se añade `program_cycle_id` cuando la entidad vive dentro de un ciclo concreto. Ya aplicado: `Ambition` y las asignaciones de emprendimiento cuelgan del emprendimiento; `Objective`/`Activity`/`Evidence`/`Diagnostic`/`Validation` cuelgan del ciclo. Las tablas nuevas siguen esta regla según lo diga su documento de programa. |
 | 3 | **Validation polimórfica o por tipo** | **RESUELTO EN CÓDIGO.** Semi-tipada: una tabla `tracking_validations` con FK tipadas `objective_id` **XOR** `diagnostic_id` (`CheckConstraint("(objective_id IS NULL) <> (diagnostic_id IS NULL)")`), más `snapshot` (JSON) y `entity_revision`. **No** es polimórfica pura `(entity_type, entity_id)`. Para validables futuros: se añade una FK tipada y se amplía el XOR, o el dominio lleva su propia traza de aprobación (finanzas e informes ya embeben `aprobado_por`). |
 | 4 | **schedule_item tabla o vista** | **RESUELTO EN CÓDIGO.** **No es tabla.** El cronograma se **deriva** de `Activity` (`starts_on`, `ends_on`, `completed_at`). Si en el futuro se requieren hitos distintos de actividades, será una decisión nueva → `TBD`. |
-| 5 | **Finanzas** | **TBD (se modela tentativo 🔴).** El documento financiero está lleno de `TBD` y solo Prototipado la habilita; la relación de Puesta en marcha con presupuesto sigue sin definir. Se propone estructura (§Finanzas) pero **no se implementa** hasta que el programa cierre partidas, flujo y estados. |
-| 6 | **`document` unificado** | **RESUELTO EN CÓDIGO.** `documents` centraliza archivos privados y emisión de URL firmada tras autorización. Evidencia puede referenciarlo. Facturas y adjuntos de chat siguen pendientes; el PDF de informes comparte almacén, pero mantiene su clave en `technical_reports` y no crea fila en `documents`. |
+| 5 | **Finanzas** | **RESUELTO EN CÓDIGO para Prototipado (migración `013`).** Implementadas partidas, compras/trámites, adjuntos privados, cambios presupuestarios, conciliación y eventos según la decisión operativa de 2026-10-29. Puesta en marcha sigue sin habilitación financiera; catálogo oficial, reservas/disponible operativo, permisos adicionales e integración API permanecen `TBD`. |
+| 6 | **`document` unificado** | **RESUELTO EN CÓDIGO.** `documents` centraliza archivos privados y emisión de URL firmada tras autorización. Evidencias y respaldos financieros pueden referenciarlo (migración `013`); los adjuntos de chat siguen pendientes. El PDF de informes comparte almacén, pero mantiene su clave en `technical_reports` y no crea fila en `documents`. |
 | 7 | **Rol RevisorFinanciero** | **TBD.** No está en `VALID_ROLES` (`Coordinadora`, `Gestor`, `Emprendedor`). Su alcance y separación respecto a Coordinadora/Gestor siguen sin definir en [roles](actores-roles-y-permisos.md). Como el rol es texto validado, añadirlo después **no** requiere migración de esquema, solo ampliar el conjunto/`CheckConstraint`. |
 
 > Pendiente adicional heredado: **Pre-incubación** se dejó fuera del primer alcance; sus canvas, entregables y reglas se modelarán cuando el programa entre en juego. Todo lo `TBD` de programa permanece en sus documentos funcionales.
@@ -491,7 +491,7 @@ Rastro de toda acción sensible. Lo escriben los servicios en la **misma transac
 - Registra al menos: aprobaciones, cambios de objetivos aprobados, movimientos de presupuesto, validaciones, cierres, mensajes editados/eliminados y emisión de informes. Sin índice de scope por diseño (es transversal); las consultas van por `entity_type`/`entity_id`/`actor_id`.
 
 ### `documents` (transversal — decisión de diseño #6) 🟢
-Tabla central de archivos privados. La API guarda el objeto y publica metadatos; la clave `storage_key` no sale en el contrato. La descarga es una URL firmada emitida tras autorizar el emprendimiento. Límites MIME y tamaño siguen `TBD`. Chat y facturas aún no la referencian. El PDF del informe aprobado usa el mismo almacén de objetos, pero su clave queda en `technical_reports.pdf_storage_key` y no crea fila aquí.
+Tabla central de archivos privados. La API guarda el objeto y publica metadatos; la clave `storage_key` no sale en el contrato. La descarga es una URL firmada emitida tras autorizar el emprendimiento. Límites MIME y tamaño siguen `TBD`. Chat aún no la referencia; los respaldos financieros sí (migración `013`). El PDF del informe aprobado usa el mismo almacén de objetos, pero su clave queda en `technical_reports.pdf_storage_key` y no crea fila aquí.
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -526,17 +526,21 @@ alcance; el `payload` de cada tarea conserva los datos de su consumidor.
 
 ---
 
-## 9. Finanzas por programa 🔴 *tentativo — casi todo TBD*
+## 9. Finanzas por programa 🟢 *Prototipado implementado; TBD de programa*
 
-> **Actualización de ejecución 2026-10-29:** la sección inferior conserva el diseño
-> histórico. La [decisión operativa de Prototipado](../02-prototipado/finanzas-operacion.md)
-> y [módulo implementado](../../apps/api/app/modules/finanzas/README.md) describen la
-> migración `013`: `finance_budget_items`, `finance_purchases`, `finance_attachments`,
+> **Implementación 2026-10-29 (migración `013`):** la [decisión operativa de Prototipado](../02-prototipado/finanzas-operacion.md)
+> y [módulo implementado](../../apps/api/app/modules/finanzas/README.md) describen las
+> tablas reales: `finance_budget_items`, `finance_purchases`, `finance_attachments`,
 > `finance_budget_changes`, `finance_reconciliations`, `finance_events`. El ciclo es
-> contenedor de presupuesto; factura/respaldo no duplica el gasto. Se mantienen TBD
+> contenedor de presupuesto; factura/respaldo no duplica el gasto. La aplicación en
+> staging se registra en [release 013](../release-013-staging.md). Se mantienen TBD
 > catálogo oficial, reservas/disponible operativo, permisos adicionales e integración API.
 
-> **Aviso fuerte:** es la parte más verde. Solo **Prototipado** habilita finanzas; **Puesta en marcha** aún **no define** su relación con presupuesto ([doc](../03-puesta-en-marcha/presupuesto-compras-y-facturas.md)). La **lista oficial de partidas, el flujo exacto de compras, los estados, los responsables y la integración administrativa** están `TBD`. Se modela para no perder el hilo; **no se implementa** hasta que el programa lo cierre. **La IA nunca aprueba** compras ni cambios presupuestarios.
+> **Alcance vigente:** solo **Prototipado** habilita finanzas; **Puesta en marcha** aún
+> **no define** su relación con presupuesto ([doc](../03-puesta-en-marcha/presupuesto-compras-y-facturas.md)).
+> La sección inferior conserva el diseño histórico previo a `013`; las tablas y columnas
+> reales prevalecen sobre esas propuestas. La **lista oficial de partidas, el flujo exacto
+> de compras, los estados, los responsables y la integración administrativa** siguen `TBD`.
 
 Regla de cálculo (decisión sostenida del borrador): **`ejecutado`, `disponible` y `% consumido` NO se guardan**; se **calculan** desde compras y facturas. Todo cuelga del **ciclo** (`program_cycle_id`).
 
@@ -586,7 +590,7 @@ aprobar. Una corrección crea otra fila con `supersedes_id`.
 
 Dos vistas para separar lo real de lo propuesto. Cardinalidad Mermaid: `||` = uno, `o{` = cero-o-muchos, `|o` = cero-o-uno.
 
-### 11.1 Implementado 🟢 (migraciones 001–007)
+### 11.1 Implementado 🟢 (núcleo 001–007; ampliaciones 008–013 en sus módulos)
 
 ```mermaid
 erDiagram
@@ -635,8 +639,13 @@ erDiagram
 ```
 
 > `audit_logs` es transversal y **no** lleva FK duras (`entity_type`/`entity_id`/`actor_id` sueltos), por eso va fuera del grafo.
+>
+> Las migraciones `008–013` añaden `evidence_folders`/`evidence_placements` y las seis
+> tablas `finance_*`. Se detallan en [carpetas de evidencias](../evidencias-carpetas.md)
+> y [Finanzas](../02-prototipado/finanzas-operacion.md); no se repiten aquí para no
+> duplicar esos grafos.
 
-### 11.2 Propuesto 🔴 (sin migración)
+### 11.2 Propuesto histórico 🔴 (sin migración; Finanzas reemplazada por `013`)
 
 ```mermaid
 erDiagram
@@ -653,7 +662,10 @@ erDiagram
 ```
 
 > `job_queue` es infraestructura (sin FK de dominio) e incluye el consumidor de PDF;
-> minutas IA, correo y alertas programadas siguen sin consumidor real.
+> minutas IA, correo y alertas programadas siguen sin consumidor real. Las tablas
+> `budgets`/`budget_items`/`purchases`/`invoices` son el diseño histórico; la
+> implementación real de Prototipado usa `finance_*` desde `013`. `chat_attachments`
+> sigue propuesto.
 
 ---
 
@@ -677,8 +689,8 @@ Estado final de los 7 pendientes que dejaste abiertos:
 | 2 | Grano emprendimiento vs. ciclo | ✅ Cerrado | Regla: ancla `entrepreneurship_id`; `program_cycle_id` cuando aplica. Ya consistente en todo el árbol. |
 | 3 | Validation polimórfica/por tipo | ✅ Cerrado | Semi-tipada (`objective_id` XOR `diagnostic_id`). |
 | 4 | schedule_item tabla/vista | ✅ Cerrado | Derivado de `activities`; sin tabla. |
-| 5 | Finanzas | 🔴 Diseño tentativo | Modelado con banderas; **no implementar** hasta que el programa cierre partidas/flujo/estados. |
-| 6 | `documents` unificado | ✅ Decisión: sí | Tabla `documents` y URL firmada implementadas. El PDF del informe usa el mismo almacén, con la clave en `technical_reports`, no una fila de `documents`. Chat y facturas siguen sin referenciarla. Límites MIME/tamaño `TBD`. |
+| 5 | Finanzas | 🟢 Implementado en Prototipado | Migración `013`; Puesta en marcha y los TBD de partidas/flujo/integración siguen pendientes. |
+| 6 | `documents` unificado | ✅ Decisión: sí | Tabla `documents` y URL firmada implementadas. El PDF del informe usa el mismo almacén, con la clave en `technical_reports`, no una fila de `documents`. Evidencias y respaldos financieros pueden referenciarla; chat sigue sin hacerlo. Límites MIME/tamaño `TBD`. |
 | 7 | Rol RevisorFinanciero | 🔴 TBD | `role` es texto validado → añadirlo luego sin migración de esquema. |
 
 Extra del borrador ya resuelto en código: **`meeting_action` no existe** (fusionado en `agreements.next_steps`); **participantes** de reunión = JSON descriptivo; **taxonomía de `channels`** sigue `TBD` (sin columna `tipo`).

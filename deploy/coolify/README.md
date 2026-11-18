@@ -6,10 +6,11 @@ debe publicar como la aplicación operativa.
 
 ## Recursos requeridos
 
-El staging público está disponible en `https://sia.dev.neuroboard.app`: el 2026-10-06
-la Web `/` y `/api/health` respondieron 200 sin sesión. Esta comprobación no acredita por
-sí sola las migraciones, la API interna, Redis, R2, backups ni rollback; la evidencia y
-los límites vigentes están en [operación API](../../docs/operacion-api.md#verificación-de-staging--2026-10-06).
+El staging público está disponible en `https://sia.dev.neuroboard.app`. La aplicación de
+la cadena `001–013`, `alembic check` y `/readyz` se registran en
+[release 013](../../docs/release-013-staging.md). Un smoke HTTP no acredita por sí solo
+la API interna, Redis, R2, backups ni rollback; la evidencia y los límites vigentes están
+en [operación API](../../docs/operacion-api.md#verificación-de-staging--2026-10-30).
 
 1. Crear PostgreSQL 16 y Redis 7 en el mismo proyecto/entorno de Coolify.
 2. Crear la aplicación API desde el repositorio `TEC-Emprende-Lab/SIA`.

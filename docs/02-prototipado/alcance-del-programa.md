@@ -16,7 +16,10 @@ La salida esperada es un prototipo validado, con evidencia de pruebas y aprendiz
 
 ## Estado de implementación
 
-Canvas v1, seguimiento, diagnósticos descriptivos, ambiciones, comunicación, informes
-y documentos privados están implementados bajo las reglas comunes. Presupuesto, compras
-y facturas siguen siendo requisitos de programa sin backend. La evidencia verificable y
-los límites operativos están en el [estado actual](../estado-actual.md).
+Canvas v1, seguimiento, diagnósticos descriptivos, ambiciones, comunicación, informes,
+documentos privados y Finanzas de Prototipado están implementados bajo las reglas comunes.
+La migración `013` cubre partidas, compras/trámites, facturas, adjuntos privados, cambios
+presupuestarios, conciliación y reportes; su aplicación en staging se registra en
+[release 013](../release-013-staging.md). Catálogo oficial de partidas, reservas y API
+FUNDATEC siguen `TBD`. La evidencia verificable y los límites operativos están en el
+[estado actual](../estado-actual.md).

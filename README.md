@@ -4,11 +4,13 @@
 
 SIA centraliza el seguimiento de emprendimientos incubados: objetivos, actividades, reuniones, minutas, finanzas y compras, documentos, alertas y comunicación por proyecto.
 
+**[Producción](https://sia.neuroboard.app)** · **[Dev](https://sia.dev.neuroboard.app)** · [Estado verificable](docs/estado-actual.md) · [Contribuir](CONTRIBUTING.md)
+
 ## Estado actual
 
-**Lectura del 2026-11-10:** staging y producción responden con Coordinadora. Finanzas de Prototipado devuelve resumen y PDF en los dos. Producción no tiene emprendimientos visibles. La fase que falta para un grupo real es la 9. El detalle está en [estado actual](docs/estado-actual.md) y en el [recorrido](docs/recorrido-operativo-2026-11-10.md).
+**MVP en curso.** El último paquete incluye Equipo por ámbito, acceso inicial con Google, Bandeja independiente del ciclo, mejoras móviles en Finanzas y calendario de Reuniones por semana o mes. Aún falta validar un ciclo completo antes de operar una cohorte.
 
-**Corte publicado: 2026-11-04, `develop` en `e07e6dc` y `main` en `6eae158`. MVP en curso.** `origin/main` tiene además `95b6f77` (2026-11-06, documentación), no desplegado. Esta matriz resume la implementación. Los documentos de núcleo y programa definen requisitos, no certifican funcionalidades entregadas.
+La matriz resume el código, no certifica el despliegue de cada función. En el [estado verificable](docs/estado-actual.md) se conservan los cortes, pruebas y límites de cada entorno.
 
 | Componente | Estado real en el repositorio | Límite / pendiente |
 |---|---|---|
