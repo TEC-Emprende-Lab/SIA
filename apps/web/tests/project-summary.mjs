@@ -21,22 +21,33 @@ try {
     .replaceAll("'./project-reference-ui'", "'./project-reference-ui.mjs'")
     .replaceAll("'./authenticated-shell'", "'./meeting-stubs.mjs'")
     .replaceAll("'./load-more'", "'./meeting-stubs.mjs'")
+    .replaceAll("'./ui/confirm-action'", "'./meeting-stubs.mjs'")
+    .replaceAll("'./ui/loading-state'", "'./loading-state.mjs'")
+    .replaceAll("'next/link'", "'./link-stub.mjs'")
     .replaceAll("'../lib/use-paged-list'", "'./meeting-stubs.mjs'")
     .replace("import shell from './expediente.module.css';", 'const shell = new Proxy({}, { get: (_, key) => String(key) });')
     .replace("import styles from './comunicacion.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
     .replace("import styles from './summary-communication.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
+    .replace("import styles from './interaction-states.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
   for (const name of ['comunicacion', 'expediente', 'project-summary', 'meeting-calendar']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/lib/${name}.ts`, import.meta.url), 'utf8')))
   }
-  for (const name of ['project-reference-ui', 'summary-communication', 'comunicacion-views']) {
+  for (const name of ['project-reference-ui', 'summary-communication', 'comunicacion-views', 'bandeja-views']) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/components/${name}.tsx`, import.meta.url), 'utf8')))
   }
+  await writeFile(join(temporary, 'loading-state.mjs'), compile(await readFile(new URL('../app/components/ui/loading-state.tsx', import.meta.url), 'utf8')))
+  await writeFile(join(temporary, 'link-stub.mjs'), compile('export default function Link(props) { return <a {...props} /> }'))
   await writeFile(join(temporary, 'meeting-stubs.mjs'), `
-    let role, data
+    let role, data, inbox
     export function setMeetingFixture(nextRole, nextData) { role = nextRole; data = nextData }
+    export function setInboxFixture(alerts, notifications) { inbox = { alerts, notifications } }
     export function useMe() { return { id: 'u1', role } }
-    export function usePagedList() { return { state: { status: 'ready', data } } }
+    export function usePagedList(page) {
+      const state = inbox?.[page?.name.replace('Page', '')] ?? { status: 'ready', data }
+      return { state, reload() {} }
+    }
     export function LoadMore() { return null }
+    export function ConfirmAction() { return null }
     export function MeetingCalendar({ renderMeeting }) { return data.map(renderMeeting) }
   `)
   const { MeetingsPanel } = await import(pathToFileURL(join(temporary, 'comunicacion-views.mjs')))
@@ -52,7 +63,7 @@ try {
       assert.doesNotMatch(html, /Editar reunión|Revocar reunión|Registrar reunión/)
     } else {
       assert.match(html, /aria-expanded="false" aria-controls="meeting-action-m1"[^>]*>Editar reunión/)
-      assert.match(html, /aria-expanded="false" aria-controls="meeting-action-m1"[^>]*>Revocar reunión/)
+      assert.match(html, /aria-haspopup="dialog"[^>]*>Revocar reunión/)
     }
   }
   console.log('✓ Meeting cards render read-first and restrict edit and revoke controls to active meetings and management roles')
@@ -81,6 +92,21 @@ try {
   const meeting = { ...common, id: 'm1', cycle_id: 'c1', title: 'Prueba con usuarios', participants: ['Equipo de prueba'], scheduled_at: '2026-10-06T15:00:00Z', reference_url: null }
   const agreement = { ...common, id: 'a1', meeting_id: 'm1', description: 'Documentar los aprendizajes', responsible_id: 'u1', due_date: '2026-10-10', next_steps: 'Reunir los resultados de las entrevistas.' }
   const alert = { id: 'al1', created_at: now, entrepreneurship_id: 'e1', cycle_id: 'c1', recipient_id: 'u1', kind: 'mention', detail: 'Revisar el mensaje del equipo.', resolved_at: null }
+  const { BandejaView } = await import(pathToFileURL(join(temporary, 'bandeja-views.mjs')))
+  const { setInboxFixture } = await import(pathToFileURL(join(temporary, 'meeting-stubs.mjs')))
+  const inboxRecords = { status: 'ready', data: [{ id: 'n1', alert_id: alert.id, created_at: now, read_at: null }] }
+  setInboxFixture({ status: 'loading' }, inboxRecords)
+  const inboxPending = renderToStaticMarkup(createElement(BandejaView))
+  assert.match(inboxPending, /Cargando detalles de alertas/)
+  assert.match(inboxPending, /Marcar como leída/)
+  setInboxFixture({ status: 'error', message: 'Consulta temporalmente no disponible' }, inboxRecords)
+  const inboxPartial = renderToStaticMarkup(createElement(BandejaView))
+  assert.match(inboxPartial, /Reintentar detalles/)
+  assert.match(inboxPartial, /Marcar como leída/)
+  assert.doesNotMatch(inboxPartial, /No hay alertas|Ver expediente/)
+  setInboxFixture({ status: 'ready', data: [alert] }, inboxRecords)
+  assert.match(renderToStaticMarkup(createElement(BandejaView)), /Revisar el mensaje del equipo/)
+  console.log('✓ Inbox keeps notifications visible while independent alert details load or fail')
   const reply = (body, status = 200) => new Response(JSON.stringify(body), { status })
   const requests = []
   const oldMeetings = Array.from({ length: 100 }, (_, index) => ({ ...meeting, id: `old-${index}`, scheduled_at: '2026-09-01T15:00:00Z' }))
@@ -195,6 +221,12 @@ try {
   assert(partial.includes('HTTP 403'))
   assert(partial.includes('role="alert"'))
   assert(partial.includes('role="status"'))
+  assert.match(partial, /role="status">Consultando datos autorizados…<\/span><div aria-hidden="true">/)
+  const { LoadingRows } = await import(pathToFileURL(join(temporary, 'loading-state.mjs')))
+  const tableSkeleton = renderToStaticMarkup(createElement(LoadingRows, { label: 'Cargando partidas…', rows: 3, layout: 'table' }))
+  assert.equal((tableSkeleton.match(/role="status"/g) ?? []).length, 1)
+  assert.equal((tableSkeleton.match(/data-size="short"/g) ?? []).length, 3)
+  assert.doesNotMatch(tableSkeleton, /<button|<input|<a /)
   assert(!partial.includes('No hay acuerdos'))
   const capped = render({ meetings: ready(Array.from({ length: 8 }, (_, index) => ({ ...meeting, id: `m${index}`, title: `Meeting ${index}` }))) })
   assert(capped.includes('5 de 8'))
@@ -203,6 +235,19 @@ try {
   const tree = SummaryCommunicationContent({ ...props, navigate: (section) => navigation.push(section) })
   for (const panel of tree.props.children.slice(0, 3)) panel.props.action.props.onClick()
   assert.deepEqual(navigation, ['Reuniones', 'Reuniones', 'Alertas'])
+  const retries = []
+  const retryTree = SummaryCommunicationContent({
+    ...props,
+    meetings: { status: 'error', message: 'Reuniones no disponibles' },
+    alerts: { status: 'error', message: 'Alertas no disponibles' },
+    retryMeetings: () => retries.push('reuniones'),
+    retryAlerts: () => retries.push('alertas'),
+    onRetry: () => retries.push('todo'),
+  })
+  retryTree.props.children[0].props.children[1].props.onRetry()
+  retryTree.props.children[2].props.children[1].props.onRetry()
+  retryTree.props.children[4].props.onClick()
+  assert.deepEqual(retries, ['reuniones', 'alertas', 'todo'])
   console.log('✓ Summary cards render real fields, independent failures, loading/empty states and explicit display limits')
 
   if (process.env.SIA_SUMMARY_PREVIEW) {

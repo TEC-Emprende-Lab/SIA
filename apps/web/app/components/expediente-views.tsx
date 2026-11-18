@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { BriefcaseBusiness, CalendarPlus, FolderPlus, Search, X } from 'lucide-react'
 
 import { StatusPanel, useMe } from './authenticated-shell'
@@ -47,6 +47,7 @@ import {
 } from '../lib/expediente'
 import { usePagedList } from '../lib/use-paged-list'
 import { LoadMore } from './load-more'
+import { LoadingRows } from './ui/loading-state'
 
 const fetchEnrollments = (url: string) => requestExpediente(url, parseEnrollmentList)
 const fetchCycles = (url: string) => requestExpediente(url, parseCycleList)
@@ -90,12 +91,12 @@ function useExpediente<T>(
   return { state, retry }
 }
 
-function LoadingLine({ children }: { children: string }) {
-  return (
-    <p className={styles.meta} aria-live="polite">
-      {children}
-    </p>
-  )
+function LoadingLine({ children, rows = 2, layout = 'list' }: {
+  children: string
+  rows?: number
+  layout?: 'list' | 'table'
+}) {
+  return <LoadingRows label={children} rows={rows} layout={layout} />
 }
 
 function ResourceFallback({
@@ -229,6 +230,7 @@ function NameForm({
   submitLabel,
   pending,
   error,
+  notice,
   onSubmit,
 }: {
   title: string
@@ -236,6 +238,7 @@ function NameForm({
   submitLabel: string
   pending: boolean
   error: string | null
+  notice?: string | null
   onSubmit: (name: string) => void
 }) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -244,21 +247,21 @@ function NameForm({
     const raw = data.get('name')
     onSubmit(typeof raw === 'string' ? raw : '')
   }
+  let action = submitLabel
+  if (pending) action = 'Guardando…'
+  if (notice) action = 'Abriendo…'
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
+    <form className={`${styles.form} ${styles.actionSurface}`} onSubmit={handleSubmit}>
       <h2>{title}</h2>
       <label className={styles.field}>
         {fieldLabel}
         <input name="name" required maxLength={200} disabled={pending} autoComplete="off" />
       </label>
-      {error ? (
-        <p className={styles.formError} role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error && <p className={styles.formError} role="alert">{error}</p>}
+      <p className={styles.saveFeedback} role="status">{notice}</p>
       <div className={styles.actions}>
-        <button className={styles.button} type="submit" disabled={pending}>
-          {pending ? 'Guardando…' : submitLabel}
+        <button className={styles.button} type="submit" disabled={pending || Boolean(notice)}>
+          {action}
         </button>
       </div>
     </form>
@@ -289,9 +292,10 @@ export function ExpedienteListView() {
   const [moreError, setMoreError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [pending, setPending] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const saving = useRef(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [createdNotice, setCreatedNotice] = useState<string | null>(null)
-  const [formKey, setFormKey] = useState(0)
   const [query, setQuery] = useState('')
   usePageTitle('Expediente')
 
@@ -301,6 +305,7 @@ export function ExpedienteListView() {
     let cancelled = false
     async function load() {
       setState('loading')
+      setMoreError(null)
       const result = await requestExpediente(
         expedienteUrl('', { limit: LIST_PAGE_SIZE, offset: 0 }),
         parseEntrepreneurshipList,
@@ -326,6 +331,7 @@ export function ExpedienteListView() {
   }, [attempt])
 
   async function loadMore() {
+    if (state !== 'ready' || loadingMore || pending) return
     setLoadingMore(true)
     setMoreError(null)
     const result = await requestExpediente(
@@ -342,57 +348,60 @@ export function ExpedienteListView() {
   }
 
   async function createEntrepreneurship(rawName: string) {
-    if (pending) {
-      return
-    }
+    if (saving.current || loadingMore) return
+    setCreatedNotice(null)
     const name = trimmedName(rawName)
     if ('error' in name) {
       setFormError(name.error)
       return
     }
+    saving.current = true
     setPending(true)
     setFormError(null)
-    setCreatedNotice(null)
     const result = await requestExpediente(expedienteUrl(''), parseEntrepreneurship, {
       method: 'POST',
       body: { name: name.name },
     })
-    setPending(false)
     if (!result.ok) {
-      setFormError(result.message)
+      saving.current = false
+      setPending(false)
+      setFormError(`No se pudo crear el emprendimiento. ${result.message}`)
       return
     }
     if (me.role === 'Coordinadora') {
+      setCreatedNotice(`Se registró ${result.data.name}. Abriendo el expediente…`)
       router.push(`/expediente/${result.data.id}`)
       return
     }
-    setFormKey((value) => value + 1)
+    saving.current = false
+    setPending(false)
+    setCreateOpen(false)
     setCreatedNotice(
       `Se registró ${result.data.name}. Podrás consultarlo cuando tengas una asignación vigente.`,
     )
     setAttempt((value) => value + 1)
   }
 
+  const canCreate = canRegisterExpediente(me.role)
+  let emptyDescription = 'Aquí aparecerán los emprendimientos a los que te asignen. Si esperabas ver uno, consulta con Coordinación.'
+  if (canCreate) emptyDescription = 'Usa «Nuevo emprendimiento» para abrir su expediente y registrar su historial.'
+  let retry: (() => void) | undefined
+  if (state === 'error') retry = () => setAttempt((value) => value + 1)
+  let navigationNotice: string | null = null
+  if (pending) navigationNotice = createdNotice
+  let listFallback = null
   if (state === 'loading') {
-    return (
-      <div className={styles.page}>
-        <header className={styles.header}>
-          <h1>Expediente</h1>
-        </header>
-        <LoadingLine>Cargando emprendimientos…</LoadingLine>
-      </div>
-    )
+    listFallback = <LoadingLine layout="table" rows={4}>Cargando emprendimientos…</LoadingLine>
   }
   if (state === 'forbidden' || state === 'error') {
-    return (
-      <div className={styles.page}>
-        <ResourceFallback
-          state={{ status: state, message }}
-          missingTitle="Expediente"
-          errorTitle="No se pudo cargar el expediente"
-          onRetry={state === 'error' ? () => setAttempt((value) => value + 1) : undefined}
-        />
-      </div>
+    listFallback = (
+      <ResourceFallback
+        state={{ status: state, message }}
+        missingTitle="Expediente"
+        errorTitle="No se pudieron cargar los emprendimientos"
+        onRetry={retry}
+        heading="h2"
+      />
     )
   }
 
@@ -404,38 +413,40 @@ export function ExpedienteListView() {
           <h1>Emprendimientos</h1>
           <p className={styles.intro}>Consulta el historial y los ciclos a los que tienes acceso.</p>
         </div>
-        {canRegisterExpediente(me.role) ? (
-          <Dialog>
-            <DialogTrigger className={styles.button}><FolderPlus aria-hidden="true" /> Nuevo emprendimiento</DialogTrigger>
+        {canCreate && state !== 'forbidden' && (
+          <Dialog open={createOpen} onOpenChange={(open) => {
+            if (saving.current) return
+            setFormError(null)
+            setCreateOpen(open)
+          }}>
+            <DialogTrigger className={`${styles.button} ${styles.actionSurface}`} disabled={loadingMore}><FolderPlus aria-hidden="true" /> Nuevo emprendimiento</DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Nuevo emprendimiento</DialogTitle>
                 <DialogDescription>El expediente conservará su historial entre programas y ciclos.</DialogDescription>
               </DialogHeader>
               <NameForm
-                key={formKey}
                 title="Datos del emprendimiento"
                 fieldLabel="Nombre"
                 submitLabel="Crear emprendimiento"
                 pending={pending}
                 error={formError}
+                notice={navigationNotice}
                 onSubmit={(name) => void createEntrepreneurship(name)}
               />
             </DialogContent>
           </Dialog>
-        ) : null}
+        )}
       </header>
-      {createdNotice ? (
-        <p className={styles.notice} role="status">
-          {createdNotice}
-        </p>
-      ) : null}
-      {items.length === 0 ? (
+      <p className={styles.saveFeedback} role="status">{!pending && createdNotice}</p>
+      {listFallback}
+      {state === 'ready' && items.length === 0 && (
         <EmptyState
           title="No hay emprendimientos en tu alcance"
-          description={canRegisterExpediente(me.role) ? 'Crea el primer emprendimiento para iniciar su expediente.' : 'Cuando te asignen a un emprendimiento, aparecerá aquí.'}
+          description={emptyDescription}
         />
-      ) : <>
+      )}
+      {state === 'ready' && items.length > 0 && (
         <section className={styles.listWorkspace} aria-labelledby="lista-emprendimientos">
           <div className={styles.listToolbar}>
             <div>
@@ -453,19 +464,10 @@ export function ExpedienteListView() {
             <EmptyState title="No encontramos coincidencias" description="Prueba con otro nombre o limpia la búsqueda para consultar los emprendimientos cargados." />
           ) : <EntrepreneurshipTable items={visibleItems} />}
         </section>
-      </>}
-      {hasMore ? (
-        <div className={styles.actions}>
-          <button type="button" className={styles.buttonSecondary} disabled={loadingMore} onClick={() => void loadMore()}>
-            {loadingMore ? 'Cargando…' : 'Cargar más'}
-          </button>
-        </div>
-      ) : null}
-      {moreError ? (
-        <p className={styles.formError} role="alert">
-          {moreError}
-        </p>
-      ) : null}
+      )}
+      {state === 'ready' && (
+        <LoadMore hasMore={hasMore && !pending} loading={loadingMore} error={moreError} onLoad={() => void loadMore()} />
+      )}
     </div>
   )
 }
@@ -485,12 +487,16 @@ export function ExpedienteDetailView({ entrepreneurshipId }: { entrepreneurshipI
     { missingMessage: 'Emprendimiento no encontrado' },
   )
   const [pending, setPending] = useState(false)
+  const [enrollmentOpen, setEnrollmentOpen] = useState(false)
+  const saving = useRef(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const canCreate = canRegisterExpediente(me.role)
   const title = entrepreneurship.state.status === 'ready' ? entrepreneurship.state.data.name : null
   usePageTitle(title)
 
   async function createEnrollment(localValue: string) {
-    if (!id || pending) {
+    if (!id || saving.current) {
       return
     }
     const enrolled = enrolledAtIso(localValue)
@@ -498,17 +504,20 @@ export function ExpedienteDetailView({ entrepreneurshipId }: { entrepreneurshipI
       setFormError(enrolled.error)
       return
     }
+    saving.current = true
     setPending(true)
     setFormError(null)
     const result = await requestExpediente(expedienteUrl(`/${id}/enrollments`), parseEnrollment, {
       method: 'POST',
       body: { program: PROTOTIPADO_PROGRAM, enrolled_at: enrolled.iso },
     })
-    setPending(false)
     if (!result.ok) {
-      setFormError(result.message)
+      saving.current = false
+      setPending(false)
+      setFormError(`No se pudo guardar la inscripción. ${result.message}`)
       return
     }
+    setNotice('Inscripción guardada. Abriendo el programa…')
     router.push(`/expediente/${id}/inscripciones/${result.data.id}`)
   }
 
@@ -531,15 +540,19 @@ export function ExpedienteDetailView({ entrepreneurshipId }: { entrepreneurshipI
             title={entrepreneurship.state.data.name}
             description="Historial de programas, ciclos y colaboración autorizada."
             monogram={entrepreneurship.state.data.name}
-            action={canRegisterExpediente(me.role) ? (
-              <Dialog>
-                <DialogTrigger className={styles.button}><CalendarPlus aria-hidden="true" /> Inscribir en Prototipado</DialogTrigger>
+            action={canCreate ? (
+              <Dialog open={enrollmentOpen} onOpenChange={(open) => {
+                if (saving.current) return
+                setFormError(null)
+                setEnrollmentOpen(open)
+              }}>
+                <DialogTrigger className={`${styles.button} ${styles.actionSurface}`}><CalendarPlus aria-hidden="true" /> Inscribir en Prototipado</DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Inscribir en Prototipado</DialogTitle>
                     <DialogDescription>La inscripción se conserva como parte del historial del emprendimiento.</DialogDescription>
                   </DialogHeader>
-                  <EnrollmentForm pending={pending} error={formError} onSubmit={(value) => void createEnrollment(value)} />
+                  <EnrollmentForm pending={pending} error={formError} notice={notice} onSubmit={(value) => void createEnrollment(value)} />
                 </DialogContent>
               </Dialog>
             ) : undefined}
@@ -553,6 +566,7 @@ export function ExpedienteDetailView({ entrepreneurshipId }: { entrepreneurshipI
                 />
                 <EnrollmentSection
                   state={enrollments.state}
+                  canCreate={canCreate}
                   entrepreneurshipId={entrepreneurship.state.data.id}
                   onRetry={enrollments.reload}
                 />
@@ -590,10 +604,12 @@ export function ExpedienteDetailView({ entrepreneurshipId }: { entrepreneurshipI
 
 function EnrollmentSection({
   state,
+  canCreate,
   entrepreneurshipId,
   onRetry,
 }: {
   state: ViewState<Enrollment[]>
+  canCreate: boolean
   entrepreneurshipId: string
   onRetry: () => void
 }) {
@@ -611,9 +627,11 @@ function EnrollmentSection({
       />
     )
   }
+  let emptyDescription = 'Aquí verás los programas en los que se inscriba este emprendimiento.'
+  if (canCreate) emptyDescription = 'Usa «Inscribir en Prototipado» para registrar el ingreso y luego crear un ciclo.'
   return (
     state.data.length === 0 ? (
-      <EmptyState title="Aún no hay inscripciones" description="Las inscripciones registran el paso del emprendimiento por cada programa." />
+      <EmptyState title="Aún no hay inscripciones" description={emptyDescription} />
     ) : (
       <RecordList empty={null}>
         {state.data.map((enrollment) => (
@@ -632,10 +650,12 @@ function EnrollmentSection({
 function EnrollmentForm({
   pending,
   error,
+  notice,
   onSubmit,
 }: {
   pending: boolean
   error: string | null
+  notice: string | null
   onSubmit: (localValue: string) => void
 }) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -644,8 +664,11 @@ function EnrollmentForm({
     const raw = data.get('enrolled_at')
     onSubmit(typeof raw === 'string' ? raw : '')
   }
+  let action = 'Inscribir'
+  if (pending) action = 'Guardando…'
+  if (notice) action = 'Abriendo…'
   return (
-    <form className={styles.formCompact} onSubmit={handleSubmit}>
+    <form className={`${styles.formCompact} ${styles.actionSurface}`} onSubmit={handleSubmit}>
       <label className={styles.field}>
         Fecha de ingreso
         <input
@@ -656,14 +679,11 @@ function EnrollmentForm({
           disabled={pending}
         />
       </label>
-      {error ? (
-        <p className={styles.formError} role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error && <p className={styles.formError} role="alert">{error}</p>}
+      <p className={styles.saveFeedback} role="status">{notice}</p>
       <div className={styles.actions}>
         <button className={styles.button} type="submit" disabled={pending}>
-          {pending ? 'Guardando…' : 'Inscribir'}
+          {action}
         </button>
       </div>
     </form>
@@ -699,7 +719,10 @@ export function EnrollmentDetailView({
     { missingMessage: 'Inscripción no encontrada' },
   )
   const [pending, setPending] = useState(false)
+  const [cycleOpen, setCycleOpen] = useState(false)
+  const saving = useRef(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const aligned =
     entrepreneurship.state.status === 'ready' &&
@@ -710,6 +733,7 @@ export function EnrollmentDetailView({
     enrollment.state.status === 'ready' &&
     enrollment.state.data.entrepreneurship_id !== entrepreneurship.state.data.id
   const program = aligned && enrollment.state.status === 'ready' ? enrollment.state.data.program : null
+  const canCreate = canRegisterExpediente(me.role) && program === PROTOTIPADO_PROGRAM
   usePageTitle(program)
 
   const onlyCycle = cycles.state.status === 'ready' && !cycles.hasMore && cycles.state.data.length === 1
@@ -724,7 +748,7 @@ export function EnrollmentDetailView({
   }, [aligned, enrollment.state, entrepreneurship.state, onlyCycle, router])
 
   async function createCycle(rawName: string) {
-    if (!aligned || enrollment.state.status !== 'ready' || entrepreneurship.state.status !== 'ready' || pending) {
+    if (!aligned || enrollment.state.status !== 'ready' || entrepreneurship.state.status !== 'ready' || saving.current) {
       return
     }
     const name = trimmedName(rawName)
@@ -732,6 +756,7 @@ export function EnrollmentDetailView({
       setFormError(name.error)
       return
     }
+    saving.current = true
     setPending(true)
     setFormError(null)
     const result = await requestExpediente(
@@ -739,11 +764,13 @@ export function EnrollmentDetailView({
       parseCycle,
       { method: 'POST', body: { name: name.name } },
     )
-    setPending(false)
     if (!result.ok) {
-      setFormError(result.message)
+      saving.current = false
+      setPending(false)
+      setFormError(`No se pudo crear el ciclo. ${result.message}`)
       return
     }
+    setNotice(`Se creó ${result.data.name}. Abriendo el ciclo…`)
     router.push(
       `/expediente/${entrepreneurship.state.data.id}/inscripciones/${enrollment.state.data.id}/ciclos/${result.data.id}`,
     )
@@ -783,9 +810,8 @@ export function EnrollmentDetailView({
           missingTitle="Inscripción no encontrada"
           errorTitle="No se pudo abrir la inscripción"
           onRetry={() => {
-            entrepreneurship.retry()
-            enrollment.retry()
-            cycles.reload()
+            if (entrepreneurship.state.status === 'error') entrepreneurship.retry()
+            if (enrollment.state.status === 'error') enrollment.retry()
           }}
         />
       ) : null}
@@ -802,9 +828,13 @@ export function EnrollmentDetailView({
             <SectionHeader
               title="Ciclos"
               description="Proyectos o intervenciones registrados dentro de esta inscripción."
-              action={canRegisterExpediente(me.role) && enrollment.state.data.program === PROTOTIPADO_PROGRAM ? (
-                <Dialog>
-                  <DialogTrigger className={styles.button}><FolderPlus aria-hidden="true" /> Nuevo ciclo</DialogTrigger>
+               action={canCreate ? (
+                 <Dialog open={cycleOpen} onOpenChange={(open) => {
+                   if (saving.current) return
+                   setFormError(null)
+                   setCycleOpen(open)
+                 }}>
+                   <DialogTrigger className={`${styles.button} ${styles.actionSurface}`}><FolderPlus aria-hidden="true" /> Nuevo ciclo</DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Nuevo ciclo de Prototipado</DialogTitle>
@@ -815,7 +845,8 @@ export function EnrollmentDetailView({
                       fieldLabel="Nombre del ciclo"
                       submitLabel="Crear ciclo"
                       pending={pending}
-                      error={formError}
+                       error={formError}
+                       notice={notice}
                       onSubmit={(name) => void createCycle(name)}
                     />
                   </DialogContent>
@@ -824,7 +855,8 @@ export function EnrollmentDetailView({
             />
             {onlyCycle ? <LoadingLine>Abriendo el único ciclo disponible…</LoadingLine> : <>
               <CycleSection
-                state={cycles.state}
+                 state={cycles.state}
+                 canCreate={canCreate}
                 entrepreneurshipId={entrepreneurship.state.data.id}
                 entrepreneurshipName={entrepreneurship.state.data.name}
                 program={enrollment.state.data.program}
@@ -846,12 +878,14 @@ export function EnrollmentDetailView({
 
 function CycleSection({
   state,
+  canCreate,
   entrepreneurshipId,
   entrepreneurshipName,
   program,
   onRetry,
 }: {
   state: ViewState<Cycle[]>
+  canCreate: boolean
   entrepreneurshipId: string
   entrepreneurshipName: string
   program: string
@@ -871,9 +905,11 @@ function CycleSection({
       />
     )
   }
+  let emptyDescription = 'Aquí aparecerán los ciclos disponibles para esta inscripción.'
+  if (canCreate) emptyDescription = 'Usa «Nuevo ciclo» para empezar a organizar el trabajo de esta inscripción.'
   return (
     state.data.length === 0 ? (
-      <EmptyState title="Aún no hay ciclos" description="Crea un ciclo cuando exista un proyecto o intervención concreta dentro de esta inscripción." />
+      <EmptyState title="Aún no hay ciclos" description={emptyDescription} />
     ) : (
       <CycleWorkspaceTabs cycles={state.data}>
         {(cycle) => <CycleWorkspace cycle={cycle} entrepreneurshipId={entrepreneurshipId} entrepreneurshipName={entrepreneurshipName} program={program} />}
@@ -998,9 +1034,9 @@ export function CycleDetailView({
           missingTitle="Ciclo no encontrado"
           errorTitle="No se pudo abrir el ciclo"
           onRetry={() => {
-            entrepreneurship.retry()
-            enrollment.retry()
-            cycle.retry()
+            if (entrepreneurship.state.status === 'error') entrepreneurship.retry()
+            if (enrollment.state.status === 'error') enrollment.retry()
+            if (cycle.state.status === 'error') cycle.retry()
           }}
         />
       ) : null}

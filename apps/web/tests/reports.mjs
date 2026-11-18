@@ -13,12 +13,42 @@ const temporary = await mkdtemp(join(tmpdir(), 'sia-reports-'))
 const originalFetch = globalThis.fetch
 try {
   const compile = (source) => ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
-    .replace(/from ["'](react|react\/jsx-runtime)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
+    .replace(/from ["'](react|react\/jsx-runtime|lucide-react)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
     .replaceAll("'../lib/expediente'", "'./expediente.mjs'")
-    .replace("import styles from './reports.module.css';", 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
-  for (const [name, path] of [['expediente', 'lib/expediente.ts'], ['reports', 'lib/reports.ts'], ['report-sources', 'components/report-sources.tsx'], ['report-form', 'components/report-form.tsx']]) {
+    .replaceAll("'../lib/reports'", "'./reports.mjs'")
+    .replaceAll("'./ui/loading-state'", "'./loading-state.mjs'")
+    .replaceAll("'./report-form'", "'./report-form.mjs'")
+    .replaceAll("'./report-sources'", "'./report-sources.mjs'")
+    .replace(/from '\.\/(?:authenticated-shell|project-reference-ui|ui\/dialog|ui\/confirm-action)'/g, "from './view-stubs.mjs'")
+    .replace(/import styles from '\.\/[^']+\.module\.css';/, 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
+  await writeFile(join(temporary, 'view-stubs.mjs'), compile(`
+    export const useMe = () => ({ role: 'Gestor' })
+    export const ProjectHeading = ({ action }) => action
+    export const Dialog = () => null
+    export const DialogContent = () => null
+    export const DialogDescription = () => null
+    export const DialogHeader = () => null
+    export const DialogTitle = () => null
+    export const ConfirmAction = () => null
+  `))
+  for (const [name, path] of [
+    ['expediente', 'lib/expediente.ts'],
+    ['reports', 'lib/reports.ts'],
+    ['report-sources', 'components/report-sources.tsx'],
+    ['report-form', 'components/report-form.tsx'],
+    ['loading-state', 'components/ui/loading-state.tsx'],
+    ['reports-view', 'components/reports-view.tsx'],
+  ]) {
     await writeFile(join(temporary, `${name}.mjs`), compile(await readFile(new URL(`../app/${path}`, import.meta.url), 'utf8')))
   }
+  const { ReportsView } = await import(pathToFileURL(join(temporary, 'reports-view.mjs')))
+  const loadingMarkup = renderToStaticMarkup(createElement(ReportsView, { cycleId: 'cycle-1' }))
+  assert.match(loadingMarkup, /<button[^>]*disabled=""[^>]*>.*Preparar informe/)
+  assert.match(loadingMarkup, /role="status">Cargando informes…<\/span><div aria-hidden="true"><div class="report-list">/)
+  assert.equal([...loadingMarkup.matchAll(/<div class="report-row loadingRow">/g)].length, 3)
+  assert.doesNotMatch(loadingMarkup, /Este ciclo todavía no tiene informes|class="report-row"/)
+  console.log('✓ Pending reports render three decorative rows, announce loading, and keep creation disabled')
+
   const { ReportSources } = await import(pathToFileURL(join(temporary, 'report-sources.mjs')))
   const render = (composition) => renderToStaticMarkup(createElement(ReportSources, { composition }))
   // Snapshot fixtures only: rendering must not mutate or replace historical data.

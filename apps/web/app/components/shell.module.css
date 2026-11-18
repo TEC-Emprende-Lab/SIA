@@ -29,6 +29,14 @@
 .panel p { max-width: 640px; margin: 0; color: #6e6e73; font-size: 14px; }
 .notice { padding: 32px; color: #6e6e73; font-size: 14px; }
 
+.skeletonBrand { display: flex; min-height: 40px; align-items: center; gap: 12px; padding-inline: 8px; }
+.skeletonBrand > span:first-child { flex: 0 0 36px; height: 36px; }
+.skeletonBrand > span:last-child { width: 88px; }
+.skeletonNav { display: grid; gap: 28px; margin-top: 40px; padding: 16px 12px; }
+.skeletonTopbar > span:first-child { width: min(50%, 200px); }
+.skeletonContent { display: grid; gap: 16px; }
+.skeletonContent > span:first-child { height: 24px; }
+
 .guest { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); grid-template-rows: 1fr auto; align-items: center; column-gap: clamp(32px, 5vw, 72px); min-height: calc(100dvh - 100px); max-width: 1440px; margin: 0 auto; padding: 0 clamp(24px, 5vw, 72px); }
 .guestHero { padding: 40px 0; }
 .guestEyebrow { margin: 0 0 24px; color: #68642d; font-size: 16px; font-weight: 600; line-height: 1.5; }
@@ -52,6 +60,7 @@
 @media (max-width: 760px) {
   .shell { flex-direction: column; }
   .nav { position: static; flex-basis: auto; height: auto; padding: 20px; }
+  .skeletonNav { display: none; }
   .nav nav { display: flex; gap: 16px; overflow-x: auto; padding-top: 16px; }
   .nav nav > div { flex: none; }
   .links { display: flex; }

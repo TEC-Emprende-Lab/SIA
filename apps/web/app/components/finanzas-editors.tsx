@@ -3,9 +3,10 @@
 import { useId, useState, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, Check, FileText } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
+import { ConfirmAction } from './ui/confirm-action'
 import { uploadPrivateDocument, requestDocumentAccess } from '../lib/documents'
 import { financeRequest, extractInvoice, money, type Purchase, type FinanceEvent, type Definitions, type Summary, type Kind, type Attachment } from '../lib/finanzas'
-import { FinanceError, FinanceField, FinanceLoading, FinanceNotice, FinancePages, FinanceStatus, financeEventLabel, financeFailure, localDateInput, useFinanceData } from './finanzas-ui'
+import { FinanceError, FinanceField, FinanceNotice, FinancePages, FinanceReadFeedback, FinanceStatus, financeEventLabel, financeFailure, localDateInput, useFinanceData } from './finanzas-ui'
 import styles from './finanzas.module.css'
 
 const DOCUMENT_LABEL: Record<Kind, string> = {
@@ -101,16 +102,32 @@ export function PurchaseForm({ cycle, definitions, summary, purchase, close, sav
         </form>
       </div>
       <footer className={styles.dialogFooter}>
-        {discard ? <><p>Hay cambios sin guardar. ¿Quieres descartarlos?</p><div className={styles.actions}><button className="btn secondary" onClick={() => setDiscard(false)}>Seguir editando</button><button className={`btn secondary ${styles.danger}`} onClick={close}>Descartar cambios</button></div></> : <>
           <p>{unavailable ? 'Espera a que termine la operación.' : '* Campos obligatorios. Se guarda como borrador.'}</p>
           <div className={styles.actions}><button type="button" className="btn secondary" disabled={unavailable} onClick={requestClose}>Cancelar</button>{step === 1 && <button type="button" className="btn secondary" disabled={unavailable} onClick={() => setStep(0)}><ArrowLeft size={15} aria-hidden="true" />Atrás</button>}<button form={formId} type="submit" className={step === 1 ? 'btn primary' : 'btn secondary'} disabled={unavailable}>{busy ? 'Guardando…' : 'Guardar borrador'}</button>{step === 0 && <button type="button" className="btn primary" disabled={unavailable} onClick={next}>Revisar verificaciones<ArrowRight size={15} aria-hidden="true" /></button>}</div>
-        </>}
       </footer>
+      {discard && <ConfirmAction
+        title="Descartar cambios"
+        description="Los cambios sin guardar de este formulario se perderán. Lo que ya guardaste no cambia."
+        confirmLabel="Descartar cambios"
+        cancelLabel="Seguir editando"
+        tone="danger"
+        onCancel={() => setDiscard(false)}
+        onConfirm={close}
+      />}
     </DialogContent>
   </Dialog>
 }
 
 type Action = { id: string; label: string; hint: string; sensitive?: boolean }
+const ACTION_SUCCESS: Record<string, string> = {
+  submit: 'Trámite enviado a revisión.',
+  validate: 'Validación interna registrada. No confirma un pago.',
+  request_correction: 'Se solicitó una corrección. La observación quedó en el historial.',
+  register_fundatec: 'Se guardó el consecutivo FUNDATEC. La ejecución se registra por separado.',
+  execute: 'Ejecución registrada. Este trámite es inmutable y conserva sus respaldos e historial.',
+  reject: 'Trámite rechazado. El registro y su historial se conservan.',
+  cancel: 'Trámite anulado. El registro y su historial se conservan.',
+}
 function availableActions(p: Purchase, role: string, editable: boolean): Action[] {
   const result: Action[] = []
   const manager = role === 'Gestor' || role === 'Coordinadora'
@@ -123,7 +140,7 @@ function availableActions(p: Purchase, role: string, editable: boolean): Action[
   return result
 }
 
-export function PurchaseDetail({ cycle, eid, purchase: p, definitions, role, userId, close, edit, updated }: { cycle: string; eid: string; purchase: Purchase; definitions: Definitions; role: string; userId: string; close: () => void; edit: () => void; updated: (p: Purchase) => void }) {
+export function PurchaseDetail({ cycle, eid, purchase: p, definitions, role, userId, close, edit, notice, updated }: { cycle: string; eid: string; purchase: Purchase; definitions: Definitions; role: string; userId: string; close: () => void; edit?: () => void; notice: string; updated: (p: Purchase, message: string) => void }) {
   const [eventOffset, setEventOffset] = useState(0)
   const history = useFinanceData<FinanceEvent[]>(cycle, `events?entity_id=${p.id}&offset=${eventOffset}`)
   const files = useFinanceData<Attachment[]>(cycle, `purchases/${p.id}/attachments`)
@@ -134,66 +151,129 @@ export function PurchaseDetail({ cycle, eid, purchase: p, definitions, role, use
   const [fundatec, setFundatec] = useState('')
   const [executed, setExecuted] = useState('')
   const [human, setHuman] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [attaching, setAttaching] = useState(false)
+  const [needsSync, setNeedsSync] = useState(false)
+  const [fileError, setFileError] = useState('')
+  const [opening, setOpening] = useState('')
   const action = actions.find(a => a.id === actionId)
   const needsHuman = ['validate', 'execute'].includes(actionId)
   const checklistComplete = Object.values(p.checklist).every(Boolean)
-  const canAct = !!observation.trim() && (!needsHuman || human) && (!action?.sensitive || confirmed) && (actionId !== 'register_fundatec' || !!fundatec.trim()) && (actionId !== 'execute' || !!executed) && (actionId !== 'validate' || checklistComplete)
+  const canAct = !attaching && !needsSync && !!observation.trim() && (!needsHuman || human) && (actionId !== 'register_fundatec' || !!fundatec.trim()) && (actionId !== 'execute' || !!executed) && (actionId !== 'validate' || checklistComplete)
 
-  async function act(event: FormEvent) {
+  function requestAction(event: FormEvent) {
     event.preventDefault()
+    if (!canAct || busy || !action) return
+    if (action.sensitive || action.id === 'execute') {
+      setError('')
+      setConfirming(true)
+      return
+    }
+    void act()
+  }
+
+  async function act() {
     if (!canAct || busy) return
     setBusy(true); setError('')
-    try { updated(await financeRequest<Purchase>(cycle, `purchases/${p.id}/transitions`, 'POST', { action: actionId, expected_revision: p.revision, observation, human_reviewed: human, fundatec_number: fundatec, executed_on: executed || null })) }
+    try {
+      const result = await financeRequest<Purchase>(cycle, `purchases/${p.id}/transitions`, 'POST', { action: actionId, expected_revision: p.revision, observation, human_reviewed: human, fundatec_number: fundatec, executed_on: executed || null })
+      setConfirming(false)
+      updated(result, ACTION_SUCCESS[actionId] ?? 'Decisión registrada.')
+    }
     catch (reason) { setError(financeFailure(reason)) } finally { setBusy(false) }
   }
   async function attach(file?: File) {
-    if (!file) return
-    setBusy(true); setError('')
+    if (!file || busy || attaching || needsSync) return
+    setAttaching(true); setFileError('')
     try {
       const upload = await uploadPrivateDocument(eid, file)
       if (!upload.ok) throw new Error(upload.message)
       await financeRequest(cycle, `purchases/${p.id}/attachments`, 'POST', { document_id: upload.data.id, expected_revision: p.revision })
-      updated(await financeRequest<Purchase>(cycle, `purchases/${p.id}`))
-    } catch (reason) { setError(financeFailure(reason)) } finally { setBusy(false) }
+      setNeedsSync(true)
+      files.retry()
+      history.retry()
+      await syncAttachment()
+    } catch (reason) { setFileError(financeFailure(reason)) } finally { setAttaching(false) }
+  }
+  async function syncAttachment() {
+    setAttaching(true); setFileError('')
+    try {
+      updated(await financeRequest<Purchase>(cycle, `purchases/${p.id}`), 'Respaldo adjuntado al trámite.')
+      setNeedsSync(false)
+    } catch {
+      setFileError('El respaldo se guardó, pero no se pudo consultar la nueva revisión. Actualiza el trámite antes de editarlo o registrar una decisión.')
+    } finally { setAttaching(false) }
   }
   async function openDocument(id: string) {
-    setError('')
-    const result = await requestDocumentAccess(eid, id)
-    if (result.ok) window.open(result.data.url, '_blank', 'noopener,noreferrer')
-    else setError(result.message)
+    setOpening(id); setFileError('')
+    try {
+      const result = await requestDocumentAccess(eid, id)
+      if (!result.ok) throw new Error(result.message)
+      window.open(result.data.url, '_blank', 'noopener,noreferrer')
+    } catch (reason) { setFileError(financeFailure(reason)) } finally { setOpening('') }
   }
-  return <Dialog open onOpenChange={open => { if (!open && !busy) close() }}><DialogContent className={styles.dialog} onPointerDownOutside={event => event.preventDefault()}>
+  let footerHint = 'Los cambios se verifican en el servidor.'
+  if (busy) footerHint = 'Guardando la decisión…'
+  let fileTitle = 'No se pudo completar la operación con el respaldo'
+  if (needsSync) fileTitle = 'Respaldo guardado; falta actualizar el trámite'
+  return <Dialog open onOpenChange={open => { if (!open && !busy && !attaching) close() }}><DialogContent className={styles.dialog} onPointerDownOutside={event => event.preventDefault()}>
     <DialogHeader className={styles.dialogHeader}><DialogTitle>{definitions.types[p.kind]}</DialogTitle><DialogDescription>{p.supplier}</DialogDescription></DialogHeader>
     <div className={styles.dialogBody}>
       <div className={styles.toolbar}><strong className={styles.detailTotal}>{money(p.amount)}</strong><FinanceStatus status={p.status} /></div>
       <dl className={styles.detailFacts}><div><dt>Documento</dt><dd>{p.invoice_number || 'Aún no registrado'}</dd></div><div><dt>Consecutivo FUNDATEC</dt><dd>{p.fundatec_number || 'Aún no registrado'}</dd></div><div><dt>Lista de verificación v{p.checklist_version}</dt><dd>{Object.values(p.checklist).filter(Boolean).length} de {Object.keys(p.checklist).length} completos</dd></div><div><dt>Fecha de ejecución</dt><dd>{p.executed_on || 'Sin ejecución confirmada'}</dd></div></dl>
       <p className={styles.description}>{p.description}</p>
-      {p.status === 'executed' && <FinanceNotice tone="success">Ejecución registrada. Este trámite es inmutable y conserva sus respaldos e historial.</FinanceNotice>}
+      {notice && <FinanceNotice tone="success">{notice}</FinanceNotice>}
+      {!notice && p.status === 'executed' && <FinanceNotice>Este trámite es inmutable y conserva sus respaldos e historial.</FinanceNotice>}
       <section className={styles.detailSection}><h3>Respaldos privados</h3>
-        {files.error ? <FinanceError message={files.error} retry={files.retry} /> : files.loading ? <FinanceLoading label="Consultando respaldos…" /> : files.data?.length ? files.data.map(a => <button key={a.id} className={styles.attachment} onClick={() => void openDocument(a.document_id)}><FileText size={18} aria-hidden="true" />{a.name}<ArrowRight size={15} aria-hidden="true" /></button>) : <p className={styles.hint}>Todavía no hay archivos adjuntos a este trámite.</p>}
-        {editable && <div className={styles.upload}><FinanceField label="Adjuntar un respaldo" hint="El archivo será privado y quedará vinculado al trámite.">{(id, hintId) => <input id={id} aria-describedby={hintId} type="file" disabled={busy} onChange={event => void attach(event.target.files?.[0])} />}</FinanceField></div>}
+        <FinanceReadFeedback read={files} label="Consultando respaldos…" title="No se pudieron consultar los respaldos" />
+        {files.data?.map(a => <button key={a.id} className={styles.attachment} disabled={Boolean(opening) || needsSync} onClick={() => void openDocument(a.document_id)}><FileText size={18} aria-hidden="true" />{a.name}<ArrowRight size={15} aria-hidden="true" /></button>)}
+        {files.data?.length === 0 && <p className={styles.hint}>Todavía no hay archivos adjuntos a este trámite.</p>}
+        {editable && <div className={styles.upload}><FinanceField label="Adjuntar un respaldo" hint="El archivo será privado y quedará vinculado al trámite.">{(id, hintId) => <input id={id} aria-describedby={hintId} type="file" disabled={busy || attaching || needsSync} onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; void attach(file) }} />}</FinanceField></div>}
+        {opening && <p className={styles.refreshing} role="status">Solicitando acceso al respaldo…</p>}
+        {attaching && <p className={styles.refreshing} role="status">Procesando el respaldo…</p>}
+        {fileError && <FinanceError title={fileTitle} message={fileError} />}
+        {needsSync && !attaching && <button className="btn secondary" onClick={() => void syncAttachment()}>Actualizar trámite</button>}
       </section>
-      {action && <section className={styles.detailSection}><h3>Siguiente paso</h3><form className={styles.form} onSubmit={act} aria-busy={busy}>
-        <FinanceField label="Acción a realizar">{id => <select id={id} value={actionId} disabled={busy} onChange={event => { setActionId(event.target.value); setHuman(false); setConfirmed(false); setError('') }}><optgroup label="Continuar el trámite">{actions.filter(a => !a.sensitive).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</optgroup><optgroup label="Acciones definitivas">{actions.filter(a => a.sensitive).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</optgroup></select>}</FinanceField>
+      {action && <section className={styles.detailSection}><h3>Siguiente paso</h3><form className={styles.form} onSubmit={requestAction} aria-busy={busy}>
+        <FinanceField label="Acción a realizar">{id => <select id={id} value={actionId} disabled={busy} onChange={event => { setActionId(event.target.value); setHuman(false); setError('') }}><optgroup label="Continuar el trámite">{actions.filter(a => !a.sensitive).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</optgroup><optgroup label="Acciones definitivas">{actions.filter(a => a.sensitive).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</optgroup></select>}</FinanceField>
         <FinanceNotice tone={action.sensitive ? 'warning' : 'info'}>{action.hint}</FinanceNotice>
         {actionId === 'validate' && !checklistComplete && <FinanceNotice tone="warning">La lista de verificación está incompleta. Solicita una corrección para que la persona solicitante la complete antes de validar.</FinanceNotice>}
         {actionId === 'register_fundatec' && <FinanceField label="Consecutivo FUNDATEC *">{id => <input id={id} required maxLength={100} disabled={busy} value={fundatec} onChange={event => setFundatec(event.target.value)} />}</FinanceField>}
         {actionId === 'execute' && <FinanceField label="Fecha de ejecución *" hint="La fecha del pago o movimiento que verificaste, no una fecha futura.">{(id, hintId) => <input id={id} aria-describedby={hintId} type="date" required max={localDateInput()} disabled={busy} value={executed} onChange={event => setExecuted(event.target.value)} />}</FinanceField>}
         <FinanceField label="Observación / motivo *">{id => <textarea id={id} required maxLength={4000} disabled={busy} value={observation} onChange={event => setObservation(event.target.value)} />}</FinanceField>
         {needsHuman && <label className={styles.checkbox}><input type="checkbox" disabled={busy} checked={human} onChange={event => setHuman(event.target.checked)} />Confirmo que revisé personalmente la información y los respaldos.</label>}
-        {action.sensitive && <label className={styles.checkbox}><input type="checkbox" disabled={busy} checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />Entiendo que esta decisión es definitiva y que el historial se conserva.</label>}
-        <div><button className={action.sensitive ? `btn secondary ${styles.danger}` : 'btn primary'} disabled={busy || !canAct}>{busy ? 'Guardando decisión…' : action.label}<Check size={15} aria-hidden="true" /></button>{!canAct && <p className={styles.hint}>Completa los campos y las confirmaciones de esta acción para continuar.</p>}</div>
+        <div><button className={action.sensitive ? `btn secondary ${styles.danger}` : 'btn primary'} disabled={busy || !canAct}>{busy ? 'Guardando decisión…' : action.label}<Check size={15} aria-hidden="true" /></button>{!canAct && !attaching && !needsSync && <p className={styles.hint}>Completa los campos y las confirmaciones de esta acción para continuar.</p>}</div>
       </form></section>}
-      {error && <FinanceError message={error} />}
-      <section className={styles.detailSection}><h3>Historial verificable</h3>{history.error ? <FinanceError message={history.error} retry={history.retry} /> : history.loading ? <FinanceLoading label="Consultando historial…" /> : <><ol className={styles.history}>{history.data?.map(event => <li key={event.id}><strong>{financeEventLabel(event.action)}</strong><small>{new Date(event.created_at).toLocaleString('es-CR')}, {event.actor_id === userId ? 'Tú' : `Usuario ${event.actor_id}`}</small><p>{event.observation}</p></li>)}</ol><FinancePages offset={eventOffset} count={history.data?.length ?? 0} loading={history.loading} change={setEventOffset} /></>}
+      {error && !confirming && <FinanceError message={error} />}
+      <section className={styles.detailSection}><h3>Historial verificable</h3>
+        <FinanceReadFeedback read={history} label="Consultando historial…" title="No se pudo consultar el historial" />
+        {history.data?.length === 0 && <p className={styles.hint}>No hay eventos en esta página del historial.</p>}
+        {Boolean(history.data?.length) && <ol className={styles.history}>{history.data?.map(event => <li key={event.id}><strong>{financeEventLabel(event.action)}</strong><small>{new Date(event.created_at).toLocaleString('es-CR')}, {event.actor_id === userId ? 'Tú' : `Usuario ${event.actor_id}`}</small><p>{event.observation}</p></li>)}</ol>}
+        {!history.loading && <FinancePages offset={eventOffset} count={history.data?.length ?? 0} loading={history.loading} change={setEventOffset} />}
         <details className={styles.disclosure}><summary>Identificación para auditoría</summary><p>Trámite: {p.id}<br />Revisión vigente: {p.revision}</p></details>
       </section>
     </div>
-    <footer className={styles.dialogFooter}><p>{busy ? 'Guardando los cambios…' : 'Los cambios se verifican en el servidor.'}</p><div className={styles.actions}><button className="btn secondary" disabled={busy} onClick={close}>Cerrar</button>{editable && <button className="btn primary" disabled={busy} onClick={edit}>Editar información y verificaciones</button>}</div></footer>
+    <footer className={styles.dialogFooter}><p>{footerHint}</p><div className={styles.actions}><button className="btn secondary" disabled={busy || attaching} onClick={close}>Cerrar</button>{editable && <button className="btn primary" disabled={busy || attaching || needsSync || !edit} onClick={edit}>Editar información y verificaciones</button>}</div></footer>
+    {confirming && action && <ConfirmAction
+      title={action.label}
+      subject={`${p.supplier} / ${money(p.amount)}`}
+      description={action.hint}
+      confirmLabel={action.label}
+      pendingLabel="Guardando decisión…"
+      tone={confirmationTone(action)}
+      pending={busy}
+      error={error}
+      onCancel={() => { setConfirming(false); setError('') }}
+      onConfirm={() => void act()}
+    />}
   </DialogContent></Dialog>
+}
+
+function confirmationTone(action: Action) {
+  if (action.sensitive) return 'danger'
+  return 'normal'
 }
 
 export function ItemForm({ cycle, close, saved }: { cycle: string; close: () => void; saved: () => void }) {

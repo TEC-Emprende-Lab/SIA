@@ -11,3 +11,18 @@
 .references dt { font-weight: 600; }
 .references dd { margin: 0 0 .4rem; }
 .narrative { white-space: pre-wrap; overflow-wrap: anywhere; }
+.loadingRow > :first-child { width: 24px; height: 24px; }
+.loadingRow > :last-child { width: 16px; }
+.loadingReportInfo { display: grid; gap: 8px; min-width: 0; }
+.loadingReportStatus { width: 64px; }
+.feedback { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.feedback:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; }
+.moreLoading { margin-block: 12px; }
+.moreButton { margin-block-start: 12px; min-height: 40px; }
+.moreButton[aria-disabled='true'] { cursor: wait; opacity: .7; }
+.pdfAccess { display: flex; flex-wrap: wrap; gap: 8px; }
+.pdfAccess p { width: 100%; margin: 0; }
+
+@media (max-width: 760px) {
+  .loadingReportInfo { width: 100%; }
+}

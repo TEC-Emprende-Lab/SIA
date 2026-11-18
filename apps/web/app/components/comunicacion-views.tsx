@@ -7,8 +7,10 @@ import shell from './expediente.module.css'
 import styles from './comunicacion.module.css'
 import { LoadMore } from './load-more'
 import { MeetingCalendar } from './meeting-calendar'
+import { ConfirmAction } from './ui/confirm-action'
+import { LoadingRows } from './ui/loading-state'
 import { formatDateTime, localDateTimeValue } from '../lib/expediente'
-import { usePagedList } from '../lib/use-paged-list'
+import { usePagedList, type PagedState } from '../lib/use-paged-list'
 import {
   awareDateTime,
   canManageMeetings,
@@ -73,7 +75,7 @@ export function MeetingsPanel({ cycleId, program }: { cycleId: string; program: 
   if (!tracked(program)) {
     return <p className={shell.meta}>Este programa no tiene reuniones en el alcance inicial.</p>
   }
-  return <MeetingsCycle cycleId={cycleId} />
+  return <MeetingsCycle key={cycleId} cycleId={cycleId} />
 }
 
 function MeetingsCycle({ cycleId }: { cycleId: string }) {
@@ -81,6 +83,10 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
   const manage = canManageMeetings(me.role)
   const [view, setView] = useState<'calendar' | 'history'>('calendar')
   const [calendarRevision, setCalendarRevision] = useState(0)
+  const [notice, setNotice] = useState('')
+  const [formVersion, setFormVersion] = useState(0)
+  const writeLock = useRef(false)
+  const heading = useRef<HTMLHeadingElement>(null)
   let historyPage: ((limit: number, offset: number) => string) | null = null
   if (view === 'history') historyPage = (limit, offset) => meetingsUrl(cycleId, '', { limit, offset })
   const meetings = usePagedList(historyPage, fetchMeetings)
@@ -94,26 +100,35 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
   }
 
   function renderMeeting(meeting: Meeting) {
-    return <MeetingCard key={meeting.id} cycleId={cycleId} meeting={meeting} manage={manage} userId={me.id} onChanged={reloadMeetings} />
+    return <MeetingCard key={meeting.id} cycleId={cycleId} meeting={meeting} manage={manage} userId={me.id} focusHeading={() => heading.current?.focus()} onChanged={(message) => {
+      setNotice(message)
+      reloadMeetings()
+    }} />
   }
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
-    if (pendingId) {
+    if (writeLock.current) {
       return
     }
+    writeLock.current = true
     setPendingId(id)
     setActionError(null)
+    setNotice('')
     const result = await exec()
+    writeLock.current = false
     setPendingId(null)
     if (!result.ok) {
       setActionError({ id, message: result.message })
       return
     }
+    setNotice('Reunión registrada. Puedes consultarla en Calendario o Historial.')
+    setFormVersion((value) => value + 1)
+    heading.current?.focus()
     reloadMeetings()
   }
 
   function renderHistory() {
-    if (state.status === 'loading') return <p className={shell.meta} role="status">Cargando reuniones…</p>
+    if (state.status === 'loading') return <LoadingRows label="Cargando reuniones…" />
     if (state.status !== 'ready') {
       return <>
         <p className={shell.formError} role="alert">
@@ -127,7 +142,11 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
       </>
     }
     return <>
-      {state.data.length === 0 && <p className={shell.meta}>No hay reuniones en este ciclo.</p>}
+      {state.data.length === 0 && <div className={styles.emptyNote}>
+        <strong>Este ciclo todavía no tiene reuniones</strong>
+        {manage && <p className={shell.meta}>Usa «Nueva reunión» para registrar la fecha, las personas participantes y la referencia de la reunión externa.</p>}
+        {!manage && <p className={shell.meta}>Aquí podrás consultar las reuniones que registre el equipo gestor del ciclo.</p>}
+      </div>}
       <div className={styles.stack}>{state.data.map(renderMeeting)}</div>
       <LoadMore
         hasMore={meetings.hasMore}
@@ -141,11 +160,12 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
 
   return (
     <section className={shell.section} aria-labelledby="reuniones-titulo">
-      <h2 id="reuniones-titulo">Reuniones</h2>
+      <h2 id="reuniones-titulo" ref={heading} tabIndex={-1}>Reuniones</h2>
       <p className={shell.meta}>
         Fecha, participantes y referencia de la herramienta externa. La minuta publicada queda fija; una corrección es
         otra minuta.
       </p>
+      <div role="status" className={styles.meetingNotice}>{notice}</div>
       <div className={shell.actions} role="group" aria-label="Cómo ver las reuniones">
         <button type="button" className={shell.buttonSecondary} aria-pressed={view === 'calendar'} onClick={() => setView('calendar')}>Calendario</button>
         <button type="button" className={shell.buttonSecondary} aria-pressed={view === 'history'} onClick={() => setView('history')}>Historial</button>
@@ -154,6 +174,7 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
       {view === 'history' && renderHistory()}
       {manage ? (
         <MeetingForm
+          key={formVersion}
           id="meeting-new"
           title="Nueva reunión"
           submitLabel="Registrar reunión"
@@ -176,12 +197,14 @@ function MeetingCard({
   manage,
   userId,
   onChanged,
+  focusHeading,
 }: {
   cycleId: string
   meeting: Meeting
   manage: boolean
   userId: string
-  onChanged: () => void
+  onChanged: (message: string) => void
+  focusHeading: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [action, setAction] = useState<'edit' | 'revoke' | null>(null)
@@ -193,9 +216,12 @@ function MeetingCard({
   const canWrite = manage && active
   const readingId = `meeting-reading-${meeting.id}`
   const actionsId = `meeting-action-${meeting.id}`
+  const completed = useRef(false)
+  const writeLock = useRef(false)
 
   function toggleAction(next: 'edit' | 'revoke', trigger: HTMLButtonElement) {
     actionTrigger.current = trigger
+    completed.current = false
     setActionError(null)
     if (action === next) {
       setAction(null)
@@ -211,20 +237,27 @@ function MeetingCard({
   }
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
-    if (pendingId) {
+    if (writeLock.current) {
       return
     }
+    writeLock.current = true
     setPendingId(id)
     setActionError(null)
     const result = await exec()
+    writeLock.current = false
     setPendingId(null)
     if (!result.ok) {
       setActionError({ id, message: result.message })
       return
     }
+    completed.current = true
     setAction(null)
-    readingTrigger.current?.focus()
-    onChanged()
+    if (id.startsWith('revoke-')) {
+      onChanged('Se revocó la reunión. Puedes consultarla en Historial.')
+    } else {
+      readingTrigger.current?.focus()
+      onChanged('Cambios de la reunión guardados.')
+    }
   }
 
   return (
@@ -263,12 +296,12 @@ function MeetingCard({
           <button type="button" className={shell.buttonSecondary} aria-expanded={action === 'edit'} aria-controls={actionsId} disabled={pendingId !== null} onClick={(event) => toggleAction('edit', event.currentTarget)}>
             Editar reunión
           </button>
-          <button type="button" className={shell.buttonSecondary} aria-expanded={action === 'revoke'} aria-controls={actionsId} disabled={pendingId !== null} onClick={(event) => toggleAction('revoke', event.currentTarget)}>
+          <button type="button" className={shell.buttonSecondary} aria-haspopup="dialog" disabled={pendingId !== null} onClick={(event) => toggleAction('revoke', event.currentTarget)}>
             Revocar reunión
           </button>
         </div>
       )}
-      <div id={actionsId} hidden={!canWrite || action === null}>
+      <div id={actionsId} hidden={!canWrite || action !== 'edit'}>
         {canWrite && action === 'edit' && (
           <MeetingForm
             id={`meeting-${meeting.id}`}
@@ -288,16 +321,24 @@ function MeetingCard({
             }
           />
         )}
-        {canWrite && action === 'revoke' && (
-          <ObservationForm
-            id={`revoke-${meeting.id}`}
+      </div>
+      {canWrite && action === 'revoke' && (
+          <ConfirmAction
             title="Revocar reunión"
-            submitLabel="Confirmar revocación"
-            hint="La reunión revocada se conserva. No admite minutas ni acuerdos nuevos."
+            subject={meeting.title}
+            confirmLabel="Confirmar revocación"
+            description="La reunión saldrá del calendario y seguirá disponible en Historial. No podrás agregar nuevas minutas ni acuerdos."
+            tone="danger"
+            requireObservation
+            pendingLabel="Revocando reunión…"
             pending={pendingId === `revoke-${meeting.id}`}
-            error={actionError}
-            onCancel={cancelAction}
-            onSubmit={(observation) =>
+            error={actionError?.message}
+            onCancel={() => setAction(null)}
+            restoreFocus={() => {
+              if (completed.current) focusHeading()
+              else actionTrigger.current?.focus()
+            }}
+            onConfirm={(observation) =>
               run(`revoke-${meeting.id}`, async () =>
                 requestComunicacion(meetingsUrl(cycleId, meeting.id), parseMeeting, {
                   method: 'DELETE',
@@ -306,11 +347,10 @@ function MeetingCard({
               )
             }
           />
-        )}
-      </div>
+      )}
       <div id={readingId} hidden={!open}>
         {open && (
-          <MeetingChildren cycleId={cycleId} meeting={meeting} canWrite={canWrite} manage={manage} userId={userId} />
+          <MeetingChildren cycleId={cycleId} meeting={meeting} canWrite={canWrite} manage={manage} userId={userId} focusReading={() => readingTrigger.current?.focus()} />
         )}
       </div>
     </article>
@@ -323,12 +363,14 @@ function MeetingChildren({
   canWrite,
   manage,
   userId,
+  focusReading,
 }: {
   cycleId: string
   meeting: Meeting
   canWrite: boolean
   manage: boolean
   userId: string
+  focusReading: () => void
 }) {
   const minutes = usePagedList(
     (limit, offset) => meetingsUrl(cycleId, `${meeting.id}/minutes`, { limit, offset }),
@@ -341,61 +383,55 @@ function MeetingChildren({
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<ActionError>(null)
   const [generation, setGeneration] = useState(0)
+  const [notice, setNotice] = useState('')
+  const writeLock = useRef(false)
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
-    if (pendingId) {
+    if (writeLock.current) {
       return
     }
+    writeLock.current = true
     setPendingId(id)
     setActionError(null)
+    setNotice('')
     const result = await exec()
+    writeLock.current = false
     setPendingId(null)
     if (!result.ok) {
       setActionError({ id, message: result.message })
       return
+    }
+    if (id.startsWith('approve-')) {
+      setNotice('Minuta publicada. Esta versión ya no se puede editar.')
+    } else if (id.startsWith('draft-')) {
+      setNotice('Transcripción guardada como borrador. Completa la minuta antes de publicarla.')
+    } else if (id.startsWith('minutes-')) {
+      setNotice('Borrador de minuta guardado. Aún no está publicado.')
+    } else if (id.startsWith('agreement-new-')) {
+      setNotice('Acuerdo registrado con su fecha de compromiso.')
+    } else {
+      setNotice('Cambios del acuerdo guardados.')
     }
     minutes.reload()
     agreements.reload()
     setGeneration((value) => value + 1)
   }
 
-  const failed = [minutes.state, agreements.state].find(
-    (state) => state.status !== 'loading' && state.status !== 'ready',
-  )
-  if (failed) {
-    return (
-      <div className={styles.stack}>
-        <p className={shell.formError} role="alert">
-          {failed.message}
-        </p>
-        <button
-          type="button"
-          className={shell.buttonSecondary}
-          onClick={() => {
-            minutes.reload()
-            agreements.reload()
-          }}
-        >
-          Reintentar
-        </button>
-      </div>
-    )
-  }
-  if (minutes.state.status !== 'ready' || agreements.state.status !== 'ready') {
-    return <p className={shell.meta}>Cargando minuta y acuerdos…</p>
-  }
   return (
     <div className={styles.stack}>
-      <MinutesBlock
+      <p role="status" className={styles.meetingNotice}>{notice}</p>
+      <MeetingResource state={minutes.state} title="Minutas" label="Cargando minutas…" retry={minutes.reload}>
+      {(items) => <MinutesBlock
         key={`minutes-${generation}`}
         cycleId={cycleId}
         meeting={meeting}
-        minutes={minutes.state.data}
+        minutes={items}
         canWrite={canWrite}
         manage={manage}
         pendingId={pendingId}
         actionError={actionError}
         run={run}
+        focusReading={focusReading}
         more={
           <LoadMore
             hasMore={minutes.hasMore}
@@ -405,12 +441,14 @@ function MeetingChildren({
             label="Cargar más minutas"
           />
         }
-      />
-      <AgreementsBlock
+      />}
+      </MeetingResource>
+      <MeetingResource state={agreements.state} title="Acuerdos" label="Cargando acuerdos…" retry={agreements.reload}>
+      {(items) => <AgreementsBlock
         key={`agreements-${generation}`}
         cycleId={cycleId}
         meeting={meeting}
-        agreements={agreements.state.data}
+        agreements={items}
         canWrite={canWrite}
         userId={userId}
         pendingId={pendingId}
@@ -425,9 +463,28 @@ function MeetingChildren({
             label="Cargar más acuerdos"
           />
         }
-      />
+      />}
+      </MeetingResource>
     </div>
   )
+}
+
+function MeetingResource<T>({ state, title, label, retry, children }: {
+  state: PagedState<T>
+  title: string
+  label: string
+  retry: () => void
+  children: (items: T[]) => ReactNode
+}) {
+  if (state.status === 'ready') return children(state.data)
+  return <section className={styles.stack} aria-label={title}>
+    <h4>{title}</h4>
+    {state.status === 'loading' && <LoadingRows label={label} rows={2} />}
+    {state.status !== 'loading' && <>
+      <p className={shell.formError} role="alert">{state.message}</p>
+      {state.status === 'error' && <button type="button" className={shell.buttonSecondary} onClick={retry}>Reintentar</button>}
+    </>}
+  </section>
 }
 
 function MinutesBlock({
@@ -440,6 +497,7 @@ function MinutesBlock({
   actionError,
   run,
   more,
+  focusReading,
 }: {
   cycleId: string
   meeting: Meeting
@@ -450,13 +508,17 @@ function MinutesBlock({
   actionError: ActionError
   run: (id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) => Promise<void>
   more: ReactNode
+  focusReading: () => void
 }) {
+  const [publishing, setPublishing] = useState<string | null>(null)
+  const publishTrigger = useRef<HTMLButtonElement>(null)
+
   return (
     <div className={styles.stack}>
       <h4>Minutas</h4>
-      {minutes.length === 0 ? (
-        <p className={shell.meta}>{manage ? 'No hay minutas.' : 'No hay minutas publicadas.'}</p>
-      ) : null}
+      {minutes.length === 0 && canWrite && <p className={shell.meta}>Redacta una minuta manual o guarda una transcripción como borrador.</p>}
+      {minutes.length === 0 && manage && !canWrite && <p className={shell.meta}>Esta reunión quedó en el historial sin minutas registradas.</p>}
+      {minutes.length === 0 && !manage && <p className={shell.meta}>No hay minutas publicadas para esta reunión.</p>}
       {minutes.map((item) => (
         <article key={item.id} className={styles.block}>
           <div className={styles.row}>
@@ -486,14 +548,27 @@ function MinutesBlock({
                   )
                 }
               />
-              <ObservationForm
-                id={`approve-${item.id}`}
+              <button type="button" className={shell.buttonSecondary} aria-haspopup="dialog" disabled={pendingId !== null} onClick={(event) => {
+                publishTrigger.current = event.currentTarget
+                setPublishing(item.id)
+              }}>
+                Publicar minuta
+              </button>
+              {publishing === item.id && <ConfirmAction
                 title="Publicar minuta"
-                submitLabel="Publicar"
-                hint="Publicar confirma la revisión humana. La minuta publicada no se modifica."
+                subject={meeting.title}
+                confirmLabel="Publicar minuta"
+                description="Al publicar confirmas que revisaste el borrador. La minuta publicada no se puede editar."
+                requireObservation
+                pendingLabel="Publicando minuta…"
                 pending={pendingId === `approve-${item.id}`}
-                error={actionError}
-                onSubmit={(observation) =>
+                error={actionError?.id === `approve-${item.id}` && actionError.message || undefined}
+                onCancel={() => setPublishing(null)}
+                restoreFocus={() => {
+                  if (publishTrigger.current?.isConnected) publishTrigger.current.focus()
+                  else focusReading()
+                }}
+                onConfirm={(observation) =>
                   run(`approve-${item.id}`, async () =>
                     requestComunicacion(
                       meetingsUrl(cycleId, `${meeting.id}/minutes/${item.id}/approval`),
@@ -505,7 +580,7 @@ function MinutesBlock({
                     ).then(settled),
                   )
                 }
-              />
+              />}
             </>
           ) : null}
         </article>
@@ -575,7 +650,8 @@ function AgreementsBlock({
   return (
     <div className={styles.stack}>
       <h4>Acuerdos</h4>
-      {agreements.length === 0 ? <p className={shell.meta}>No hay acuerdos.</p> : null}
+      {agreements.length === 0 && <p className={shell.meta}>Esta reunión no tiene acuerdos registrados.</p>}
+      {agreements.length === 0 && canWrite && <p className={shell.meta}>Usa «Nuevo acuerdo» para guardar un compromiso y su fecha.</p>}
       {agreements.map((item) => (
         <article key={item.id} className={styles.block}>
           <p className={styles.prose}>{item.description}</p>
@@ -830,61 +906,6 @@ function MinutesForm({
         <button className={shell.button} type="submit" disabled={pending}>
           {pending ? 'Guardando…' : submitLabel}
         </button>
-      </div>
-    </form>
-  )
-}
-
-function ObservationForm({
-  id,
-  title,
-  submitLabel,
-  hint,
-  pending,
-  error,
-  onCancel,
-  onSubmit,
-}: {
-  id: string
-  title: string
-  submitLabel: string
-  hint?: string
-  pending: boolean
-  error: ActionError
-  onCancel?: () => void
-  onSubmit: (observation: string) => void
-}) {
-  const [localError, setLocalError] = useState<string | null>(null)
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const note = requiredText(field(new FormData(event.currentTarget), 'observation'), 'La observación es obligatoria.')
-    if ('error' in note) {
-      setLocalError(note.error)
-      return
-    }
-    setLocalError(null)
-    onSubmit(note.text)
-  }
-  return (
-    <form className={shell.form} onSubmit={handleSubmit}>
-      <h4>{title}</h4>
-      {hint ? <p className={shell.meta}>{hint}</p> : null}
-      <label className={styles.field}>
-        Observación
-        <textarea name="observation" required disabled={pending} />
-      </label>
-      {localError ? (
-        <p className={shell.formError} role="alert">
-          {localError}
-        </p>
-      ) : (
-        <ErrorLine id={id} error={error} />
-      )}
-      <div className={shell.actions}>
-        <button className={shell.buttonSecondary} type="submit" disabled={pending}>
-          {pending ? 'Guardando…' : submitLabel}
-        </button>
-        {onCancel && <button className={shell.buttonSecondary} type="button" disabled={pending} onClick={onCancel}>Cancelar</button>}
       </div>
     </form>
   )

@@ -1,10 +1,14 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import Link from 'next/link'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 
 import { StatusPanel, useMe } from './authenticated-shell'
 import styles from './expediente.module.css'
 import extra from './comunicacion.module.css'
+import { ConfirmAction } from './ui/confirm-action'
+import { LoadingRows } from './ui/loading-state'
+import { LoadMore } from './load-more'
 import { formatDateTime } from '../lib/expediente'
 import {
   assignableRoles,
@@ -44,14 +48,16 @@ export function InvitacionesView() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [moreError, setMoreError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const saving = useRef(false)
+  const formId = useId()
   const [formError, setFormError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [formKey, setFormKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       setState({ status: 'loading' })
+      setMoreError(null)
       const result = await requestAdmin(pageUrl('/api/sia/invitations', 0), parseInvitationList)
       if (cancelled) {
         return
@@ -73,7 +79,7 @@ export function InvitacionesView() {
   }, [attempt])
 
   async function loadMore() {
-    if (state.status !== 'ready' || loadingMore) {
+    if (state.status !== 'ready' || loadingMore || saving.current) {
       return
     }
     setLoadingMore(true)
@@ -94,10 +100,12 @@ export function InvitacionesView() {
 
   async function invite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (pending) {
+    if (saving.current || loadingMore) {
       return
     }
-    const data = new FormData(event.currentTarget)
+    setNotice(null)
+    const form = event.currentTarget
+    const data = new FormData(form)
     const email = invitationEmail(String(data.get('email') ?? ''))
     const role = String(data.get('role') ?? '')
     if ('error' in email) {
@@ -108,27 +116,30 @@ export function InvitacionesView() {
       setFormError('Elige un rol que puedas invitar.')
       return
     }
+    saving.current = true
     setPending(true)
     setFormError(null)
-    setNotice(null)
     const result = await requestAdmin('/api/sia/invitations', parseInvitation, {
       method: 'POST',
       body: { email: email.email, role },
     })
+    saving.current = false
     setPending(false)
     if (!result.ok) {
-      setFormError(result.message)
+      setFormError(`No se pudo guardar la invitación. ${result.message}`)
       return
     }
     setNotice(
       `Se registró la invitación de ${result.data.email} como ${result.data.role}. SIA no envía correo: avisa a esa persona que inicie sesión con Google usando ese mismo correo antes del ${formatDateTime(result.data.expires_at)}.`,
     )
-    setFormKey((value) => value + 1)
+    form.reset()
     setAttempt((value) => value + 1)
   }
 
+  let submitLabel = 'Registrar invitación'
+  if (pending) submitLabel = 'Registrando invitación…'
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.actionSurface}`}>
       <header className={styles.header}>
         <h1>Invitaciones</h1>
       </header>
@@ -136,10 +147,10 @@ export function InvitacionesView() {
         {me.role === 'Coordinadora'
           ? 'Todas las invitaciones emitidas en SIA.'
           : 'Invitaciones que emitiste. Puedes invitar a Emprendedores.'}{' '}
-        La invitación se acepta sola cuando la persona inicia sesión con Google usando el mismo correo.
+        La persona acepta la invitación al iniciar sesión con Google usando el mismo correo.
       </p>
       {roles.length > 0 ? (
-        <form key={formKey} className={styles.form} onSubmit={(event) => void invite(event)}>
+        <form id={formId} tabIndex={-1} className={styles.form} onSubmit={(event) => void invite(event)}>
           <h2>Nueva invitación</h2>
           <label className={styles.field}>
             Correo de Google
@@ -162,34 +173,35 @@ export function InvitacionesView() {
             </p>
           ) : null}
           <div className={styles.actions}>
-            <button className={styles.button} type="submit" disabled={pending}>
-              {pending ? 'Guardando…' : 'Invitar'}
+            <button className={styles.button} type="submit" disabled={pending || loadingMore}>
+              {submitLabel}
             </button>
           </div>
         </form>
       ) : null}
-      {notice ? (
-        <p className={styles.meta} role="status">
-          {notice}
-        </p>
-      ) : null}
+      <p className={styles.saveFeedback} role="status">{notice}</p>
       <section className={styles.section} aria-labelledby="invitaciones-lista">
         <h2 id="invitaciones-lista">Registro</h2>
-        {state.status === 'loading' ? <p className={styles.meta}>Cargando invitaciones…</p> : null}
+        {state.status === 'loading' && <LoadingRows label="Cargando invitaciones…" />}
         {state.status === 'forbidden' ? (
           <StatusPanel status="forbidden" heading="h2" title="Acceso no disponible" description={state.message} />
         ) : null}
         {state.status === 'error' ? (
           <>
-            <StatusPanel status="error" heading="h2" title="No se pudieron cargar" description={state.message} />
+            <p className={styles.formError} role="alert">No se pudo cargar el registro de invitaciones. {state.message}</p>
             <button type="button" className={styles.buttonSecondary} onClick={() => setAttempt((value) => value + 1)}>
               Reintentar
             </button>
           </>
         ) : null}
-        {state.status === 'ready' && state.items.length === 0 ? (
-          <p className={styles.meta}>No hay invitaciones.</p>
-        ) : null}
+        {state.status === 'ready' && state.items.length === 0 && (
+          <p className={styles.meta}>
+            Aún no hay invitaciones en este registro.
+            {roles.length > 0 && (
+              <> Ve a <a className={styles.stateLink} href={`#${formId}`}>Nueva invitación</a> para registrar el correo con el que la persona entrará a SIA.</>
+            )}
+          </p>
+        )}
         {state.status === 'ready' && state.items.length > 0 ? (
           <ul className={styles.list}>
             {state.items.map((invitation) => {
@@ -213,18 +225,9 @@ export function InvitacionesView() {
             })}
           </ul>
         ) : null}
-        {state.status === 'ready' && !state.complete ? (
-          <div className={styles.actions}>
-            <button type="button" className={styles.buttonSecondary} disabled={loadingMore} onClick={() => void loadMore()}>
-              {loadingMore ? 'Cargando…' : 'Cargar más'}
-            </button>
-          </div>
-        ) : null}
-        {moreError ? (
-          <p className={styles.formError} role="alert">
-            {moreError}
-          </p>
-        ) : null}
+        {state.status === 'ready' && (
+          <LoadMore hasMore={!state.complete && !pending} loading={loadingMore} error={moreError} onLoad={() => void loadMore()} />
+        )}
       </section>
     </div>
   )
@@ -259,24 +262,26 @@ export function UsuariosView() {
   }, [attempt])
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.actionSurface}`}>
       <header className={styles.header}>
         <h1>Usuarios</h1>
       </header>
       <p className={styles.intro}>Personas que ya iniciaron sesión con una invitación aceptada.</p>
-      {state.status === 'loading' ? <p className={styles.meta}>Cargando usuarios…</p> : null}
+      {state.status === 'loading' && <LoadingRows label="Cargando usuarios…" />}
       {state.status === 'forbidden' ? (
         <StatusPanel status="forbidden" heading="h2" title="Acceso no disponible" description={state.message} />
       ) : null}
       {state.status === 'error' ? (
         <>
-          <StatusPanel status="error" heading="h2" title="No se pudieron cargar" description={state.message} />
+          <StatusPanel status="error" heading="h2" title="No se pudieron cargar los usuarios" description={state.message} />
           <button type="button" className={styles.buttonSecondary} onClick={() => setAttempt((value) => value + 1)}>
             Reintentar
           </button>
         </>
       ) : null}
-      {state.status === 'ready' && state.items.length === 0 ? <p className={styles.meta}>No hay usuarios.</p> : null}
+      {state.status === 'ready' && state.items.length === 0 && (
+        <p className={styles.meta}>Aún no hay usuarios registrados. Aparecerán aquí cuando acepten una invitación e inicien sesión.</p>
+      )}
       {state.status === 'ready' && state.items.length > 0 ? (
         <ul className={styles.list}>
           {state.items.map((user) => (
@@ -314,20 +319,26 @@ export function AssignmentPanel({ scope }: { scope: AssignmentScope }) {
   }
   const path = assignmentsPath(scope)
   return (
-    <section className={styles.section} aria-labelledby={`asignaciones-${scope.id}`}>
+    <section className={`${styles.section} ${styles.actionSurface}`} aria-labelledby={`asignaciones-${scope.id}`}>
       <h2 id={`asignaciones-${scope.id}`}>{title}</h2>
-      <AssignmentRoster key={path} path={path} canManage={canListUsers(me.role)} />
+      <AssignmentRoster key={path} path={path} scope={scope.kind} canManage={canListUsers(me.role)} />
     </section>
   )
 }
 
-function AssignmentRoster({ path, canManage }: { path: string; canManage: boolean }) {
+function AssignmentRoster({ path, scope, canManage }: { path: string; scope: AssignmentScope['kind']; canManage: boolean }) {
   const [list, setList] = useState<ListState<ActiveAssignment>>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [offset, setOffset] = useState(0)
   const [revoking, setRevoking] = useState<string | null>(null)
+  const [selection, setSelection] = useState<ActiveAssignment | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
+  const status = useRef<HTMLParagraphElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const returnToStatus = useRef(false)
+  let consequence = 'Esta asignación al ciclo dejará de dar acceso. Otras asignaciones no cambian.'
+  if (scope === 'entrepreneurship') consequence = 'Esta asignación al emprendimiento dejará de dar acceso. Otras asignaciones no cambian.'
   const pageSize = 50
 
   useEffect(() => {
@@ -336,6 +347,10 @@ function AssignmentRoster({ path, canManage }: { path: string; canManage: boolea
     void requestAdmin(url, parseActiveAssignments).then((result) => {
       if (!active) return
       if (!result.ok) {
+        if (result.status === 403) {
+          setList({ status: 'forbidden', message: result.message })
+          return
+        }
         setList({ status: 'error', message: result.message })
         return
       }
@@ -370,24 +385,35 @@ function AssignmentRoster({ path, canManage }: { path: string; canManage: boolea
     const result = await requestAdmin(`${path}/${item.id}`, parseAssignment, { method: 'DELETE' })
     setRevoking(null)
     if (!result.ok) {
-      setError(result.message)
-      if (result.status === 409) reload()
+      setError(`No se pudo revocar la asignación. ${result.message}`)
+      if (result.status === 409) {
+        returnToStatus.current = true
+        setSelection(null)
+        setNotice('La asignación cambió. Consulta la lista actualizada.')
+        reload()
+      }
       return
     }
+    returnToStatus.current = true
+    setSelection(null)
     setNotice(`Se revocó esta asignación de ${item.email}.`)
     reload()
   }
 
   let body = null
   if (list.status === 'loading') {
-    body = <p className={styles.meta} role="status">Consultando asignaciones…</p>
-  } else if (list.status === 'error' || list.status === 'forbidden') {
+    body = <LoadingRows label="Consultando asignaciones…" rows={2} />
+  } else if (list.status === 'forbidden') {
+    body = <p role="alert" className={styles.formError}>No tienes acceso a las asignaciones de este ámbito. {list.message}</p>
+  } else if (list.status === 'error') {
     body = <>
       <p role="alert" className={styles.formError}>No se pudo consultar el equipo. {list.message}</p>
       <button className={styles.buttonSecondary} type="button" onClick={reload}>Reintentar</button>
     </>
   } else if (list.items.length === 0) {
-    body = <p className={styles.meta}>Todavía no hay asignaciones vigentes en este ámbito.</p>
+    let guidance = 'Si necesitas incorporar a alguien, consulta con Coordinación.'
+    if (canManage) guidance = 'Usa «Asignar acceso» cuando la persona ya haya iniciado sesión.'
+    body = <p className={styles.meta}>Aún no hay asignaciones vigentes. {guidance}</p>
   } else {
     body = <>
       <ul className={styles.list}>
@@ -403,8 +429,14 @@ function AssignmentRoster({ path, canManage }: { path: string; canManage: boolea
                 className={styles.buttonSecondary}
                 type="button"
                 aria-label={`Revocar la asignación de ${item.email}`}
+                aria-haspopup="dialog"
                 disabled={revoking !== null}
-                onClick={() => void revoke(item)}
+                onClick={(event) => {
+                  trigger.current = event.currentTarget
+                  returnToStatus.current = false
+                  setError(null)
+                  setSelection(item)
+                }}
               >
                 Revocar asignación
               </button>
@@ -425,24 +457,40 @@ function AssignmentRoster({ path, canManage }: { path: string; canManage: boolea
     <>
       <p className={styles.meta}>Solo se muestran las asignaciones vigentes de este ámbito.</p>
       {body}
-      {error && <p className={styles.formError} role="alert">{error}</p>}
-      <p className={styles.meta} role="status">{notice}</p>
-      {canManage && <AssignmentForm path={path} onAssigned={() => {
+      {!selection && error && <p className={styles.formError} role="alert">{error}</p>}
+      <p className={styles.saveFeedback} role="status" tabIndex={-1} ref={status}>{notice}</p>
+      {selection && <ConfirmAction
+        title="Revocar asignación"
+        subject={`${selection.email} (${selection.role})`}
+        description={consequence}
+        confirmLabel="Revocar asignación"
+        pendingLabel="Revocando asignación…"
+        tone="danger"
+        pending={revoking === selection.id}
+        error={error ?? undefined}
+        onCancel={() => setSelection(null)}
+        onConfirm={() => void revoke(selection)}
+        restoreFocus={() => {
+          if (returnToStatus.current) status.current?.focus()
+          else trigger.current?.focus()
+        }}
+      />}
+      {canManage && <AssignmentForm path={path} onAssigned={(person) => {
         setError(null)
-        setNotice('Asignación guardada.')
+        setNotice(`Se guardó la asignación de ${person.email}.`)
         reload()
       }} />}
     </>
   )
 }
 
-function AssignmentForm({ path, onAssigned }: { path: string; onAssigned: () => void }) {
+function AssignmentForm({ path, onAssigned }: { path: string; onAssigned: (person: SiaUser) => void }) {
   const roles = assignableRoles('Coordinadora')
   const [users, setUsers] = useState<ListState<SiaUser>>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [pending, setPending] = useState(false)
+  const saving = useRef(false)
   const [error, setError] = useState<string | null>(null)
-  const [formKey, setFormKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -453,6 +501,10 @@ function AssignmentForm({ path, onAssigned }: { path: string; onAssigned: () => 
         return
       }
       if (!result.ok) {
+        if (result.status === 403) {
+          setUsers({ status: 'forbidden', message: result.message })
+          return
+        }
         setUsers({ status: 'error', message: result.message })
         return
       }
@@ -470,54 +522,64 @@ function AssignmentForm({ path, onAssigned }: { path: string; onAssigned: () => 
 
   async function assign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (pending || users.status !== 'ready') {
+    if (saving.current || users.status !== 'ready') {
       return
     }
-    const userId = String(new FormData(event.currentTarget).get('user_id') ?? '')
+    const form = event.currentTarget
+    const userId = String(new FormData(form).get('user_id') ?? '')
     const person = users.items.find((user) => user.id === userId)
     if (!person) {
       setError('Elige a una persona.')
       return
     }
+    saving.current = true
     setPending(true)
     setError(null)
     const result = await requestAdmin(path, parseAssignment, {
       method: 'POST',
       body: { user_id: person.id, role: person.role },
     })
+    saving.current = false
     setPending(false)
     if (!result.ok) {
-      setError(result.message)
+      setError(`No se pudo guardar la asignación. ${result.message}`)
       return
     }
-    setFormKey((value) => value + 1)
-    onAssigned()
+    form.reset()
+    onAssigned(person)
   }
 
   if (users.status === 'loading') {
-    return <p className={styles.meta}>Cargando personas…</p>
+    return <LoadingRows label="Cargando personas…" rows={1} />
   }
   if (users.status === 'forbidden' || users.status === 'error') {
     return (
       <>
         <p className={styles.formError} role="alert">
-          {users.message}
+          No se pudieron consultar las personas para asignar. {users.message}
         </p>
-        <button type="button" className={styles.buttonSecondary} onClick={() => setAttempt((value) => value + 1)}>
-          Reintentar
-        </button>
+        {users.status === 'error' && (
+          <button type="button" className={styles.buttonSecondary} onClick={() => setAttempt((value) => value + 1)}>
+            Reintentar personas
+          </button>
+        )}
       </>
     )
   }
 
   if (users.items.length === 0) {
-    return <p className={styles.meta}>No hay gestores ni emprendedores con sesión iniciada para asignar.</p>
+    return (
+      <p className={styles.meta}>
+        Aún no hay gestores ni emprendedores disponibles. Revisa <Link className={styles.stateLink} href="/invitaciones">Invitaciones</Link>:
+        la persona debe aceptar la suya e iniciar sesión antes de poder asignarle acceso.
+      </p>
+    )
   }
   let action = 'Asignar acceso'
-  if (pending) action = 'Guardando…'
+  if (pending) action = 'Guardando asignación…'
   return (
     <>
-        <form key={formKey} className={styles.form} onSubmit={(event) => void assign(event)}>
+        <form className={styles.form} onSubmit={(event) => void assign(event)}>
           <label className={extra.field}>
             Persona
             <select name="user_id" required defaultValue="" disabled={pending}>

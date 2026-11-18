@@ -36,6 +36,16 @@
 .summary dt { font-size: 13px; color: var(--finance-muted); }
 .summary dd { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 7px 0; overflow-wrap: anywhere; }
 .summary small { font-size: 12px; color: var(--finance-muted); }
+.summaryPlaceholder { display: grid; align-content: center; gap: 8px; min-block-size: 112px; }
+.amountPlaceholder > span { block-size: 24px; inline-size: min(66%, 8rem); }
+.tabsPlaceholder {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 96px));
+  align-items: center;
+  gap: 16px;
+  min-block-size: 48px;
+  border-bottom: 1px solid var(--finance-line);
+}
 .tabs { display: flex; flex-wrap: wrap; gap: 4px 24px; border-bottom: 1px solid var(--finance-line); }
 .tab { border: 0; border-bottom: 2px solid transparent; background: none; padding: 14px 2px; color: var(--finance-muted); font-size: 13px; white-space: nowrap; min-height: 48px; }
 .tab:hover { color: var(--finance-ink); background: #f5f5f7; }
@@ -49,6 +59,7 @@
 .error p { margin-top: 4px; }
 .error button { margin-top: 12px; }
 .hint { color: var(--finance-muted); font-size: 12px; line-height: 1.65; margin: 10px 0 0; }
+.refreshing { color: var(--finance-muted); font-size: 13px; margin: 0 0 8px; }
 .disclosure { color: var(--finance-muted); font-size: 13px; margin-top: 16px; }
 .disclosure summary { cursor: pointer; padding: 8px 0; color: var(--finance-accent); }
 .disclosure p { margin: 8px 0; max-width: 72ch; overflow-wrap: anywhere; }
@@ -91,9 +102,6 @@
 .upload p { font-size: 12px; margin: 0; color: var(--finance-muted); }
 .pagination { padding-top: 18px; font-size: 12px; color: var(--finance-muted); }
 .pagination > div { display: flex; gap: 8px; }
-.loading { display: grid; gap: 12px; padding: 22px 0; color: var(--finance-muted); font-size: 13px; }
-.skeleton { height: 44px; background: #f5f5f7; border-radius: 5px; }
-.skeleton:last-child { width: 72%; }
 .empty { display: grid; justify-items: center; padding: 40px 20px; text-align: center; gap: 10px; color: var(--finance-muted); }
 .empty h3 { margin: 4px 0 0; color: var(--finance-ink); font-size: 16px; }
 .empty p { max-width: 52ch; margin: 0; font-size: 13px; line-height: 1.7; }
