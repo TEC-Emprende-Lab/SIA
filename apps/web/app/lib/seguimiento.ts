@@ -468,6 +468,7 @@ export async function requestSeguimiento<T>(
   path: string,
   parse: (value: unknown) => T | null,
   init?: { method: 'POST' | 'PUT'; body: unknown },
+  signal?: AbortSignal,
 ): Promise<SeguimientoResult<T>> {
   let response: Response
   try {
@@ -476,6 +477,7 @@ export async function requestSeguimiento<T>(
       headers: init ? { 'content-type': 'application/json' } : undefined,
       body: init ? JSON.stringify(init.body) : undefined,
       cache: 'no-store',
+      signal,
     })
   } catch {
     return { ok: false, status: 0, message: 'No se pudo consultar el seguimiento.' }

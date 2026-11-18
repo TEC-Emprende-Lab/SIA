@@ -62,8 +62,12 @@ export function usePagedList<T extends { id: string }>(
   const fetchRef = useRef(fetchPage)
   const loadedKeyRef = useRef<string | null>(null)
   const countRef = useRef(pageSize)
+  const loadGeneration = useRef(0)
+  const loadingMoreRef = useRef(false)
+  const refreshing = useRef(false)
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<PagedState<T>>({ status: 'loading' })
+  const [stateKey, setStateKey] = useState<string | null>(key)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [moreError, setMoreError] = useState<string | null>(null)
@@ -74,22 +78,29 @@ export function usePagedList<T extends { id: string }>(
   })
 
   useEffect(() => {
+    const generation = ++loadGeneration.current
+    loadingMoreRef.current = false
+    setLoadingMore(false)
+    setMoreError(null)
+    setStateKey(key)
     const build = pageUrlRef.current
     if (!key || !build) {
+      refreshing.current = false
       loadedKeyRef.current = null
       setState({ status: 'missing', message: missingMessage })
       setHasMore(false)
       return
     }
-    let cancelled = false
+    refreshing.current = true
     if (loadedKeyRef.current !== key) {
       countRef.current = pageSize
       setState({ status: 'loading' })
     }
     void fetchRange(build, fetchRef.current, 0, countRef.current).then((result) => {
-      if (cancelled) {
+      if (generation !== loadGeneration.current) {
         return
       }
+      refreshing.current = false
       setMoreError(null)
       if (!result.ok) {
         loadedKeyRef.current = null
@@ -102,7 +113,7 @@ export function usePagedList<T extends { id: string }>(
       setHasMore(result.more)
     })
     return () => {
-      cancelled = true
+      loadGeneration.current += 1
     }
   }, [key, attempt, missingMessage, pageSize])
 
@@ -110,13 +121,17 @@ export function usePagedList<T extends { id: string }>(
 
   const loadMore = useCallback(async () => {
     const build = pageUrlRef.current
-    if (!build || state.status !== 'ready' || loadingMore) {
+    if (!build || stateKey !== key || state.status !== 'ready' || !hasMore || loadingMoreRef.current || refreshing.current) {
       return
     }
+    const generation = loadGeneration.current
+    loadingMoreRef.current = true
     setLoadingMore(true)
     setMoreError(null)
     const current = state.data
     const result = await fetchRange(build, fetchRef.current, current.length, pageSize)
+    if (generation !== loadGeneration.current) return
+    loadingMoreRef.current = false
     setLoadingMore(false)
     if (!result.ok) {
       setMoreError(result.message)
@@ -127,7 +142,10 @@ export function usePagedList<T extends { id: string }>(
     countRef.current = Math.max(pageSize, merged.length)
     setState({ status: 'ready', data: merged })
     setHasMore(result.more)
-  }, [loadingMore, pageSize, state])
+  }, [hasMore, key, pageSize, state, stateKey])
 
+  if (stateKey !== key) {
+    return { state: { status: 'loading' } as PagedState<T>, hasMore: false, loadingMore: false, moreError: null, loadMore, reload }
+  }
   return { state, hasMore, loadingMore, moreError, loadMore, reload }
 }

@@ -13,12 +13,13 @@ import { unstable_getResponseFromNextConfig } from 'next/experimental/testing/se
 const temporary = await mkdtemp(join(tmpdir(), 'sia-project-navigation-'))
 const originalFetch = globalThis.fetch
 try {
-  for (const name of ['expediente', 'project-workspace', 'reports', 'tracking-summary']) {
+  for (const name of ['expediente', 'project-workspace', 'reports', 'tracking-summary', 'seguimiento']) {
     const source = await readFile(new URL(`../app/lib/${name}.ts`, import.meta.url), 'utf8')
     const result = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext } })
     await writeFile(join(temporary, `${name}.mjs`), result.outputText.replaceAll("'./expediente'", "'./expediente.mjs'"))
   }
   const { readProjectSection, loadProjects, PROJECT_GROUPS } = await import(pathToFileURL(join(temporary, 'project-workspace.mjs')))
+  const { requestSeguimiento } = await import(pathToFileURL(join(temporary, 'seguimiento.mjs')))
   const reference = await readFile(new URL('../../../visual/prototype/src/CatalitecApp.tsx', import.meta.url), 'utf8')
   assert.deepEqual(PROJECT_GROUPS.flatMap((group) => [...group.sections]), [...reference.matchAll(/name: "([^"]+)", icon:/g)].map((match) => match[1]))
   assert.deepEqual(PROJECT_GROUPS.map((group) => group.label), ['GENERAL', 'ACOMPAÑAMIENTO', 'ESPACIO DEL PROYECTO'])
@@ -56,6 +57,19 @@ try {
   globalThis.fetch = async () => reply([{ id: 'incomplete' }])
   await assert.rejects(loadProjects())
   console.log('✓ Empty, forbidden and malformed responses never produce seed projects')
+  const searchController = new AbortController()
+  let searchRequest
+  globalThis.fetch = async (_input, init) => {
+    searchRequest = init
+    throw new DOMException('Canceled', 'AbortError')
+  }
+  searchController.abort()
+  const canceled = await requestSeguimiento('/search-fixture', (payload) => payload, undefined, searchController.signal)
+  assert.equal(searchRequest.signal, searchController.signal)
+  assert.equal(searchRequest.method, 'GET')
+  assert(searchRequest.signal.aborted)
+  assert.deepEqual(canceled, { ok: false, status: 0, message: 'No se pudo consultar el seguimiento.' })
+  console.log('✓ Search reads pass cancellation through to the network')
 
   const require = createRequire(import.meta.url)
   const loadingSource = await readFile(new URL('../app/components/ui/loading-state.tsx', import.meta.url), 'utf8')
@@ -102,6 +116,7 @@ try {
     export const ReportsView = () => null
     export const FinanzasView = () => null
     export const ProjectHeading = () => null
+    export const ActionFeedback = () => null
     export const Dialog = () => null
     export const DialogContent = () => null
     export const DialogDescription = () => null
@@ -203,6 +218,7 @@ try {
     export default {}
     export { useMe, setRole } from './panels.mjs'
     export const LoadMore = () => null
+    export const ConfirmAction = () => null
     export const LoadingRows = () => null
     export const LoadingState = () => null
     export const SkeletonBar = () => null
@@ -254,6 +270,8 @@ try {
 
   const paged = Array.from({ length: 51 }, (_, index) => ({ ...entrepreneurship, id: `e${index}` }))
   let secondPage = false
+  let inFlight = 0
+  let peakInFlight = 0
   globalThis.fetch = async (input) => {
     const url = new URL(input, 'http://localhost')
     if (url.pathname.endsWith('/entrepreneurships')) {
@@ -261,7 +279,13 @@ try {
       if (offset === 50) secondPage = true
       return reply(paged.slice(offset, offset + 50))
     }
-    if (url.pathname.endsWith('/e50/enrollments')) return reply([{ ...enrollment, entrepreneurship_id: 'e50' }])
+    if (url.pathname.endsWith('/enrollments')) {
+      inFlight += 1
+      peakInFlight = Math.max(peakInFlight, inFlight)
+      await Promise.resolve()
+      inFlight -= 1
+      if (url.pathname.endsWith('/e50/enrollments')) return reply([{ ...enrollment, entrepreneurship_id: 'e50' }])
+    }
     if (url.pathname.endsWith('/en1/cycles')) return reply([cycle])
     return reply([])
   }
@@ -269,6 +293,7 @@ try {
   assert(secondPage)
   assert.equal(projects.length, 1)
   assert.equal(projects[0].entrepreneurship.id, 'e50')
+  assert.equal(peakInFlight, 6)
   console.log('✓ Picker reads all authorized pages before deciding project availability')
 
   const { parseReport, parseReports } = await import(pathToFileURL(join(temporary, 'reports.mjs')))

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, History, LayoutGrid, List, Plus } from 'lucide-react'
 import { DiagnosticExplorer } from './diagnostic-explorer'
 import { AmbitionExplorer } from './ambition-explorer'
@@ -13,6 +13,7 @@ import { TrackingKanban, type ObjectiveDropAction, type ObjectiveDecision } from
 import type { ProjectSection } from '../lib/project-workspace'
 import { ACTIVITY_COLUMNS, ACTIVITY_COLUMN_LABEL, OBJECTIVE_COLUMNS, activityColumn } from '../lib/kanban'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { ConfirmAction } from './ui/confirm-action'
 import { LoadingRows, LoadingState, SkeletonBar } from './ui/loading-state'
 
 import { useMe } from './authenticated-shell'
@@ -41,7 +42,6 @@ import {
   parseEvidenceList,
   parseObjective,
   parseObjectiveList,
-  parseSchedule,
   parseValidation,
   parseValidationList,
   parseTrackingSummary,
@@ -58,25 +58,12 @@ import {
   type Evidence,
   type Objective,
   type ScheduleItem,
+  type SeguimientoResult,
   type Validation,
   type TrackingSummary,
 } from '../lib/seguimiento'
 
-type Bundle = {
-  summary: TrackingSummary
-  canvas: Canvas
-  ambitions: Ambition[]
-  objectives: Objective[]
-  activities: Activity[]
-  evidence: Evidence[]
-  diagnostics: Diagnostic[]
-  schedule: ScheduleItem[]
-  validations: Validation[]
-}
-
-type LoadState =
-  | { status: 'loading' }
-  | { status: 'ready'; data: Bundle }
+type LoadFailure =
   | { status: 'forbidden'; message: string }
   | { status: 'error'; message: string }
 
@@ -136,6 +123,72 @@ function field(data: FormData, name: string): string {
 
 type TrackingView = 'work' | 'summary' | 'diagnostics' | 'ambitions' | 'evidence' | 'evolution'
 type TrackingProps = { cycleId: string; program: string; view?: TrackingView; entrepreneurshipId?: string; projectName?: string; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }
+
+type Plan = { objectives: Objective[]; activities: Activity[] }
+type WithCanvas = { canvas: Canvas }
+type WithValidations = { validations: Validation[] }
+type WorkData = Plan & WithCanvas & WithValidations & { ambitions: Ambition[]; evidence: Evidence[]; summary: TrackingSummary }
+type TrackingData =
+  | (WorkData & { view: 'work' })
+  | (Plan & WithCanvas & { view: 'summary'; summary: TrackingSummary })
+  | (Plan & WithCanvas & { view: 'ambitions'; ambitions: Ambition[] })
+  | (Plan & { view: 'evidence'; evidence: Evidence[] })
+  | (WithCanvas & WithValidations & { view: 'diagnostics'; diagnostics: Diagnostic[] })
+  | (WithCanvas & { view: 'evolution'; diagnostics: Diagnostic[] })
+
+function loadFailure(entries: ReadonlyArray<readonly [string, SeguimientoResult<unknown>]>): LoadFailure {
+  for (const [, result] of entries) {
+    if (!result.ok && result.status === 403) return { status: 'forbidden', message: result.message }
+  }
+  for (const [resource, result] of entries) {
+    if (!result.ok) return { status: 'error', message: `${result.message} (API: seguimiento/${resource}, HTTP ${result.status}).` }
+  }
+  return { status: 'error', message: 'No se pudo consultar el seguimiento.' }
+}
+
+// Consultar en paralelo únicamente los datos que usa la vista; no sustituir
+// relaciones o revisiones necesarias para escribir por colecciones vacías.
+async function loadTrackingView(cycleId: string, view: TrackingView, signal?: AbortSignal): Promise<TrackingData | LoadFailure> {
+  const get = <T,>(resource: string, parse: (value: unknown) => T | null) =>
+    requestSeguimiento(seguimientoUrl(cycleId, resource), parse, undefined, signal)
+  if (view === 'evolution') {
+    const [canvas, diagnostics] = await Promise.all([get('canvas', parseCanvas), get('diagnostics', parseDiagnosticList)])
+    if (canvas.ok && diagnostics.ok) return { view, canvas: canvas.data, diagnostics: diagnostics.data }
+    return loadFailure([['canvas', canvas], ['diagnostics', diagnostics]])
+  }
+  if (view === 'diagnostics') {
+    const [canvas, diagnostics, validations] = await Promise.all([get('canvas', parseCanvas), get('diagnostics', parseDiagnosticList), get('validations', parseValidationList)])
+    if (canvas.ok && diagnostics.ok && validations.ok) return { view, canvas: canvas.data, diagnostics: diagnostics.data, validations: validations.data }
+    return loadFailure([['canvas', canvas], ['diagnostics', diagnostics], ['validations', validations]])
+  }
+  const objectivesRequest = get('objectives', parseObjectiveList)
+  const activitiesRequest = get('activities', parseActivityList)
+  if (view === 'evidence') {
+    const [objectives, activities, evidence] = await Promise.all([objectivesRequest, activitiesRequest, get('evidence', parseEvidenceList)])
+    if (objectives.ok && activities.ok && evidence.ok) return { view, objectives: objectives.data, activities: activities.data, evidence: evidence.data }
+    return loadFailure([['objectives', objectives], ['activities', activities], ['evidence', evidence]])
+  }
+  const canvasRequest = get('canvas', parseCanvas)
+  if (view === 'ambitions') {
+    const [objectives, activities, canvas, ambitions] = await Promise.all([objectivesRequest, activitiesRequest, canvasRequest, get('ambitions', parseAmbitionList)])
+    if (objectives.ok && activities.ok && canvas.ok && ambitions.ok) return { view, objectives: objectives.data, activities: activities.data, canvas: canvas.data, ambitions: ambitions.data }
+    return loadFailure([['objectives', objectives], ['activities', activities], ['canvas', canvas], ['ambitions', ambitions]])
+  }
+  const summaryRequest = get('summary', parseTrackingSummary)
+  if (view === 'summary') {
+    const [objectives, activities, canvas, summary] = await Promise.all([objectivesRequest, activitiesRequest, canvasRequest, summaryRequest])
+    if (objectives.ok && activities.ok && canvas.ok && summary.ok) return { view, objectives: objectives.data, activities: activities.data, canvas: canvas.data, summary: summary.data }
+    return loadFailure([['objectives', objectives], ['activities', activities], ['canvas', canvas], ['summary', summary]])
+  }
+  const [objectives, activities, canvas, summary, ambitions, evidence, validations] = await Promise.all([
+    objectivesRequest, activitiesRequest, canvasRequest, summaryRequest,
+    get('ambitions', parseAmbitionList), get('evidence', parseEvidenceList), get('validations', parseValidationList),
+  ])
+  if (objectives.ok && activities.ok && canvas.ok && summary.ok && ambitions.ok && evidence.ok && validations.ok) {
+    return { view, objectives: objectives.data, activities: activities.data, canvas: canvas.data, summary: summary.data, ambitions: ambitions.data, evidence: evidence.data, validations: validations.data }
+  }
+  return loadFailure([['objectives', objectives], ['activities', activities], ['canvas', canvas], ['summary', summary], ['ambitions', ambitions], ['evidence', evidence], ['validations', validations]])
+}
 
 const trackingTitle: Record<TrackingView, string> = {
   work: 'Objetivos y actividades',
@@ -209,132 +262,85 @@ export function SeguimientoPanel({ cycleId, program, view = 'work', entrepreneur
   if (!tracked(program)) {
     return <p className={shell.meta}>Este programa no tiene seguimiento confirmado.</p>
   }
-  return <SeguimientoCycle cycleId={cycleId} view={view} entrepreneurshipId={entrepreneurshipId} projectName={projectName} program={program} focusId={focusId} navigate={navigate} />
+  return <SeguimientoCycle key={`${cycleId}/${view}`} cycleId={cycleId} view={view} entrepreneurshipId={entrepreneurshipId} projectName={projectName} program={program} focusId={focusId} navigate={navigate} />
 }
 
-function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, program, focusId, navigate }: TrackingProps) {
+function SeguimientoCycle({ cycleId, view = 'work', entrepreneurshipId, projectName, program, focusId, navigate }: TrackingProps) {
   const me = useMe()
   const [attempt, setAttempt] = useState(0)
-  const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [state, setState] = useState<TrackingData | LoadFailure | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<ActionError>(null)
+  const [actionStatus, setActionStatus] = useState('')
+  const writing = useRef(false)
   // La vista elegida vive aquí para sobrevivir a la recarga que sigue a cada guardado.
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list')
   const [board, setBoard] = useState<'objectives' | 'activities'>('objectives')
 
   useEffect(() => {
-    let cancelled = false
-    async function load() {
-      setState({ status: 'loading' })
-      const base = seguimientoUrl(cycleId, '')
-      const [canvas, ambitions, objectives, activities, evidence, diagnostics, schedule, validations, summary] =
-        await Promise.all([
-          requestSeguimiento(`${base}canvas`, parseCanvas),
-          requestSeguimiento(`${base}ambitions`, parseAmbitionList),
-          requestSeguimiento(`${base}objectives`, parseObjectiveList),
-          requestSeguimiento(`${base}activities`, parseActivityList),
-          requestSeguimiento(`${base}evidence`, parseEvidenceList),
-          requestSeguimiento(`${base}diagnostics`, parseDiagnosticList),
-          requestSeguimiento(`${base}schedule`, parseSchedule),
-          requestSeguimiento(`${base}validations`, parseValidationList),
-          requestSeguimiento(`${base}summary`, parseTrackingSummary),
-        ])
-      if (cancelled) {
-        return
-      }
-      const results = [canvas, ambitions, objectives, activities, evidence, diagnostics, schedule, validations, summary]
-      const denied = results.find((item) => !item.ok && item.status === 403)
-      const failed = results.find((item) => !item.ok)
-      if (denied && !denied.ok) {
-        setState({ status: 'forbidden', message: denied.message })
-        return
-      }
-      if (failed && !failed.ok) {
-        const resources = ['canvas', 'ambitions', 'objectives', 'activities', 'evidence', 'diagnostics', 'schedule', 'validations', 'summary']
-        const resource = resources[results.indexOf(failed)]
-        setState({ status: 'error', message: `${failed.message} (API: seguimiento/${resource}, HTTP ${failed.status}).` })
-        return
-      }
-      if (
-        !canvas.ok ||
-        !ambitions.ok ||
-        !objectives.ok ||
-        !activities.ok ||
-        !evidence.ok ||
-        !diagnostics.ok ||
-        !schedule.ok ||
-        !validations.ok || !summary.ok
-      ) {
-        return
-      }
-      setState({
-        status: 'ready',
-        data: {
-          summary: summary.data,
-          canvas: canvas.data,
-          ambitions: ambitions.data,
-          objectives: objectives.data,
-          activities: activities.data,
-          evidence: evidence.data,
-          diagnostics: diagnostics.data,
-          schedule: schedule.data,
-          validations: validations.data,
-        },
-      })
-    }
-    void load()
+    const controller = new AbortController()
+    void loadTrackingView(cycleId, view, controller.signal).then((result) => {
+      if (!controller.signal.aborted) setState(result)
+    })
     return () => {
-      cancelled = true
+      controller.abort()
     }
-  }, [cycleId, attempt])
+  }, [cycleId, view, attempt])
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
-    if (pendingId) {
-      return
-    }
+    if (writing.current) return
+    writing.current = true
     setPendingId(id)
     setActionError(null)
-    const result = await exec()
-    setPendingId(null)
-    if (!result.ok) {
-      setActionError({ id, message: result.message })
-      return
+    setActionStatus('Guardando cambios…')
+    try {
+      const result = await exec()
+      if (!result.ok) {
+        setActionStatus('')
+        setActionError({ id, message: result.message })
+        return
+      }
+      setActionStatus('Cambios guardados.')
+      reload()
+    } catch {
+      setActionStatus('')
+      setActionError({ id, message: 'No se pudo confirmar el guardado. Revisa el registro antes de volver a intentarlo.' })
+    } finally {
+      writing.current = false
+      setPendingId(null)
     }
+  }
+
+  function reload() {
+    setState(null)
     setAttempt((value) => value + 1)
   }
 
-  if (state.status === 'loading') {
-    return <TrackingLoading view={view} projectName={projectName} program={program} viewMode={viewMode} board={board} />
+  const feedback = <p className={styles.actionStatus} role="status">{actionStatus}</p>
+  if (!state) {
+    return <>{feedback}<TrackingLoading view={view} projectName={projectName} program={program} viewMode={viewMode} board={board} /></>
   }
-  if (state.status === 'forbidden') {
-    return (
-      <section className={shell.section}>
-        <h2>Seguimiento</h2>
+  if ('status' in state) {
+    return <>
+      {feedback}
+      <ProjectHeading title={trackingTitle[view]} />
+      <section className={shell.section} aria-label="Estado de la consulta">
         <p className={shell.formError} role="alert">
           {state.message}
         </p>
-      </section>
-    )
-  }
-  if (state.status === 'error') {
-    return (
-      <section className={shell.section}>
-        <h2>Seguimiento</h2>
-        <p className={shell.formError} role="alert">
-          {state.message}
-        </p>
-        <button type="button" className={shell.buttonSecondary} onClick={() => setAttempt((value) => value + 1)}>
+        {state.status === 'error' && <button type="button" className="btn secondary" onClick={reload}>
           Reintentar
-        </button>
+        </button>}
       </section>
-    )
+    </>
   }
 
-  const bundle = state.data
-  const areas = [...bundle.canvas.areas].sort((left, right) => left.position - right.position)
+  const bundle = state
   const shared = { cycleId, entrepreneurshipId, pendingId, actionError, run, role: me.role, userId: me.id }
+  if (bundle.view === 'evidence') return <>{feedback}<EvidenceSection {...shared} evidence={bundle.evidence} activities={bundle.activities} objectives={bundle.objectives} focusId={focusId} navigate={navigate} /></>
+  const areas = [...bundle.canvas.areas].sort((left, right) => left.position - right.position)
 
-  if (view === 'summary') {
+  if (bundle.view === 'summary') {
     const upcoming = bundle.activities.filter((item) => !item.completed_at).sort((left, right) => left.ends_on.localeCompare(right.ends_on)).slice(0, 5)
     const awaiting = bundle.objectives.filter((item) => item.status === 'pending_validation')
     return <>
@@ -349,16 +355,17 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
         <ProjectPanel title="El plan compartido">{bundle.objectives.length === 0 ? <p className="muted">Aún no hay objetivos registrados.</p> : bundle.objectives.map((objective) => { const progress = bundle.summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0; return <div className="summary-objective" key={objective.id}><ProjectLink onClick={() => navigate?.('Objetivos y actividades', objective.id)}>{objective.title}</ProjectLink><div className="inline"><ProjectProgress value={progress} label={`Avance de ${objective.title}`} /><span className="small">{Math.round(progress)}%</span></div><span className={`badge ${objective.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[objective.status]}</span></div> })}</ProjectPanel>
       </div>
       {entrepreneurshipId && <SummaryCommunication key={`${entrepreneurshipId}/${cycleId}/${me.id}`} entrepreneurshipId={entrepreneurshipId} cycleId={cycleId} userId={me.id} navigate={navigate} />}
-      <ProjectPanel title="Historial reciente">{bundle.validations.length === 0 ? <p className="muted">Aún no hay decisiones de validación registradas.</p> : [...bundle.validations].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5).map((validation) => <div className="record-row" key={validation.id}><CheckCircle2 size={20} /><div><strong>{DECISION_LABEL[validation.decision as keyof typeof DECISION_LABEL] ?? validation.decision}</strong><p>{validation.observation}, {formatDateTime(validation.created_at)}</p></div></div>)}<p className="small muted">Avance: promedio de objetivos aprobados, con igual peso. Modificar actividades o evidencias requiere revalidar su objetivo.</p></ProjectPanel>
+      <SummaryValidationHistory cycleId={cycleId} />
     </>
   }
 
-  if (view === 'diagnostics' || view === 'evolution') return <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} validations={bundle.validations} evolution={view === 'evolution'} focusId={focusId} navigate={navigate} />
-  if (view === 'ambitions') return <AmbitionSection {...shared} ambitions={bundle.ambitions} objectives={bundle.objectives} activities={bundle.activities} areas={bundle.canvas.areas} navigate={navigate} />
-  if (view === 'evidence') return <EvidenceSection {...shared} evidence={bundle.evidence} activities={bundle.activities} objectives={bundle.objectives} focusId={focusId} navigate={navigate} />
+  if (bundle.view === 'evolution') return <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} evolution focusId={focusId} navigate={navigate} />
+  if (bundle.view === 'diagnostics') return <>{feedback}<DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} validations={bundle.validations} focusId={focusId} navigate={navigate} /></>
+  if (bundle.view === 'ambitions') return <>{feedback}<AmbitionSection {...shared} ambitions={bundle.ambitions} objectives={bundle.objectives} activities={bundle.activities} areas={bundle.canvas.areas} navigate={navigate} /></>
 
   return (
     <>
+      {feedback}
       <ObjectiveSection
         {...shared}
         summary={bundle.summary}
@@ -376,6 +383,34 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
       />
     </>
   )
+}
+
+function SummaryValidationHistory({ cycleId }: { cycleId: string }) {
+  const [history, setHistory] = useState<SeguimientoResult<Validation[]> | null>(null)
+  const [retry, setRetry] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    void requestSeguimiento(seguimientoUrl(cycleId, 'validations'), parseValidationList).then((result) => {
+      if (active) setHistory(result)
+    })
+    return () => { active = false }
+  }, [cycleId, retry])
+
+  let content: ReactNode
+  if (!history) {
+    content = <LoadingRows label="Cargando historial de validaciones…" />
+  } else if (!history.ok) {
+    content = <>
+      <p className={shell.formError} role="alert">No se pudo consultar el historial de validaciones. {history.message}</p>
+      {history.status !== 403 && <button type="button" className="btn secondary" onClick={() => { setHistory(null); setRetry((value) => value + 1) }}>Reintentar historial</button>}
+    </>
+  } else if (history.data.length === 0) {
+    content = <p className="muted">Las decisiones aparecerán aquí cuando se validen objetivos o diagnósticos.</p>
+  } else {
+    content = [...history.data].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5).map((validation) => <div className="record-row" key={validation.id}><CheckCircle2 size={20} /><div><strong>{DECISION_LABEL[validation.decision as keyof typeof DECISION_LABEL] ?? validation.decision}</strong><p>{validation.observation}, {formatDateTime(validation.created_at)}</p></div></div>)
+  }
+  return <ProjectPanel title="Historial reciente">{content}<p className="small muted">Modificar actividades o añadir evidencias requiere revalidar su objetivo.</p></ProjectPanel>
 }
 
 function FormDialog({ title, children, pending, error, actionId, trigger, primary = false }: { title: string; children: ReactNode; pending: boolean; error: ActionError; actionId: string; trigger?: ReactNode; primary?: boolean }) {
@@ -572,12 +607,23 @@ function ObjectiveSection({
       }).then(asVoid),
     )
   }
+  const newObjective = <FormDialog title="Nuevo objetivo" primary={objectives.length === 0} pending={pendingId === 'objective-new'} error={actionError} actionId="objective-new" trigger={<><Target size={16} aria-hidden="true" /> Nuevo objetivo</>}>
+    <ObjectiveForm id="objective-new" title="Nuevo objetivo" submitLabel="Crear objetivo" areas={areas} ambitions={ambitions} pending={pendingId === 'objective-new'} error={actionError} onSubmit={(body) => run('objective-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'objectives'), parseObjective, { method: 'POST', body }).then(asVoid))} />
+  </FormDialog>
+  if (objectives.length === 0) {
+    return <div className={styles.workWorkspace}>
+      <ProjectHeading title={trackingTitle.work} description={workDescription} />
+      <div className={`${styles.emptyWorkspace} ${styles.firstObjective}`}>
+        <h2>Construye el primer paso de tu plan</h2>
+        <p>Crea un objetivo en un área del Cubo 360. Después podrás añadir actividades, fechas y evidencias.</p>
+        {newObjective}
+      </div>
+    </div>
+  }
   return (
     <div className={styles.workWorkspace}>
       <ProjectHeading title={trackingTitle.work} description={workDescription} action={<>
-      <FormDialog title="Nuevo objetivo" pending={pendingId === 'objective-new'} error={actionError} actionId="objective-new" trigger={<><Target size={16} /> Nuevo objetivo</>}>
-        <ObjectiveForm id="objective-new" title="Nuevo objetivo" submitLabel="Crear objetivo" areas={areas} ambitions={ambitions} pending={pendingId === 'objective-new'} error={actionError} onSubmit={(body) => run('objective-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'objectives'), parseObjective, { method: 'POST', body }).then(asVoid))} />
-      </FormDialog>
+      {newObjective}
       <FormDialog title="Nueva actividad" primary pending={pendingId === 'activity-new'} error={actionError} actionId="activity-new" trigger={<><Plus size={17} /> Nueva actividad</>}>
         <label className={styles.field}>Objetivo asociado<select value={newActivityObjective} onChange={(event) => setNewActivityObjective(event.target.value)}>{objectives.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
         {newActivityObjective ? <ActivityForm id="activity-new" title="Nueva actividad" submitLabel="Crear actividad" hint="La actividad queda a tu nombre." pending={pendingId === 'activity-new'} error={actionError} onSubmit={(body) => run('activity-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'activities'), parseActivity, { method: 'POST', body: { ...body, objective_id: newActivityObjective, responsible_id: userId } }).then(asVoid))} /> : <p>Crea primero un objetivo.</p>}
@@ -598,7 +644,6 @@ function ObjectiveSection({
         <label className={styles.searchField}><Search size={16} aria-hidden="true" /><input aria-label="Buscar objetivo o actividad" type="search" placeholder="Buscar en el plan…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
       </div>
       {(query || objectiveFilter !== 'all' || (viewMode === 'list' && activityFilter !== 'all')) && <div className={styles.filterFeedback}><span role="status">{filtered.length} objetivos{viewMode === 'list' ? `, ${visibleActivities.length} actividades` : ''}</span><button type="button" className="text-link" onClick={clearFilters}>Limpiar filtros</button></div>}
-      {objectives.length === 0 ? <div className={styles.emptyWorkspace}><Target size={28} aria-hidden="true" /><h2>Construye el primer paso de tu plan</h2><p>Crea un objetivo, elige su área del Cubo 360 y desglósalo en actividades con fechas y evidencia.</p></div> : null}
       {viewMode === 'board' ? (
         <TrackingKanban
           board={board}
@@ -1077,16 +1122,26 @@ function EvidenceSection({ cycleId, entrepreneurshipId, evidence, activities, ob
   const [activityId, setActivityId] = useState(activities[0]?.id ?? '')
   const [folderOptions, setFolderOptions] = useState<EvidenceFolder[]>([])
   const [uploadFolder, setUploadFolder] = useState('')
+  let folderId: string | null = null
+  if (folderOptions.some((item) => item.id === uploadFolder)) folderId = uploadFolder
+  let planAction: (() => void) | undefined
+  if (navigate) planAction = () => navigate('Objetivos y actividades')
+  let addEvidence: ReactNode
+  if (activities.length > 0) {
+    addEvidence = <FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} aria-hidden="true" />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new">
+      <label className={styles.field}>Actividad<select value={activityId} disabled={pendingId === 'evidence-new'} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>
+      <label className={styles.field}>Carpeta personalizada<select value={folderId ?? ''} disabled={pendingId === 'evidence-new' || folderOptions.length === 0} onChange={(event) => setUploadFolder(event.target.value)}><option value="">Sin carpeta personalizada</option>{folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
+      <EvidenceForm id="evidence-new" entrepreneurshipId={entrepreneurshipId} pending={pendingId === 'evidence-new'} error={actionError} onSubmit={(body) => run('evidence-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidence, { method: 'POST', body: { ...body, activity_id: activityId, folder_id: folderId } }).then(asVoid))} />
+      <p className="small muted">Agregar evidencia reabre la validación del objetivo aprobado. Elegir o mover una carpeta no cambia la aprobación.</p>
+    </FormDialog>
+  }
+  let headingAction: ReactNode
+  let emptyAction: ReactNode
+  if (evidence.length === 0) emptyAction = addEvidence
+  else headingAction = addEvidence
   return <>
-    <ProjectHeading eyebrow="El respaldo de cada paso" title={trackingTitle.evidence} description={evidenceDescription} action={activities.length === 0 && navigate ? <button className="btn primary" onClick={() => navigate('Objetivos y actividades')}>Ir al plan de trabajo <ArrowRight size={16} /></button> :
-      <FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new">
-        <label className={styles.field}>Actividad<select value={activityId} disabled={pendingId === 'evidence-new'} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>
-        <label className={styles.field}>Carpeta personalizada<select value={uploadFolder} disabled={pendingId === 'evidence-new'} onChange={(event) => setUploadFolder(event.target.value)}><option value="">Sin carpeta personalizada</option>{folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
-        {activityId ? <EvidenceForm id="evidence-new" entrepreneurshipId={entrepreneurshipId} pending={pendingId === 'evidence-new'} error={actionError} onSubmit={(body) => run('evidence-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidence, { method: 'POST', body: { ...body, activity_id: activityId, folder_id: uploadFolder || null } }).then(asVoid))} /> : <p>Registra primero una actividad.</p>}
-        <p className="small muted">Agregar evidencia reabre la validación del objetivo aprobado. Elegir o mover una carpeta no cambia la aprobación.</p>
-      </FormDialog>
-    } />
-    <EvidenceBrowser cycleId={cycleId} entrepreneurshipId={entrepreneurshipId} evidence={evidence} activities={activities} objectives={objectives} focusId={focusId} onActivity={(id) => navigate?.('Objetivos y actividades', id)} onFoldersChange={setFolderOptions} onFolderChange={setUploadFolder} onPlan={navigate ? () => navigate('Objetivos y actividades') : undefined}>{null}</EvidenceBrowser>
+    <ProjectHeading title={trackingTitle.evidence} description={evidenceDescription} action={headingAction} />
+    <EvidenceBrowser cycleId={cycleId} entrepreneurshipId={entrepreneurshipId} evidence={evidence} activities={activities} objectives={objectives} focusId={focusId} onActivity={(id) => navigate?.('Objetivos y actividades', id)} onFoldersChange={setFolderOptions} onFolderChange={setUploadFolder} onPlan={planAction} emptyAction={emptyAction} />
   </>
 }
 
@@ -1215,15 +1270,19 @@ function ValidationForm({
   pending,
   error,
   initialDecision,
+  immutableSubject,
   onSubmit,
 }: {
   id: string
   pending: boolean
   error: ActionError
   initialDecision?: ObjectiveDecision
+  immutableSubject?: string
   onSubmit: (decision: 'approve' | 'request_correction' | 'reject', observation: string) => void
 }) {
   const [localError, setLocalError] = useState<string | null>(null)
+  const [approvalNote, setApprovalNote] = useState('')
+  const [approvalAttempted, setApprovalAttempted] = useState(false)
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
@@ -1238,9 +1297,17 @@ function ValidationForm({
       return
     }
     setLocalError(null)
+    if (decision === 'approve' && immutableSubject) {
+      setApprovalAttempted(false)
+      setApprovalNote(observation)
+      return
+    }
     onSubmit(decision, observation)
   }
+  let approvalError: string | undefined
+  if (approvalAttempted && error?.id === id) approvalError = error.message
   return (
+    <>
     <form className={shell.form} onSubmit={handleSubmit}>
       <h4>Validar</h4>
       <label className={styles.field}>
@@ -1271,6 +1338,18 @@ function ValidationForm({
         </button>
       </div>
     </form>
+    {approvalNote && <ConfirmAction
+      title="Aprobar diagnóstico"
+      subject={immutableSubject}
+      description="Esta fotografía quedará en el historial y ya no se podrá editar. Para actualizar el diagnóstico tendrás que registrar una nueva fotografía."
+      confirmLabel="Aprobar diagnóstico"
+      pendingLabel="Registrando aprobación…"
+      pending={pending}
+      error={approvalError}
+      onCancel={() => setApprovalNote('')}
+      onConfirm={() => { setApprovalAttempted(true); onSubmit('approve', approvalNote) }}
+    />}
+    </>
   )
 }
 
@@ -1302,18 +1381,32 @@ function DiagnosticSection({
   cycleId,
   areas,
   diagnostics,
-  validations,
+  validations = [],
   pendingId,
   actionError,
   role,
   run,
-}: Actions & { areas: Area[]; diagnostics: Diagnostic[]; validations: Validation[]; evolution?: boolean; focusId?: string; navigate?: TrackingProps['navigate'] }) {
+}: Actions & { areas: Area[]; diagnostics: Diagnostic[]; validations?: Validation[]; evolution?: boolean; focusId?: string; navigate?: TrackingProps['navigate'] }) {
   const [comparison, setComparison] = useState<DiagnosticComparison | null>(null)
   const [compareError, setCompareError] = useState<string | null>(null)
+  const [comparing, setComparing] = useState(false)
   const approved = diagnostics.filter((item) => item.status === 'approved')
   const ordered = [...diagnostics].sort((a, b) => b.assessed_on.localeCompare(a.assessed_on))
   const [selected, setSelected] = useState(focusId ?? ordered.find((item) => item.status === 'approved')?.id ?? ordered[0]?.id ?? '')
   const current = diagnostics.find((item) => item.id === selected) ?? ordered[0]
+  async function compare(previousId: string, currentId: string) {
+    if (comparing) return
+    setComparing(true)
+    setCompareError(null)
+    setComparison(null)
+    const result = await requestSeguimiento(seguimientoUrl(cycleId, `diagnostics/compare/${previousId}/${currentId}`), parseComparison)
+    setComparing(false)
+    if (!result.ok) {
+      setCompareError(result.message)
+      return
+    }
+    setComparison(result.data)
+  }
   return (
     <>
       <ProjectHeading title={evolution ? 'Evolución' : 'Diagnóstico 360°'} description={evolution ? 'Compara fotografías aprobadas para observar la evolución del proyecto.' : 'Explora las seis áreas de tu proyecto y encuentra dónde enfocar el siguiente paso.'} action={<>
@@ -1387,6 +1480,7 @@ function DiagnosticSection({
                 id={`validate-photo-${diagnostic.id}`}
                 pending={pendingId === `validate-photo-${diagnostic.id}`}
                 error={actionError}
+                immutableSubject={`Fotografía del ${formatDay(diagnostic.assessed_on)}`}
                 onSubmit={(decisionName, observation) =>
                   run(`validate-photo-${diagnostic.id}`, async () =>
                     requestSeguimiento(
@@ -1412,23 +1506,11 @@ function DiagnosticSection({
       {evolution && approved.length >= 2 ? (
         <CompareForm
           approved={approved}
-          onCompare={(previousId, currentId) => {
-            void (async () => {
-              const result = await requestSeguimiento(
-                seguimientoUrl(cycleId, `diagnostics/compare/${previousId}/${currentId}`),
-                parseComparison,
-              )
-              if (!result.ok) {
-                setComparison(null)
-                setCompareError(result.message)
-                return
-              }
-              setCompareError(null)
-              setComparison(result.data)
-            })()
-          }}
+          comparing={comparing}
+          onCompare={(previousId, currentId) => void compare(previousId, currentId)}
         />
       ) : null}
+      {comparing && <LoadingRows label="Comparando diagnósticos…" />}
       {evolution && approved.length < 2 && <div className="guided-empty"><span className="welcome-icon" aria-hidden="true"><History size={25} /></span><h2>La evolución se construye con el tiempo</h2><p>Necesitas dos diagnósticos aprobados del mismo ciclo para comparar sus observaciones. {approved.length === 1 ? 'Ya tienes el primero.' : 'Empieza registrando una fotografía de las seis áreas.'}</p>{navigate && <button className="btn secondary" onClick={() => navigate('Diagnóstico 360°')}>Ir a diagnóstico 360° <ArrowRight size={16} /></button>}</div>}
       {compareError ? (
         <p className={shell.formError} role="alert">
@@ -1551,9 +1633,11 @@ function DiagnosticForm({
 
 function CompareForm({
   approved,
+  comparing,
   onCompare,
 }: {
   approved: Diagnostic[]
+  comparing: boolean
   onCompare: (previousId: string, currentId: string) => void
 }) {
   const [localError, setLocalError] = useState<string | null>(null)
@@ -1578,7 +1662,7 @@ function CompareForm({
       <h3>Comparar fotografías aprobadas</h3>
       <label className={styles.field}>
         Anterior
-        <select name="previous_id" required defaultValue="">
+        <select name="previous_id" required defaultValue="" disabled={comparing}>
           <option value="">Elige una fotografía</option>
           {approved.map((item) => (
             <option key={item.id} value={item.id}>
@@ -1589,7 +1673,7 @@ function CompareForm({
       </label>
       <label className={styles.field}>
         Posterior
-        <select name="current_id" required defaultValue="">
+        <select name="current_id" required defaultValue="" disabled={comparing}>
           <option value="">Elige una fotografía</option>
           {approved.map((item) => (
             <option key={item.id} value={item.id}>
@@ -1604,7 +1688,7 @@ function CompareForm({
         </p>
       ) : null}
       <div className={shell.actions}>
-        <button className={shell.buttonSecondary} type="submit">
+        <button className={shell.buttonSecondary} type="submit" disabled={comparing}>
           Comparar
         </button>
       </div>

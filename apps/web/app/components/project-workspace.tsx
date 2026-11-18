@@ -2,18 +2,13 @@
 
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { ArrowUpRight, Bell, CalendarDays, ChevronDown, ChevronRight, CircleHelp, Compass, FileText, FolderOpen, GitCompareArrows, Home, LayoutDashboard, Menu, MessageSquare, Search, Flag, Target, Users, Wallet, X } from 'lucide-react'
 import { useMe } from './authenticated-shell'
 import { SeguimientoPanel } from './seguimiento-views'
-import { MeetingsPanel } from './comunicacion-views'
-import { ChannelsPanel } from './canales-views'
-import { BandejaView } from './bandeja-views'
-import { AssignmentPanel } from './administracion-views'
-import { ReportsView } from './reports-view'
-import { FinanzasView } from './finanzas-view'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { LoadingRows, LoadingState, SkeletonBar } from './ui/loading-state'
+import { ActionFeedback } from './ui/action-feedback'
 import { ProjectHeading } from './project-reference-ui'
 import { ProjectWelcome } from './project-welcome'
 import { loadProjects, PROJECT_GROUPS, readProjectSection, type Project, type ProjectSection } from '../lib/project-workspace'
@@ -22,11 +17,37 @@ import { canRegisterExpediente } from '../lib/expediente'
 import { canViewTeam } from '../lib/administracion'
 
 const icons = { Resumen: LayoutDashboard, 'Diagnóstico 360°': Compass, Ambiciones: Flag, 'Objetivos y actividades': Target, Evidencias: FolderOpen, Evolución: GitCompareArrows, Informes: FileText, Reuniones: CalendarDays, 'Finanzas y compras': Wallet, Chat: MessageSquare, Equipo: Users }
+const MeetingsPanel = lazy(() => import('./comunicacion-views').then((module) => ({ default: module.MeetingsPanel })))
+const ChannelsPanel = lazy(() => import('./canales-views').then((module) => ({ default: module.ChannelsPanel })))
+const BandejaView = lazy(() => import('./bandeja-views').then((module) => ({ default: module.BandejaView })))
+const AssignmentPanel = lazy(() => import('./administracion-views').then((module) => ({ default: module.AssignmentPanel })))
+const ReportsView = lazy(() => import('./reports-view').then((module) => ({ default: module.ReportsView })))
+const FinanzasView = lazy(() => import('./finanzas-view').then((module) => ({ default: module.FinanzasView })))
 const initials = (name: string) => name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()
 type SearchItem = { title: string; section: ProjectSection; id?: string }
-type SearchResult =
-  | { cycleId: string; status: 'ready'; records: SearchItem[] }
-  | { cycleId: string; status: 'error' }
+const searchSections = ['Objetivos y actividades', 'Evidencias', 'Ambiciones'] as const
+type SearchSection = typeof searchSections[number]
+type SearchResource = { status: 'ready'; items: SearchItem[] } | { status: 'error' }
+type SearchResult = { cycleId: string; sources: Partial<Record<SearchSection, SearchResource>> }
+
+class ProjectModuleBoundary extends Component<{ children: ReactNode; title: string }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children
+    return <>
+      <ProjectHeading title={this.props.title} />
+      <div className="project-recovery">
+        <ActionFeedback tone="error">No se pudo abrir esta sección. Puedes continuar en otro módulo o recargar la página.</ActionFeedback>
+        <button type="button" className="btn secondary" onClick={() => window.location.reload()}>Recargar página</button>
+      </div>
+    </>
+  }
+}
 
 export function ProjectWorkspace() {
   const me = useMe()
@@ -41,6 +62,7 @@ export function ProjectWorkspace() {
   const [help, setHelp] = useState(false)
   const [query, setQuery] = useState('')
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
+  const [searchAttempt, setSearchAttempt] = useState(0)
   useEffect(() => {
     const update = () => { setRoute(readProjectSection(window.location.hash)); setQuery(''); setMenu(false) }
     update()
@@ -53,22 +75,22 @@ export function ProjectWorkspace() {
     return () => window.removeEventListener('keydown', close)
   }, [])
   useEffect(() => {
-    let active = true
+    const controller = new AbortController()
     setLoaded(false)
     setError('')
-    void loadProjects().then((items) => {
-      if (!active) return
+    void loadProjects(controller.signal).then((items) => {
+      if (controller.signal.aborted) return
       const requested = new URLSearchParams(window.location.search).get('project')
       setProjects(items)
       setProjectId(requested ?? (items.length === 1 ? items[0]!.cycle.id : ''))
       if (!requested && items.length > 1) setPicker(true)
       setLoaded(true)
     }).catch((reason: unknown) => {
-      if (!active) return
+      if (controller.signal.aborted) return
       setError(reason instanceof Error ? reason.message : 'No se pudieron consultar los proyectos.')
       setLoaded(true)
     })
-    return () => { active = false }
+    return () => controller.abort()
   }, [retry])
   const project = projects.find((item) => item.cycle.id === projectId)
   const cycleId = project?.cycle.id
@@ -77,28 +99,34 @@ export function ProjectWorkspace() {
     let active = true
     setSearchResult(null)
     if (!cycleId || !searching) return () => { active = false }
-    void Promise.all([
-      requestSeguimiento(seguimientoUrl(cycleId, 'objectives'), parseObjectiveList),
-      requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidenceList),
-      requestSeguimiento(seguimientoUrl(cycleId, 'ambitions'), parseAmbitionList),
-    ]).then(([objectives, evidence, ambitions]) => {
+    const targetCycle = cycleId
+
+    function complete(section: SearchSection, result: { ok: true; data: { id: string; title: string }[] } | { ok: false }) {
       if (!active) return
-      if (!objectives.ok || !evidence.ok || !ambitions.ok) {
-        setSearchResult({ cycleId, status: 'error' })
-        return
+      let resource: SearchResource = { status: 'error' }
+      if (result.ok) {
+        resource = { status: 'ready', items: result.data.map(({ id, title }) => ({ id, title, section })) }
       }
-      setSearchResult({
-        cycleId,
-        status: 'ready',
-        records: [
-          ...objectives.data.map((item) => ({ title: item.title, id: item.id, section: 'Objetivos y actividades' as const })),
-          ...evidence.data.map((item) => ({ title: item.title, id: item.id, section: 'Evidencias' as const })),
-          ...ambitions.data.map((item) => ({ title: item.title, id: item.id, section: 'Ambiciones' as const })),
-        ],
+      setSearchResult((current) => {
+        const sources: SearchResult['sources'] = {}
+        if (current?.cycleId === targetCycle) Object.assign(sources, current.sources)
+        sources[section] = resource
+        return { cycleId: targetCycle, sources }
       })
-    })
-    return () => { active = false }
-  }, [cycleId, searching])
+    }
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      void requestSeguimiento(seguimientoUrl(cycleId, 'objectives'), parseObjectiveList, undefined, controller.signal).then((result) => complete('Objetivos y actividades', result))
+      void requestSeguimiento(seguimientoUrl(cycleId, 'evidence'), parseEvidenceList, undefined, controller.signal).then((result) => complete('Evidencias', result))
+      void requestSeguimiento(seguimientoUrl(cycleId, 'ambitions'), parseAmbitionList, undefined, controller.signal).then((result) => complete('Ambiciones', result))
+    }, 180)
+    return () => {
+      active = false
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [cycleId, searching, searchAttempt])
   function navigate(section: ProjectSection, id?: string) {
     window.location.hash = encodeURIComponent(`${section}${id ? `/${id}` : ''}`)
     setRoute({ section, id })
@@ -122,27 +150,35 @@ export function ProjectWorkspace() {
     sections: group.sections.filter((section) => section !== 'Equipo' || showTeam),
   }))
   function searchContent() {
-    if (!loaded || (cycleId && searchResult?.cycleId !== cycleId)) {
-      return <div className="project-search-loading"><LoadingRows label="Buscando en el proyecto…" rows={2} /></div>
-    }
-    if (cycleId && searchResult?.status === 'error') {
-      return <p role="alert">No se pudo consultar la búsqueda del proyecto.</p>
-    }
     const items: SearchItem[] = []
-    if (cycleId && searchResult?.status === 'ready') {
-      items.push(...searchResult.records)
+    const missing: string[] = []
+    let loading = !loaded
+    if (cycleId) {
+      for (const section of searchSections) {
+        const resource = searchResult?.cycleId === cycleId && searchResult.sources[section]
+        if (!resource) loading = true
+        else if (resource.status === 'error') missing.push(section)
+        else items.push(...resource.items)
+      }
     }
     for (const group of projectGroups) {
       for (const section of group.sections) items.push({ title: section, section })
     }
     const normalized = query.trim().toLocaleLowerCase('es')
     const matches = items.filter((item) => item.title.toLocaleLowerCase('es').includes(normalized)).slice(0, 7)
-    if (matches.length === 0) return <p>Sin resultados para «{query}».</p>
-    return matches.map((item) => (
-      <button key={`${item.section}/${item.id ?? 'section'}`} onClick={() => navigate(item.section, item.id)}>
-        <span>{item.title}<small>{item.section}</small></span><ChevronRight size={15} />
-      </button>
-    ))
+    return <>
+      {matches.map((item) => (
+        <button key={`${item.section}/${item.id ?? 'section'}`} onClick={() => navigate(item.section, item.id)}>
+          <span>{item.title}<small>{item.section}</small></span><ChevronRight size={15} />
+        </button>
+      ))}
+      {loading && <div className="project-search-loading"><LoadingRows label="Buscando en el proyecto…" rows={2} /></div>}
+      {!loading && missing.length > 0 && <div className="project-search-feedback">
+        <p role="status">No se pudo consultar: {missing.join(', ')}.</p>
+        <button type="button" onClick={() => setSearchAttempt((value) => value + 1)}>Reintentar búsqueda</button>
+      </div>}
+      {!loading && missing.length === 0 && matches.length === 0 && <p>Sin resultados para «{query}».</p>}
+    </>
   }
   function projectContext() {
     if (!loaded) {
@@ -161,7 +197,10 @@ export function ProjectWorkspace() {
     return <div><span className="project-symbol">{symbol}</span><span><strong>{name}</strong><small>{subtitle}</small></span></div>
   }
   function projectLoadError() {
-    return <div className="notice error" role="alert"><p>{error}</p><button className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button></div>
+    return <div className="project-recovery">
+      <ActionFeedback tone="error">{error}</ActionFeedback>
+      <button type="button" className="btn secondary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button>
+    </div>
   }
   function workspaceContent() {
     if (!loaded) {
@@ -171,7 +210,14 @@ export function ProjectWorkspace() {
     }
     if (error) return projectLoadError()
     if (!project) return <ProjectWelcome unavailable={Boolean(projectId)} hasProjects={projects.length > 0} canManage={canManageProjects} onPick={() => setPicker(true)} onRefresh={() => setRetry((value) => value + 1)} />
-    return <div key={`${project.cycle.id}/${route.section}/${route.id ?? ''}`}>{content()}</div>
+    return <ProjectModuleBoundary key={`${project.cycle.id}/${route.section}/${route.id ?? ''}`} title={route.section}>
+      <Suspense fallback={<>
+        <ProjectHeading title={route.section} />
+        <LoadingRows label={`Abriendo ${route.section}…`} />
+      </>}>
+        {content()}
+      </Suspense>
+    </ProjectModuleBoundary>
   }
   function pickerContent() {
     if (!loaded) return <LoadingRows label="Consultando proyectos…" rows={3} />

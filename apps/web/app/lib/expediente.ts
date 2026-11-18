@@ -210,6 +210,7 @@ export async function requestExpediente<T>(
   path: string,
   parse: (value: unknown) => T | null,
   init?: { method: 'POST'; body: CreateBody },
+  signal?: AbortSignal,
 ): Promise<ExpedienteResult<T>> {
   let response: Response
   try {
@@ -218,6 +219,7 @@ export async function requestExpediente<T>(
       headers: init ? { 'content-type': 'application/json' } : undefined,
       body: init ? JSON.stringify(init.body) : undefined,
       cache: 'no-store',
+      signal,
     })
   } catch {
     return { ok: false, status: 0, message: 'No se pudo consultar el expediente.' }

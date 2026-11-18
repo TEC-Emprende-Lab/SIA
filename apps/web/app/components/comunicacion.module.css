@@ -53,6 +53,23 @@
 .loadingMessage > :first-child { flex: 0 0 32px; height: 32px; }
 .loadingMessageBody { display: grid; flex: 1; min-width: 0; gap: 8px; padding-block: 4px; }
 .referencePicker > .referenceLoading { display: block; }
+.inlineStatus, .emptyNote { color: var(--ink); font-size: .875rem; }
+.inlineStatus { margin: 0; padding: 8px 16px; }
+.inlineStatus:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; padding: 0; }
+.emptyNote { padding-block: 12px; }
+.emptyNote p { margin-block: 4px 0; }
+.messageBody > p, .messageReferences, .threadTitle { overflow-wrap: anywhere; }
+.messageMeta { flex-wrap: wrap; }
+.message .avatar { flex: none; }
+.message[data-own=true] .messageBody > p { background: var(--olive-dark); border-color: var(--olive-dark); }
+.messageActions summary { width: 40px; height: 40px; }
+.messageActions > div { position: static; width: min(20rem, calc(100vw - 8rem)); box-shadow: none; }
+.messageChoices { display: flex; flex-wrap: wrap; gap: 8px; }
+.messageChoices button, .loadMessages, .referencePicker button { min-height: 40px; }
+.messageChoices button[type='button'] { color: var(--ink); background: #fff; }
+.composerFooter button { background: var(--olive-dark); border-color: var(--olive-dark); }
+.thread [aria-disabled='true'] { cursor: wait; opacity: .7; }
+.chatSection :is(button, textarea, summary, input):focus-visible { outline: 2px solid var(--olive-dark); outline-offset: -2px; }
 
 @media (max-width: 720px) {
   .loadingChannels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }

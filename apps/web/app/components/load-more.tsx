@@ -1,5 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import styles from './expediente.module.css'
-import { LoadingRows } from './ui/loading-state'
+import { SkeletonRows } from './ui/loading-state'
+import { ActionFeedback } from './ui/action-feedback'
 
 export function LoadMore({
   hasMore,
@@ -14,24 +18,30 @@ export function LoadMore({
   onLoad: () => void
   label?: string
 }) {
+  const [requested, setRequested] = useState(false)
+  const end = requested && !hasMore && !loading && !error
+  const showButton = hasMore || loading
   let buttonLabel = label
   if (loading) buttonLabel = 'Cargando…'
+  else if (error) buttonLabel = 'Reintentar carga'
 
   return (
     <>
-      {loading && <LoadingRows label="Cargando más resultados…" rows={1} />}
-      {hasMore && (
+      {loading && <SkeletonRows rows={1} />}
+      {error && <div className={styles.paginationFeedback}><ActionFeedback tone="error">{error}</ActionFeedback></div>}
+      {showButton && (
         <div className={styles.actions}>
-          <button type="button" className={styles.buttonSecondary} disabled={loading} onClick={onLoad}>
+          <button type="button" className={styles.buttonSecondary} aria-disabled={loading} onClick={() => {
+            if (loading || !hasMore) return
+            setRequested(true)
+            onLoad()
+          }}>
             {buttonLabel}
           </button>
         </div>
       )}
-      {error && (
-        <p className={styles.formError} role="alert">
-          {error}
-        </p>
-      )}
+      {end && <p className={styles.meta} role="status">No hay más resultados.</p>}
+      <span className="sr-only" role="status">{loading && 'Cargando más resultados…'}</span>
     </>
   )
 }

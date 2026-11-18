@@ -235,6 +235,19 @@ try {
   const tree = SummaryCommunicationContent({ ...props, navigate: (section) => navigation.push(section) })
   for (const panel of tree.props.children.slice(0, 3)) panel.props.action.props.onClick()
   assert.deepEqual(navigation, ['Reuniones', 'Reuniones', 'Alertas'])
+  const retries = []
+  const retryTree = SummaryCommunicationContent({
+    ...props,
+    meetings: { status: 'error', message: 'Reuniones no disponibles' },
+    alerts: { status: 'error', message: 'Alertas no disponibles' },
+    retryMeetings: () => retries.push('reuniones'),
+    retryAlerts: () => retries.push('alertas'),
+    onRetry: () => retries.push('todo'),
+  })
+  retryTree.props.children[0].props.children[1].props.onRetry()
+  retryTree.props.children[2].props.children[1].props.onRetry()
+  retryTree.props.children[4].props.onClick()
+  assert.deepEqual(retries, ['reuniones', 'alertas', 'todo'])
   console.log('✓ Summary cards render real fields, independent failures, loading/empty states and explicit display limits')
 
   if (process.env.SIA_SUMMARY_PREVIEW) {

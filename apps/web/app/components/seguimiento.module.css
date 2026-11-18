@@ -3,6 +3,7 @@
 /* US-PRO-001/006, US-PM-001: task-focused views of the existing work plan. */
 .ambitionWorkspace { min-width: 0; }
 .workWorkspace { min-width: 0; }
+.actionStatus:not(:empty) { margin-block: 0 .75rem; color: var(--foreground); font-size: .875rem; }
 .ambitionWorkspace :global(.btn.primary), .workWorkspace :global(.btn.primary) { min-height: 44px; background: #515154; border-color: #515154; color: #ffffff; font-size: .85rem; }
 .ambitionWorkspace :global(.btn.primary:hover), .workWorkspace :global(.btn.primary:hover) { background: #303034; border-color: #303034; }
 .ambitionWorkspace :global(.btn.secondary), .workWorkspace :global(.btn.secondary) { min-height: 44px; color: #515154; font-size: .85rem; }
@@ -32,6 +33,7 @@
 .emptyWorkspace { display: grid; justify-items: center; gap: 12px; padding: 48px 24px; text-align: center; color: #515154; }
 .emptyWorkspace h2 { margin: 0; font-size: 1.25rem; letter-spacing: -.025em; }
 .emptyWorkspace p { margin: 0; max-width: 55ch; color: #515154; font-size: .95rem; }
+.firstObjective { justify-items: start; padding-inline: 0; text-align: left; }
 .planOverview { display: flex; align-items: center; gap: 28px; margin-bottom: 24px; padding: 20px 24px; border-radius: 12px; background: #f5f5f7; color: #515154; }
 .planOverview > div { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; min-width: 190px; }
 .planOverview :global(.progress) { grid-column: 1 / -1; }

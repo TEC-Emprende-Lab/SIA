@@ -19,7 +19,10 @@
 .activities button[aria-pressed=true] { background: #f5f5f7; border-color: var(--olive); }
 .folderForm, .folderForm label, .move { display: flex; flex-direction: column; gap: .75rem; }
 .folderForm button { border: 0; border-radius: .5rem; padding: .75rem; background: var(--olive); color: white; }
-.error { padding: 1rem; color: #303034; background: #f5f5f7; border-radius: .5rem; margin-bottom: 1rem; }
+.folderFeedback { color: var(--foreground); overflow-wrap: anywhere; }
+.folderFeedback p { margin: 0; max-width: 65ch; }
+.folderFeedback button { min-height: 40px; }
+.notice:not(:empty) { margin-block: 0 1rem; color: var(--foreground); font-size: .875rem; }
 .layout button, .toolbar button { cursor: pointer; }
 .layout button:focus-visible, .toolbar button:focus-visible { outline: 2px solid var(--olive-dark); outline-offset: 3px; }
 .sidebar.loadingSidebar { gap: 24px; padding-block: 16px; }

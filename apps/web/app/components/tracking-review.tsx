@@ -84,6 +84,7 @@ export function PrivateDocumentButton({ entrepreneurshipId, documentId, title }:
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   async function prepare() {
+    if (pending) return
     setPending(true)
     setError(null)
     const result = await requestDocumentAccess(entrepreneurshipId, documentId)
@@ -94,11 +95,18 @@ export function PrivateDocumentButton({ entrepreneurshipId, documentId, title }:
     }
     setUrl(result.data.url)
   }
-  if (url) {
-    return <a className={styles.evidenceOpen} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir archivo privado: ${title} (pestaña nueva)`}>Abrir archivo privado <ExternalLink size={16} aria-hidden="true" /></a>
+  let label = 'Preparar enlace privado'
+  let status = ''
+  if (pending) {
+    label = 'Preparando enlace…'
+    status = 'Preparando el enlace privado.'
   }
+  if (url) status = 'Enlace privado listo para abrir.'
   return <>
-    <button type="button" className={styles.evidenceOpen} onClick={() => void prepare()} disabled={pending}>{pending ? 'Preparando enlace…' : 'Preparar enlace privado'}</button>
-    {error ? <p className={styles.evidenceEmpty} role="alert">{error}</p> : <p className={styles.evidenceHelp}>El enlace se pide al abrirlo y caduca. No se muestra el archivo aquí.</p>}
+    {url && <a className={styles.evidenceOpen} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir archivo privado: ${title} (pestaña nueva)`}>Abrir archivo privado <ExternalLink size={16} aria-hidden="true" /></a>}
+    {!url && <button type="button" className={styles.evidenceOpen} onClick={() => void prepare()} disabled={pending}>{label}</button>}
+    {error && <p className={styles.evidenceEmpty} role="alert">{error}</p>}
+    {!url && !error && <p className={styles.evidenceHelp}>El enlace se pide al abrirlo y caduca. No se muestra el archivo aquí.</p>}
+    <span className="sr-only" role="status">{status}</span>
   </>
 }
