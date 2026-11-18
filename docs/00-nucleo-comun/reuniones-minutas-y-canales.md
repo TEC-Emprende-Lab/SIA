@@ -9,8 +9,9 @@ No se prioriza almacenar grabaciones o videos de reuniones por su costo. La rete
 **Historia transversal «Consultar una reunión sin editarla» (sin identificador
 previo):** la ficha muestra sus datos y permite abrir minuta y acuerdos sin
 mostrar los formularios de edición o revocación de la reunión. Gestor y
-Coordinadora abren cada formulario de forma explícita y pueden cancelarlo sin
-enviar cambios. Las reuniones revocadas siguen visibles en lectura. No cambian
+Coordinadora abren cada acción de forma explícita y pueden cancelarla sin enviar
+cambios. Antes de revocar, la confirmación identifica la reunión y explica qué
+queda en el historial. Las reuniones revocadas siguen visibles en lectura. No cambian
 la observación obligatoria, la auditoría ni los permisos de la API.
 
 **Historia transversal «Consultar el calendario del ciclo» (sin identificador

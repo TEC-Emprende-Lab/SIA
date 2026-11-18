@@ -8,6 +8,7 @@ import type { Alert, ComunicacionResult, Meeting } from '../lib/comunicacion'
 import type { ProjectSection } from '../lib/project-workspace'
 import { agreementDate, loadSummaryAgreements, loadSummaryAlerts, loadSummaryMeetings, upcomingMeetings, type SummaryAgreement, type SummaryState } from '../lib/project-summary'
 import styles from './summary-communication.module.css'
+import { LoadingRows } from './ui/loading-state'
 
 type Navigate = (section: ProjectSection, id?: string) => void
 
@@ -51,7 +52,7 @@ export function SummaryCommunication({ entrepreneurshipId, cycleId, userId, navi
 }
 
 function Resource<T>({ state, empty, onRetry, children }: { state: SummaryState<T>; empty: string; onRetry: () => void; children: (items: T[]) => ReactNode }) {
-  if (state.status === 'loading') return <p className={styles.message} role="status">Consultando datos autorizados…</p>
+  if (state.status === 'loading') return <LoadingRows label="Consultando datos autorizados…" rows={1} />
   if (state.status === 'error') return <div className={styles.error}><p role="alert">{state.message}{state.httpStatus ? ` (HTTP ${state.httpStatus})` : ''}</p><button className="btn secondary" onClick={onRetry}>Reintentar</button></div>
   if (state.data.length === 0) return <p className={styles.message}>{empty}</p>
   return <>{children(state.data.slice(0, 5))}{state.data.length > 5 && <p className={styles.message}>Se muestran 5 de {state.data.length} registros. Abre el módulo para consultar el resto.</p>}</>
