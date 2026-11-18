@@ -1,22 +1,22 @@
 .toolbar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-.button { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid #dedee3; border-radius: .65rem; background: white; padding: .65rem 1rem; }
+.button { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid var(--sia-line); border-radius: .65rem; background: white; padding: .65rem 1rem; }
 .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 1.5rem; }
-.sidebar { display: flex; flex-direction: column; gap: .35rem; border-right: 1px solid #dedee3; padding-right: 1rem; }
+.sidebar { display: flex; flex-direction: column; gap: .35rem; border-right: 1px solid var(--sia-line); padding-right: 1rem; }
 .sidebar button { display: flex; align-items: center; gap: .55rem; text-align: left; border: 0; background: transparent; border-radius: .6rem; padding: .7rem; overflow-wrap: anywhere; }
-.sidebar button[aria-current] { background: #f5f5f7; color: var(--olive-dark); font-weight: 600; }
+.sidebar button[aria-current] { background: var(--sia-tint); color: var(--olive-dark); font-weight: 600; }
 .sidebar button span { flex: 1; }
-.sidebar h3 { font-size: .8rem; color: #515154; margin: 1rem .7rem .3rem; }
-.sidebar p, .help { color: #515154; font-size: .85rem; line-height: 1.5; }
+.sidebar h3 { font-size: .8rem; color: var(--sia-text); margin: 1rem .7rem .3rem; }
+.sidebar p, .help { color: var(--sia-text); font-size: .85rem; line-height: 1.5; }
 .content { min-width: 0; }
 .breadcrumb { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; overflow-wrap: anywhere; }
 .breadcrumb button { background: transparent; border: 0; color: var(--olive-dark); text-decoration: underline; }
 .filters { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin: 1rem 0; }
 .filters label { display: flex; align-items: center; gap: .5rem; flex: 1; min-width: 180px; }
 .filters input { width: 100%; }
-.filters input, .filters select, .folderForm input, .move select { border: 1px solid #b8b8bd; border-radius: .5rem; padding: .65rem; background: white; color: #303034; }
+.filters input, .filters select, .folderForm input, .move select { border: 1px solid var(--sia-border); border-radius: .5rem; padding: .65rem; background: white; color: var(--sia-ink); }
 .activities { display: flex; flex-wrap: wrap; gap: .5rem; }
-.activities button { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .7rem; border-radius: .5rem; border: 1px solid #dedee3; background: white; }
-.activities button[aria-pressed=true] { background: #f5f5f7; border-color: var(--olive); }
+.activities button { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .7rem; border-radius: .5rem; border: 1px solid var(--sia-line); background: white; }
+.activities button[aria-pressed=true] { background: var(--sia-tint); border-color: var(--olive); }
 .folderForm, .folderForm label, .move { display: flex; flex-direction: column; gap: .75rem; }
 .folderForm button { border: 0; border-radius: .5rem; padding: .75rem; background: var(--olive); color: white; }
 .folderFeedback { color: var(--foreground); overflow-wrap: anywhere; }
@@ -29,4 +29,15 @@
 .loadingSidebar > :nth-child(3) { margin-top: 8px; }
 .loadingFilters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: center; gap: 12px; min-height: 44px; margin-block: 24px 16px; }
 .loadingCardCopy { display: grid; gap: 12px; }
-@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #dedee3; padding: 0 0 1rem; max-height: 260px; overflow-y: auto; } }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid var(--sia-line); padding: 0 0 1rem; max-height: 260px; overflow-y: auto; } }
+
+.error { padding: 1rem; color: var(--sia-ink); background: var(--sia-tint); border-radius: .5rem; margin-bottom: 1rem; }
+.layout button, .toolbar button { cursor: pointer; }
+.layout button:focus-visible, .toolbar button:focus-visible { outline: 2px solid var(--olive-dark); outline-offset: 3px; }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid var(--sia-line); padding: 0 0 1rem; max-height: 260px; overflow-y: auto; } }
+
+.layout { padding: 24px; border: 1px solid var(--line); border-radius: var(--sia-radius); background: var(--sia-surface); box-shadow: var(--sia-shadow); }
+.sidebar button[aria-current] { background: var(--sia-accent-soft); color: var(--sia-accent); }
+.sidebar button > svg { color: var(--sia-accent); }
+.error { color: var(--sia-danger); background: var(--sia-danger-bg); }
+@media (max-width: 760px) { .layout { padding: 18px; } }

@@ -5,7 +5,8 @@ import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, Chev
 import { DiagnosticExplorer } from './diagnostic-explorer'
 import { AmbitionExplorer } from './ambition-explorer'
 import { EvidenceBrowser, EvidenceBrowserLoading } from './evidence-browser'
-import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
+import { ProjectHeading, ProjectProgress } from './project-reference-ui'
+import { ProjectDashboard, DashboardValidationHistory } from './project-dashboard'
 import { ActivityEvidence, ObjectiveReviewContext } from './tracking-review'
 import type { EvidenceFolder } from '../lib/evidence-folders'
 import { SummaryCommunication } from './summary-communication'
@@ -341,22 +342,12 @@ function SeguimientoCycle({ cycleId, view = 'work', entrepreneurshipId, projectN
   const areas = [...bundle.canvas.areas].sort((left, right) => left.position - right.position)
 
   if (bundle.view === 'summary') {
-    const upcoming = bundle.activities.filter((item) => !item.completed_at).sort((left, right) => left.ends_on.localeCompare(right.ends_on)).slice(0, 5)
-    const awaiting = bundle.objectives.filter((item) => item.status === 'pending_validation')
-    return <>
-      <ProjectHeading title="Resumen del ciclo" description={`${projectName}, ${program}`} action={<button className="btn secondary" onClick={() => navigate?.('Diagnóstico 360°')}>Ver diagnóstico <ArrowRight size={16} /></button>} />
-      <div className="summary-progress"><div><span>Avance del ciclo</span><strong>{Math.round(bundle.summary.progress_percent)}%</strong></div><ProjectProgress value={bundle.summary.progress_percent} label="Avance del ciclo" /><p>Promedio de avance de los objetivos aprobados.</p></div>
-      <div className="summary-grid">
-        <ProjectPanel title="Lo que sigue" action={<ProjectLink onClick={() => navigate?.('Alertas')}>Ver alertas</ProjectLink>}>
-          {awaiting.map((objective) => <button className="record-row" key={objective.id} onClick={() => navigate?.('Objetivos y actividades', objective.id)}><Target size={20} /><div><strong>{objective.title}</strong><p>Objetivo pendiente de aprobación, {areaName(areas, objective.area_id)}</p></div><ChevronRight size={16} /></button>)}
-          {upcoming.map((activity) => <button className="record-row" key={activity.id} onClick={() => navigate?.('Objetivos y actividades', activity.id)}><CalendarDays size={20} /><div><strong>{activity.title}</strong><p>{formatDay(activity.ends_on)}, {activityPresentation(activity).label}</p></div><ChevronRight size={16} /></button>)}
-          {awaiting.length === 0 && upcoming.length === 0 && <p className="muted">No hay próximos pasos pendientes registrados.</p>}
-        </ProjectPanel>
-        <ProjectPanel title="El plan compartido">{bundle.objectives.length === 0 ? <p className="muted">Aún no hay objetivos registrados.</p> : bundle.objectives.map((objective) => { const progress = bundle.summary.objectives.find((item) => item.objective_id === objective.id)?.progress_percent ?? 0; return <div className="summary-objective" key={objective.id}><ProjectLink onClick={() => navigate?.('Objetivos y actividades', objective.id)}>{objective.title}</ProjectLink><div className="inline"><ProjectProgress value={progress} label={`Avance de ${objective.title}`} /><span className="small">{Math.round(progress)}%</span></div><span className={`badge ${objective.status === 'approved' ? 'olive' : 'sand'}`}>{STATUS_LABEL[objective.status]}</span></div> })}</ProjectPanel>
-      </div>
-      {entrepreneurshipId && <SummaryCommunication key={`${entrepreneurshipId}/${cycleId}/${me.id}`} entrepreneurshipId={entrepreneurshipId} cycleId={cycleId} userId={me.id} navigate={navigate} />}
-      <SummaryValidationHistory cycleId={cycleId} />
-    </>
+    return <ProjectDashboard
+      projectName={projectName ?? ''} program={program} summary={bundle.summary}
+      objectives={bundle.objectives} activities={bundle.activities} areas={areas}
+      history={<SummaryValidationHistory key={cycleId} cycleId={cycleId} />} today={today()} navigate={navigate}
+      communication={entrepreneurshipId && <SummaryCommunication key={`${entrepreneurshipId}/${cycleId}/${me.id}`} entrepreneurshipId={entrepreneurshipId} cycleId={cycleId} userId={me.id} navigate={navigate} />}
+    />
   }
 
   if (bundle.view === 'evolution') return <DiagnosticSection {...shared} areas={areas} diagnostics={bundle.diagnostics} evolution focusId={focusId} navigate={navigate} />
@@ -407,10 +398,8 @@ function SummaryValidationHistory({ cycleId }: { cycleId: string }) {
     </>
   } else if (history.data.length === 0) {
     content = <p className="muted">Las decisiones aparecerán aquí cuando se validen objetivos o diagnósticos.</p>
-  } else {
-    content = [...history.data].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5).map((validation) => <div className="record-row" key={validation.id}><CheckCircle2 size={20} /><div><strong>{DECISION_LABEL[validation.decision as keyof typeof DECISION_LABEL] ?? validation.decision}</strong><p>{validation.observation}, {formatDateTime(validation.created_at)}</p></div></div>)
   }
-  return <ProjectPanel title="Historial reciente">{content}<p className="small muted">Modificar actividades o añadir evidencias requiere revalidar su objetivo.</p></ProjectPanel>
+  return <DashboardValidationHistory validations={history?.ok ? history.data : undefined}>{content}</DashboardValidationHistory>
 }
 
 function FormDialog({ title, children, pending, error, actionId, trigger, primary = false }: { title: string; children: ReactNode; pending: boolean; error: ActionError; actionId: string; trigger?: ReactNode; primary?: boolean }) {
