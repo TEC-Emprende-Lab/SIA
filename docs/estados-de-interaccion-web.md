@@ -27,6 +27,11 @@ La autorización y los conflictos se resuelven en la API.
   para la parte que falló. No presentar una denegación como ausencia de datos.
 - Actualizar datos de un mismo ámbito: si se conserva la última consulta en
   pantalla, distinguirla de los datos vigentes cuando la actualización falle.
+- El espacio de trabajo carga el código de los módulos secundarios al abrirlos.
+  Si el módulo no se puede cargar, la navegación sigue disponible.
+- La búsqueda del proyecto muestra resultados parciales de objetivos, evidencias y
+  ambiciones conforme llega cada respuesta. No anuncia una búsqueda vacía mientras
+  falten respuestas y cancela las consultas al cerrar o cambiar de ciclo.
 
 Referencias: [Reuniones y minutas](00-nucleo-comun/reuniones-minutas-y-canales.md),
 [Bandeja](00-nucleo-comun/notificaciones-y-alertas.md) y

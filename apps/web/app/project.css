@@ -84,6 +84,10 @@ a, button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 .breadcrumb b { color: #1d1d1f; }
 .global-search input { width: 190px; font-size: 12px; }
 .global-search { position: relative; }
+.search-results button { min-height: 44px; color: var(--ink); overflow-wrap: anywhere; }
+.search-results button:focus-visible { outline: 2px solid #68642d; outline-offset: -2px; }
+.project-search-feedback { display: grid; gap: 8px; padding: 8px; }
+.project-search-feedback p { margin: 0; }
 .search-clear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
 .global-search label input { padding-right: 30px; }
 .search-results .search-scope { padding: 12px; color: #6e6e73; font-size: 11px; border-bottom: 1px solid var(--line); }
