@@ -94,5 +94,5 @@
 
 @media (max-width: 480px) {
   .confirm { padding: 20px; }
-  .confirmActions { flex-direction: column-reverse; }
+  .confirmActions { flex-direction: column; }
 }
