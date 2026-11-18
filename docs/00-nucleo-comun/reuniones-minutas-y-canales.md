@@ -34,6 +34,12 @@ Gestión de proyecto, Finanzas y Reuniones para separar las conversaciones del e
 canales por ciclo ni admite canales nuevos fuera de esa terna; el acceso se valida en
 backend y los canales históricos no se eliminan.
 
+Si la API deniega la lista de canales compartidos, la pantalla no muestra
+conversaciones. Para Gestor y Emprendedor explica que la asignación al ciclo no
+sustituye la asignación al emprendimiento, e indica que Coordinadora puede revisar
+el acceso. Un fallo de carga conserva su estado de error, sin presentarse como
+falta de permisos.
+
 ### US-COM-002 — Referenciar trabajo del ciclo desde un mensaje
 
 Como participante autorizado de un emprendimiento, quiero referenciar un objetivo o

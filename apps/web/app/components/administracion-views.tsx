@@ -9,17 +9,19 @@ import { formatDateTime } from '../lib/expediente'
 import {
   assignableRoles,
   canListUsers,
+  canViewTeam,
   INVITATION_PAGE_SIZE,
   INVITATION_STATE_LABEL,
   invitableRoles,
   invitationEmail,
   invitationState,
+  parseActiveAssignments,
   parseAssignment,
   parseInvitation,
   parseInvitationList,
   parseUserList,
   requestAdmin,
-  type Assignment,
+  type ActiveAssignment,
   type Invitation,
   type SiaUser,
 } from '../lib/administracion'
@@ -295,40 +297,151 @@ export function UsuariosView() {
 type AssignmentScope = { kind: 'entrepreneurship'; id: string } | { kind: 'cycle'; id: string }
 
 function assignmentsPath(scope: AssignmentScope): string {
-  return scope.kind === 'entrepreneurship'
-    ? `/api/sia/entrepreneurships/${scope.id}/assignments`
-    : `/api/sia/entrepreneurships/cycles/${scope.id}/assignments`
+  if (scope.kind === 'entrepreneurship') {
+    return `/api/sia/entrepreneurships/${scope.id}/assignments`
+  }
+  return `/api/sia/entrepreneurships/cycles/${scope.id}/assignments`
 }
-
-type Registered = { assignment: Assignment; email: string }
 
 export function AssignmentPanel({ scope }: { scope: AssignmentScope }) {
   const me = useMe()
-  const roles = assignableRoles(me.role)
-  if (roles.length === 0) {
+  if (!canViewTeam(me.role)) {
     return null
   }
-  const title = scope.kind === 'entrepreneurship' ? 'Asignaciones del emprendimiento' : 'Asignaciones del ciclo'
+  let title = 'Asignaciones del ciclo'
+  if (scope.kind === 'entrepreneurship') {
+    title = 'Asignaciones del emprendimiento'
+  }
+  const path = assignmentsPath(scope)
   return (
     <section className={styles.section} aria-labelledby={`asignaciones-${scope.id}`}>
       <h2 id={`asignaciones-${scope.id}`}>{title}</h2>
-      {canListUsers(me.role) ? (
-        <AssignmentForm scope={scope} roles={roles} />
-      ) : (
-        <p className={styles.meta}>
-          La consulta de integrantes y la asignación de emprendedores desde esta pantalla aún no están disponibles para Gestores.
-        </p>
-      )}
+      <AssignmentRoster key={path} path={path} canManage={canListUsers(me.role)} />
     </section>
   )
 }
 
-function AssignmentForm({ scope, roles }: { scope: AssignmentScope; roles: readonly string[] }) {
+function AssignmentRoster({ path, canManage }: { path: string; canManage: boolean }) {
+  const [list, setList] = useState<ListState<ActiveAssignment>>({ status: 'loading' })
+  const [attempt, setAttempt] = useState(0)
+  const [offset, setOffset] = useState(0)
+  const [revoking, setRevoking] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState('')
+  const pageSize = 50
+
+  useEffect(() => {
+    let active = true
+    const url = `${path}?limit=${pageSize + 1}&offset=${offset}`
+    void requestAdmin(url, parseActiveAssignments).then((result) => {
+      if (!active) return
+      if (!result.ok) {
+        setList({ status: 'error', message: result.message })
+        return
+      }
+      if (offset > 0 && result.data.length === 0) {
+        setOffset((value) => Math.max(0, value - pageSize))
+        return
+      }
+      setList({
+        status: 'ready',
+        items: result.data.slice(0, pageSize),
+        complete: result.data.length <= pageSize,
+      })
+    })
+    return () => { active = false }
+  }, [path, offset, attempt])
+
+  function reload() {
+    setList({ status: 'loading' })
+    setAttempt((value) => value + 1)
+  }
+
+  function movePage(next: number) {
+    setList({ status: 'loading' })
+    setOffset(next)
+  }
+
+  async function revoke(item: ActiveAssignment) {
+    if (revoking) return
+    setRevoking(item.id)
+    setError(null)
+    setNotice('')
+    const result = await requestAdmin(`${path}/${item.id}`, parseAssignment, { method: 'DELETE' })
+    setRevoking(null)
+    if (!result.ok) {
+      setError(result.message)
+      if (result.status === 409) reload()
+      return
+    }
+    setNotice(`Se revocó esta asignación de ${item.email}.`)
+    reload()
+  }
+
+  let body = null
+  if (list.status === 'loading') {
+    body = <p className={styles.meta} role="status">Consultando asignaciones…</p>
+  } else if (list.status === 'error' || list.status === 'forbidden') {
+    body = <>
+      <p role="alert" className={styles.formError}>No se pudo consultar el equipo. {list.message}</p>
+      <button className={styles.buttonSecondary} type="button" onClick={reload}>Reintentar</button>
+    </>
+  } else if (list.items.length === 0) {
+    body = <p className={styles.meta}>Todavía no hay asignaciones vigentes en este ámbito.</p>
+  } else {
+    body = <>
+      <ul className={styles.list}>
+        {list.items.map((item) => (
+          <li key={item.id} className={extra.block}>
+            <div className={extra.row}>
+              <strong>{item.email}</strong>
+              <span className={styles.meta}>{item.role}</span>
+            </div>
+            <p className={styles.meta}>Asignada {formatDateTime(item.created_at)}</p>
+            {canManage && (
+              <button
+                className={styles.buttonSecondary}
+                type="button"
+                aria-label={`Revocar la asignación de ${item.email}`}
+                disabled={revoking !== null}
+                onClick={() => void revoke(item)}
+              >
+                Revocar asignación
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {(offset > 0 || !list.complete) && (
+        <div className={styles.actions} aria-label="Páginas de asignaciones">
+          <button className={styles.buttonSecondary} type="button" disabled={offset === 0 || revoking !== null} onClick={() => movePage(offset - pageSize)}>Anterior</button>
+          <button className={styles.buttonSecondary} type="button" disabled={list.complete || revoking !== null} onClick={() => movePage(offset + pageSize)}>Siguiente</button>
+        </div>
+      )}
+    </>
+  }
+
+  return (
+    <>
+      <p className={styles.meta}>Solo se muestran las asignaciones vigentes de este ámbito.</p>
+      {body}
+      {error && <p className={styles.formError} role="alert">{error}</p>}
+      <p className={styles.meta} role="status">{notice}</p>
+      {canManage && <AssignmentForm path={path} onAssigned={() => {
+        setError(null)
+        setNotice('Asignación guardada.')
+        reload()
+      }} />}
+    </>
+  )
+}
+
+function AssignmentForm({ path, onAssigned }: { path: string; onAssigned: () => void }) {
+  const roles = assignableRoles('Coordinadora')
   const [users, setUsers] = useState<ListState<SiaUser>>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
-  const [pending, setPending] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [registered, setRegistered] = useState<Registered[]>([])
   const [formKey, setFormKey] = useState(0)
 
   useEffect(() => {
@@ -340,16 +453,12 @@ function AssignmentForm({ scope, roles }: { scope: AssignmentScope; roles: reado
         return
       }
       if (!result.ok) {
-        setUsers(
-          result.status === 403
-            ? { status: 'forbidden', message: result.message }
-            : { status: 'error', message: result.message },
-        )
+        setUsers({ status: 'error', message: result.message })
         return
       }
       setUsers({
         status: 'ready',
-        items: result.data.filter((user) => roles.includes(user.role)),
+        items: result.data.filter((user) => roles.some((role) => role === user.role)),
         complete: true,
       })
     }
@@ -370,38 +479,19 @@ function AssignmentForm({ scope, roles }: { scope: AssignmentScope; roles: reado
       setError('Elige a una persona.')
       return
     }
-    setPending('assign')
+    setPending(true)
     setError(null)
-    const result = await requestAdmin(assignmentsPath(scope), parseAssignment, {
+    const result = await requestAdmin(path, parseAssignment, {
       method: 'POST',
       body: { user_id: person.id, role: person.role },
     })
-    setPending(null)
+    setPending(false)
     if (!result.ok) {
       setError(result.message)
       return
     }
-    setRegistered((items) => [...items, { assignment: result.data, email: person.email }])
     setFormKey((value) => value + 1)
-  }
-
-  async function revoke(item: Registered) {
-    if (pending) {
-      return
-    }
-    setPending(item.assignment.id)
-    setError(null)
-    const result = await requestAdmin(`${assignmentsPath(scope)}/${item.assignment.id}`, parseAssignment, {
-      method: 'DELETE',
-    })
-    setPending(null)
-    if (!result.ok) {
-      setError(result.message)
-      return
-    }
-    setRegistered((items) =>
-      items.map((entry) => (entry.assignment.id === item.assignment.id ? { ...entry, assignment: result.data } : entry)),
-    )
+    onAssigned()
   }
 
   if (users.status === 'loading') {
@@ -420,19 +510,17 @@ function AssignmentForm({ scope, roles }: { scope: AssignmentScope; roles: reado
     )
   }
 
+  if (users.items.length === 0) {
+    return <p className={styles.meta}>No hay gestores ni emprendedores con sesión iniciada para asignar.</p>
+  }
+  let action = 'Asignar acceso'
+  if (pending) action = 'Guardando…'
   return (
     <>
-      <p className={styles.meta}>
-        Aquí aparecen únicamente las asignaciones que registres durante esta visita, y solo esas se pueden revocar desde
-        esta pantalla. La consulta del equipo completo aún no está disponible.
-      </p>
-      {users.items.length === 0 ? (
-        <p className={styles.meta}>No hay Gestores ni Emprendedores con sesión iniciada para asignar.</p>
-      ) : (
         <form key={formKey} className={styles.form} onSubmit={(event) => void assign(event)}>
           <label className={extra.field}>
             Persona
-            <select name="user_id" required defaultValue="" disabled={pending !== null}>
+            <select name="user_id" required defaultValue="" disabled={pending}>
               <option value="">Elige a una persona</option>
               {users.items.map((user) => (
                 <option key={user.id} value={user.id}>
@@ -442,45 +530,16 @@ function AssignmentForm({ scope, roles }: { scope: AssignmentScope; roles: reado
             </select>
           </label>
           <div className={styles.actions}>
-            <button className={styles.button} type="submit" disabled={pending !== null}>
-              {pending === 'assign' ? 'Guardando…' : 'Asignar'}
+            <button className={styles.button} type="submit" disabled={pending}>
+              {action}
             </button>
           </div>
         </form>
-      )}
-      {error ? (
+      {error && (
         <p className={styles.formError} role="alert">
           {error}
         </p>
-      ) : null}
-      {registered.length > 0 ? (
-        <ul className={styles.list}>
-          {registered.map((item) => (
-            <li key={item.assignment.id} className={extra.block}>
-              <div className={extra.row}>
-                <strong>{item.email}</strong>
-                <span className={styles.meta}>{item.assignment.role}</span>
-              </div>
-              <p className={styles.meta}>
-                Asignada {formatDateTime(item.assignment.created_at)}
-                {item.assignment.revoked_at ? `. Revocada ${formatDateTime(item.assignment.revoked_at)}.` : '.'}
-              </p>
-              {item.assignment.revoked_at ? null : (
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={styles.buttonSecondary}
-                    disabled={pending !== null}
-                    onClick={() => void revoke(item)}
-                  >
-                    {pending === item.assignment.id ? 'Guardando…' : 'Revocar'}
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      )}
     </>
   )
 }

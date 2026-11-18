@@ -7,12 +7,11 @@ export function AuthFrame({ title, description, children }: { title: string; des
     <header className={`${styles.header} auth-header`}><SiaBrand /></header>
     <section className={styles.formSide}>
       <div className={styles.formWrap}>
-        <p className={styles.eyebrow}>Acceso a SIA</p>
         <h1>{title}</h1>
         <p className={styles.description}>{description}</p>
         {children}
       </div>
     </section>
-    <footer className={styles.footer}><span>Tu acceso a proyectos depende de una invitación vigente con este mismo correo.</span><span>Catalitec de TEC Emprende Lab</span></footer>
+    <footer className={styles.footer}><span>Catalitec de TEC Emprende Lab</span></footer>
   </main>
 }

@@ -22,12 +22,16 @@ function readAllowed(path: readonly string[]): boolean {
   }
   if (path.length === 2) {
     return (
-      (isUuid(first) && second === 'enrollments') ||
+      (isUuid(first) && (second === 'enrollments' || second === 'assignments')) ||
       (first === 'enrollments' && isUuid(second)) ||
       (first === 'cycles' && isUuid(second))
     )
   }
-  return path.length === 3 && first === 'enrollments' && isUuid(second) && third === 'cycles'
+  return (
+    path.length === 3 &&
+    isUuid(second) &&
+    ((first === 'enrollments' && third === 'cycles') || (first === 'cycles' && third === 'assignments'))
+  )
 }
 
 function postAllowed(path: readonly string[]): boolean {

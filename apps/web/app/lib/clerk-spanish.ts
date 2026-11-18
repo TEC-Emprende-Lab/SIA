@@ -14,8 +14,11 @@ export const clerkSpanish = {
     ...esES.signIn,
     start: {
       ...esES.signIn?.start,
-      titleCombined: 'Continuar a {{applicationName}}',
+      titleCombined: 'Continuar a SIA',
+      subtitle: 'para continuar a SIA',
       subtitleCombined: '',
+      actionText: '¿Es tu primera vez en SIA?',
+      actionLink: 'Crear mi acceso',
     },
     protectCheck,
     passwordCompromised: { ...esES.signIn?.passwordCompromised, title: 'Contraseña comprometida' },
@@ -33,7 +36,17 @@ export const clerkSpanish = {
       },
     },
   },
-  signUp: { ...esES.signUp, protectCheck },
+  signUp: {
+    ...esES.signUp,
+    protectCheck,
+    start: {
+      ...esES.signUp?.start,
+      actionText: '¿Ya tienes acceso a SIA?',
+      actionLink: 'Iniciar sesión',
+      subtitle: 'para continuar a SIA',
+      subtitleCombined: '',
+    },
+  },
   userProfile: {
     ...esES.userProfile,
     emailAddressPage: {

@@ -41,7 +41,7 @@
 .guestAction:hover { background: #514e22; }
 .guestActionSecondary { padding-block: 12px; color: #515154; font-size: 14px; text-decoration: none; }
 .guestActionSecondary:hover { color: #1d1d1f; text-decoration: underline; text-underline-offset: 5px; }
-.guestNote { margin: 20px 0 0; color: #86868b; font-size: 12px; }
+.guestNote { max-width: 52ch; margin: 20px 0 0; color: #515154; font-size: 13px; line-height: 1.6; }
 .guestOverview { padding: 0 0 0 28px; border-left: 1px solid #e8e8ed; }
 .guestOverview > p { margin: 0 0 20px; color: #6e6e73; font-size: 12px; }
 .guestOverview > div { display: flex; align-items: center; gap: 16px; padding: 20px 0; border-top: 1px solid #e8e8ed; color: #68642d; }

@@ -76,6 +76,12 @@ manualmente y resolver diferencias conservando fuente. US-PRO-009: trasladar
 presupuesto con aprobación humana y auditoría. US-PRO-010: consultar/exportar
 reporte operativo filtrado por período/tipo/estado sin acceso cruzado.
 
+**US-PRO-007 — orientación antes del primer trámite:** si el ciclo no tiene
+partidas, la cabecera ofrece a Coordinadora registrar la primera. Al resto le
+explica quién debe hacerlo y no ofrece un botón de trámite inutilizable. Con una
+partida registrada vuelve a aparecer «Nuevo trámite». Las vistas financieras
+se pueden elegir en un ancho móvil sin desplazar la navegación horizontalmente.
+
 Aceptación transversal: backend autoriza cada acción, FK mantienen alcance,
 revisión obsoleta devuelve 409, dinero decimal, historial sin borrado, datos
 ausentes explícitos y ninguna aprobación automática. No se importa Ronda 3.

@@ -77,6 +77,13 @@ try {
   console.log('✓ First-use guidance follows existing roles and distinguishes unavailable selection from an empty list')
 
   // Render the real sidebar without starting Clerk or loading unrelated project panels.
+  const adminSource = await readFile(new URL('../app/lib/administracion.ts', import.meta.url), 'utf8')
+  await writeFile(join(temporary, 'administracion.mjs'), ts.transpileModule(adminSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText)
+  const { parseActiveAssignments } = await import(pathToFileURL(join(temporary, 'administracion.mjs')))
+  const assignment = { id: 'a1', email: 'team@example.org', role: 'Gestor', created_at: now }
+  assert.deepEqual(parseActiveAssignments([assignment]), [assignment])
+  assert.equal(parseActiveAssignments([{ ...assignment, email: '' }]), null)
+
   await writeFile(join(temporary, 'panels.mjs'), `
     let role = 'Coordinadora'
     export const setRole = (value) => { role = value }
@@ -106,6 +113,7 @@ try {
     .replace(/from ["']([^"']+)["']/g, (_, name) => {
       if (name === '../lib/project-workspace') return "from './project-workspace.mjs'"
       if (name === '../lib/expediente') return "from './expediente.mjs'"
+      if (name === '../lib/administracion') return "from './administracion.mjs'"
       if (name === './project-welcome') return "from './welcome.mjs'"
       if (name.startsWith('.') || name === '@clerk/nextjs') return "from './panels.mjs'"
       return `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`
@@ -117,6 +125,10 @@ try {
     setRole(role)
     const html = renderToStaticMarkup(createElement(ProjectWorkspace))
     const administration = html.match(/<nav aria-label="Administración"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
+    const projectNav = html.match(/<nav aria-label="Navegación del proyecto"[^>]*>([\s\S]*?)<\/nav>/)?.[1]
+    assert(projectNav)
+    assert.equal(projectNav.includes('>Equipo<'), role !== 'Emprendedor')
+    assert.match(html, /<a[^>]*aria-label="Abrir bandeja"[^>]*href="\/bandeja"/)
     if (role === 'Emprendedor') assert.equal(administration, undefined)
     else {
       assert(administration?.includes('href="/expediente"'))
@@ -124,11 +136,12 @@ try {
     }
   }
   console.log('✓ Coordinadora and Gestor can reach Expedientes before any project loads; Emprendedor has no management link')
+  console.log('✓ Team navigation and the active assignment contract respect the role and response shape')
 
   const configSource = await readFile(new URL('../next.config.ts', import.meta.url), 'utf8')
   await writeFile(join(temporary, 'config.mjs'), ts.transpileModule(configSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText)
   const { default: nextConfig } = await import(pathToFileURL(join(temporary, 'config.mjs')))
-  for (const path of ['/expediente', '/expediente/e1', '/expediente/e1/inscripciones/en1']) {
+  for (const path of ['/bandeja', '/expediente', '/expediente/e1', '/expediente/e1/inscripciones/en1']) {
     const response = await unstable_getResponseFromNextConfig({ url: `https://sia.example${path}`, nextConfig })
     assert.equal(response.status, 200, path)
     assert.equal(response.headers.get('location'), null, path)
@@ -137,6 +150,85 @@ try {
   assert.equal(cycleResponse.status, 307)
   assert.equal(cycleResponse.headers.get('location'), 'https://sia.example/?project=c1')
   console.log('✓ Registration pages stay reachable and cycle links still open their project workspace')
+  console.log('✓ Personal inbox stays reachable before any project loads')
+
+  await writeFile(join(temporary, 'auth-stubs.mjs'), `
+    import { createElement } from ${JSON.stringify(pathToFileURL(require.resolve('react')).href)}
+    export default {}
+    export const SiaBrand = () => null
+    export const SignIn = ({ signUpUrl }) => createElement('a', { href: signUpUrl }, 'Crear mi acceso')
+    export const SignUp = ({ signInUrl }) => createElement('a', { href: signInUrl }, 'Iniciar sesión')
+  `)
+  for (const [name, file] of [
+    ['public-home', '../app/components/public-home.tsx'],
+    ['auth-frame', '../app/components/auth-frame.tsx'],
+    ['sign-in', '../app/sign-in/[[...sign-in]]/page.tsx'],
+    ['sign-up', '../app/sign-up/[[...sign-up]]/page.tsx'],
+    ['clerk-spanish', '../app/lib/clerk-spanish.ts'],
+  ]) {
+    const source = await readFile(new URL(file, import.meta.url), 'utf8')
+    const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
+      .replace(/from ["']([^"']+)["']/g, (_, dependency) => {
+        if (dependency.endsWith('/auth-frame')) return "from './auth-frame.mjs'"
+        if (dependency.startsWith('.') || dependency === '@clerk/nextjs') return "from './auth-stubs.mjs'"
+        return `from ${JSON.stringify(pathToFileURL(require.resolve(dependency)).href)}`
+      })
+    await writeFile(join(temporary, `${name}.mjs`), code)
+  }
+  const { PublicHome } = await import(pathToFileURL(join(temporary, 'public-home.mjs')))
+  const { default: SignInPage } = await import(pathToFileURL(join(temporary, 'sign-in.mjs')))
+  const { default: SignUpPage } = await import(pathToFileURL(join(temporary, 'sign-up.mjs')))
+  const { clerkSpanish } = await import(pathToFileURL(join(temporary, 'clerk-spanish.mjs')))
+  const publicHome = renderToStaticMarkup(createElement(PublicHome))
+  assert.match(publicHome, /href="\/sign-up">Crear mi acceso con Google.*href="\/sign-in">Ya tengo acceso/s)
+  const signInPage = renderToStaticMarkup(createElement(SignInPage))
+  const signUpPage = renderToStaticMarkup(createElement(SignUpPage))
+  assert.match(signInPage, /misma cuenta de Google.*href="\/sign-up"/s)
+  assert.match(signUpPage, /cuenta de Google que recibió la invitación vigente.*href="\/sign-in"/s)
+  assert.equal(clerkSpanish.signIn.start.subtitle, 'para continuar a SIA')
+  assert.equal(clerkSpanish.signUp.start.actionText, '¿Ya tienes acceso a SIA?')
+  console.log('✓ The first-access route comes first and both auth forms offer the way back')
+
+  await writeFile(join(temporary, 'chat-stubs.mjs'), `
+    export default {}
+    export { useMe, setRole } from './panels.mjs'
+    export const LoadMore = () => null
+    export const usePagedList = () => ({ state: { status: 'forbidden', message: 'No autorizado para este ámbito' } })
+    export const formatDateTime = () => ''
+    export const channelUrl = () => ''
+    export const channelsUrl = () => ''
+    export const MESSAGE_PAGE_SIZE = 50
+    export const parseChannelList = () => []
+    export const parseMessage = () => null
+    export const parseMessageList = () => []
+    export const parseReceipt = () => null
+    export const parseUnread = () => null
+    export const requestComunicacion = () => null
+    export const requiredText = () => null
+    export const parseActivityList = () => []
+    export const parseObjectiveList = () => []
+    export const requestSeguimiento = () => null
+    export const seguimientoUrl = () => ''
+  `)
+  const chatSource = await readFile(new URL('../app/components/canales-views.tsx', import.meta.url), 'utf8')
+  const chatCode = ts.transpileModule(chatSource, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
+    .replace(/from ["']([^"']+)["']/g, (_, name) => {
+      if (name.startsWith('.')) return "from './chat-stubs.mjs'"
+      return `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`
+    })
+  await writeFile(join(temporary, 'chat.mjs'), chatCode)
+  const { ChannelsPanel } = await import(pathToFileURL(join(temporary, 'chat.mjs')))
+  for (const role of ['Coordinadora', 'Gestor', 'Emprendedor']) {
+    setRole(role)
+    const html = renderToStaticMarkup(createElement(ChannelsPanel, { entrepreneurshipId: 'e1', cycleId: 'c1' }))
+    assert(html.includes('Chat compartido no disponible'))
+    assert(html.includes('Volver a consultar'))
+    assert(!html.includes('Canales del emprendimiento'))
+    assert(!html.includes('<textarea'))
+    if (role === 'Coordinadora') assert(html.includes('soporte de SIA'))
+    else assert(html.includes('asignación al emprendimiento'))
+  }
+  console.log('✓ Denied chat explains the scope without displaying channels or a message composer')
 
   globalThis.fetch = async (input) => {
     const url = new URL(input, 'http://localhost')
