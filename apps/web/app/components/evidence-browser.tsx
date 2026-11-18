@@ -5,10 +5,34 @@ import { FolderOpen, Search, FileText, ChevronRight, Plus } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { PrivateDocumentButton } from './tracking-review'
 import { ProjectLink } from './project-reference-ui'
+import { LoadingState, SkeletonBar } from './ui/loading-state'
 import { formatDateTime } from '../lib/expediente'
 import { requestSeguimiento, seguimientoUrl, type Evidence, type Activity, type Objective } from '../lib/seguimiento'
 import { filterEvidence, parseFolder, parseFolders, parsePlacement, parsePlacements, type EvidenceFolder, type EvidencePlacement } from '../lib/evidence-folders'
 import styles from './evidence-browser.module.css'
+
+export function EvidenceBrowserLoading({ label }: { label: string }) {
+  return <LoadingState label={label}>
+    <div className={styles.layout}>
+      <div className={`${styles.sidebar} ${styles.loadingSidebar}`}>
+        <SkeletonBar />
+        <SkeletonBar size="text" />
+        <SkeletonBar size="short" />
+        <SkeletonBar />
+      </div>
+      <div className={styles.content}>
+        <div className={styles.breadcrumb}><SkeletonBar size="short" /><SkeletonBar /></div>
+        <div className={styles.loadingFilters}><SkeletonBar size="text" /><SkeletonBar /></div>
+        <div className="evidence-grid">
+          {[1, 2, 3].map((slot) => <div className="evidence-card" key={slot}>
+            <div className="evidence-cover"><SkeletonBar size="short" /></div>
+            <div className={styles.loadingCardCopy}><SkeletonBar /><SkeletonBar size="text" /><SkeletonBar size="short" /></div>
+          </div>)}
+        </div>
+      </div>
+    </div>
+  </LoadingState>
+}
 
 export function EvidenceBrowser({ cycleId, entrepreneurshipId, evidence, activities, objectives, focusId, onActivity, onFoldersChange, onFolderChange, onPlan, children }: {
   cycleId: string; entrepreneurshipId?: string; evidence: Evidence[]; activities: Activity[]; objectives: Objective[]; focusId?: string; onActivity: (id: string) => void; onFoldersChange: (folders: EvidenceFolder[]) => void; onFolderChange: (id: string) => void; children: ReactNode; onPlan?: () => void
@@ -75,7 +99,8 @@ export function EvidenceBrowser({ cycleId, entrepreneurshipId, evidence, activit
   return <>
     <div className={styles.toolbar}>{children}<button type="button" className={styles.button} disabled={loading || busy || Boolean(error)} onClick={() => { setName(''); setRenaming(false); setCreating(true) }}><Plus size={16} />Nueva carpeta</button></div>
     {error && <div role="alert" className={styles.error}>{error} <button type="button" disabled={busy} onClick={() => setRetry((value) => value + 1)}>Volver a consultar</button></div>}
-    {loading ? <p role="status">Cargando carpetas…</p> : <div className={styles.layout}>
+    {loading && <EvidenceBrowserLoading label="Cargando carpetas…" />}
+    {!loading && <div className={styles.layout}>
       <nav className={styles.sidebar} aria-label="Carpetas de evidencias">
         <button type="button" aria-current={location === 'all' ? 'page' : undefined} onClick={() => go('all')}>Todas las evidencias <span>{evidence.length}</span></button>
         <button type="button" aria-current={location === 'unfiled' ? 'page' : undefined} onClick={() => go('unfiled')}>Sin carpeta personalizada</button>

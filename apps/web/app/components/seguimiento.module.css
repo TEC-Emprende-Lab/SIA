@@ -147,3 +147,9 @@
 .objectiveGroupHeader { background: #fff; border-bottom: 1px solid var(--line); }
 .planOverview { background: #f5f5f7; color: #515154; }
 .objectiveGroupHeader .areaLabel { color: #6e6e73; }
+
+.loadingPanel { display: grid; align-content: start; gap: 16px; padding: 24px; }
+.loadingPlan { display: grid; min-height: 80px; }
+.loadingWorkToolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: center; gap: 12px; min-height: 44px; margin-bottom: 20px; }
+.loadingBoard[data-columns] { overflow: hidden; }
+.loadingBoard .loadingPanel { padding: 12px; }

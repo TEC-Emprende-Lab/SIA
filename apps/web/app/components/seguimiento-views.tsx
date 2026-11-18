@@ -4,20 +4,22 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Target, Search, CheckCircle2, CalendarDays, Paperclip, ArrowRight, ChevronRight, History, LayoutGrid, List, Plus } from 'lucide-react'
 import { DiagnosticExplorer } from './diagnostic-explorer'
 import { AmbitionExplorer } from './ambition-explorer'
-import { EvidenceBrowser } from './evidence-browser'
+import { EvidenceBrowser, EvidenceBrowserLoading } from './evidence-browser'
 import { ProjectHeading, ProjectPanel, ProjectProgress, ProjectLink } from './project-reference-ui'
 import { ActivityEvidence, ObjectiveReviewContext } from './tracking-review'
 import type { EvidenceFolder } from '../lib/evidence-folders'
 import { SummaryCommunication } from './summary-communication'
 import { TrackingKanban, type ObjectiveDropAction, type ObjectiveDecision } from './tracking-kanban'
 import type { ProjectSection } from '../lib/project-workspace'
-import { ACTIVITY_COLUMN_LABEL, activityColumn } from '../lib/kanban'
+import { ACTIVITY_COLUMNS, ACTIVITY_COLUMN_LABEL, OBJECTIVE_COLUMNS, activityColumn } from '../lib/kanban'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { LoadingRows, LoadingState, SkeletonBar } from './ui/loading-state'
 
 import { useMe } from './authenticated-shell'
 import shell from './expediente.module.css'
 import styles from './seguimiento.module.css'
 import diagnosticStyles from './diagnostic-explorer.module.css'
+import kanbanStyles from './tracking-kanban.module.css'
 import { formatDateTime, trimmedName } from '../lib/expediente'
 import { parseMessageReferenceList, requestComunicacion, targetReferencesUrl, type MessageReference } from '../lib/comunicacion'
 import { uploadPrivateDocument } from '../lib/documents'
@@ -135,6 +137,74 @@ function field(data: FormData, name: string): string {
 type TrackingView = 'work' | 'summary' | 'diagnostics' | 'ambitions' | 'evidence' | 'evolution'
 type TrackingProps = { cycleId: string; program: string; view?: TrackingView; entrepreneurshipId?: string; projectName?: string; focusId?: string; navigate?: (section: ProjectSection, id?: string) => void }
 
+const trackingTitle: Record<TrackingView, string> = {
+  work: 'Objetivos y actividades',
+  summary: 'Resumen del ciclo',
+  diagnostics: 'Diagnóstico 360°',
+  ambitions: 'Ambiciones',
+  evidence: 'Evidencias',
+  evolution: 'Evolución',
+}
+
+const trackingLoadingLabel: Record<TrackingView, string> = {
+  work: 'Cargando objetivos y actividades…',
+  summary: 'Cargando resumen del ciclo…',
+  diagnostics: 'Cargando diagnóstico…',
+  ambitions: 'Cargando ambiciones…',
+  evidence: 'Cargando evidencias…',
+  evolution: 'Cargando evolución…',
+}
+
+const workDescription = 'Un plan compartido para avanzar, aprender y dejar evidencia.'
+const evidenceDescription = 'Organiza archivos y enlaces sin perder su relación con el trabajo del proyecto.'
+
+function TrackingLoading({ view = 'work', projectName = '', program, viewMode, board }: Pick<TrackingProps, 'view' | 'projectName' | 'program'> & {
+  viewMode: 'list' | 'board'
+  board: 'objectives' | 'activities'
+}) {
+  const label = trackingLoadingLabel[view]
+  let description: string | undefined
+  if (view === 'summary') description = `${projectName}, ${program}`
+  if (view === 'work') description = workDescription
+  if (view === 'evidence') description = evidenceDescription
+
+  let body: ReactNode
+  if (view === 'evidence') {
+    body = <EvidenceBrowserLoading label={label} />
+  } else if (view === 'summary') {
+    body = <LoadingState label={label}>
+      <div className={`summary-progress ${styles.loadingPanel}`}><SkeletonBar /><SkeletonBar size="text" /><SkeletonBar /></div>
+      <div className="summary-grid">
+        {[1, 2].map((slot) => <div className={styles.loadingPanel} key={slot}><SkeletonBar /><SkeletonBar size="text" /><SkeletonBar /></div>)}
+      </div>
+    </LoadingState>
+  } else if (view === 'work') {
+    let plan: ReactNode
+    if (viewMode === 'board') {
+      let columns: readonly string[] = OBJECTIVE_COLUMNS
+      if (board === 'activities') columns = ACTIVITY_COLUMNS
+      plan = <div className={`${kanbanStyles.board} ${styles.loadingBoard}`} data-columns={columns.length}>
+        {columns.map((column) => <div className={`${kanbanStyles.column} ${styles.loadingPanel}`} key={column}>
+          <SkeletonBar /><SkeletonBar size="text" /><SkeletonBar />
+        </div>)}
+      </div>
+    } else {
+      plan = <div className={styles.objectiveGroup}>
+        <div className={`${styles.objectiveGroupHeader} ${styles.loadingPanel}`}><SkeletonBar /><SkeletonBar size="text" /></div>
+        {[1, 2].map((slot) => <div className={styles.loadingPanel} key={slot}><SkeletonBar /><SkeletonBar size="text" /></div>)}
+      </div>
+    }
+    body = <LoadingState label={label}>
+      <div className={`${styles.planOverview} ${styles.loadingPlan}`}><SkeletonBar /><SkeletonBar size="text" /></div>
+      <div className={styles.loadingWorkToolbar}><SkeletonBar /><SkeletonBar size="text" /></div>
+      {plan}
+    </LoadingState>
+  } else {
+    body = <LoadingRows label={label} />
+  }
+  return <><ProjectHeading title={trackingTitle[view]} description={description} />{body}</>
+}
+
 export function SeguimientoPanel({ cycleId, program, view = 'work', entrepreneurshipId, projectName = '', focusId, navigate }: TrackingProps) {
   if (!tracked(program)) {
     return <p className={shell.meta}>Este programa no tiene seguimiento confirmado.</p>
@@ -234,7 +304,7 @@ function SeguimientoCycle({ cycleId, view, entrepreneurshipId, projectName, prog
   }
 
   if (state.status === 'loading') {
-    return <p className={shell.meta}>Cargando seguimiento…</p>
+    return <TrackingLoading view={view} projectName={projectName} program={program} viewMode={viewMode} board={board} />
   }
   if (state.status === 'forbidden') {
     return (
@@ -504,7 +574,7 @@ function ObjectiveSection({
   }
   return (
     <div className={styles.workWorkspace}>
-      <ProjectHeading title="Objetivos y actividades" description="Un plan compartido para avanzar, aprender y dejar evidencia." action={<>
+      <ProjectHeading title={trackingTitle.work} description={workDescription} action={<>
       <FormDialog title="Nuevo objetivo" pending={pendingId === 'objective-new'} error={actionError} actionId="objective-new" trigger={<><Target size={16} /> Nuevo objetivo</>}>
         <ObjectiveForm id="objective-new" title="Nuevo objetivo" submitLabel="Crear objetivo" areas={areas} ambitions={ambitions} pending={pendingId === 'objective-new'} error={actionError} onSubmit={(body) => run('objective-new', async () => requestSeguimiento(seguimientoUrl(cycleId, 'objectives'), parseObjective, { method: 'POST', body }).then(asVoid))} />
       </FormDialog>
@@ -1008,7 +1078,7 @@ function EvidenceSection({ cycleId, entrepreneurshipId, evidence, activities, ob
   const [folderOptions, setFolderOptions] = useState<EvidenceFolder[]>([])
   const [uploadFolder, setUploadFolder] = useState('')
   return <>
-    <ProjectHeading eyebrow="El respaldo de cada paso" title="Evidencias" description="Organiza archivos y enlaces sin perder su relación con el trabajo del proyecto." action={activities.length === 0 && navigate ? <button className="btn primary" onClick={() => navigate('Objetivos y actividades')}>Ir al plan de trabajo <ArrowRight size={16} /></button> :
+    <ProjectHeading eyebrow="El respaldo de cada paso" title={trackingTitle.evidence} description={evidenceDescription} action={activities.length === 0 && navigate ? <button className="btn primary" onClick={() => navigate('Objetivos y actividades')}>Ir al plan de trabajo <ArrowRight size={16} /></button> :
       <FormDialog title="Agregar evidencia" primary trigger={<><Paperclip size={16} />Agregar evidencia</>} pending={pendingId === 'evidence-new'} error={actionError} actionId="evidence-new">
         <label className={styles.field}>Actividad<select value={activityId} disabled={pendingId === 'evidence-new'} onChange={(event) => setActivityId(event.target.value)}>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>
         <label className={styles.field}>Carpeta personalizada<select value={uploadFolder} disabled={pendingId === 'evidence-new'} onChange={(event) => setUploadFolder(event.target.value)}><option value="">Sin carpeta personalizada</option>{folderOptions.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
