@@ -19,7 +19,7 @@ try {
     .replaceAll("'./ui/loading-state'", "'./loading-state.mjs'")
     .replaceAll("'./report-form'", "'./report-form.mjs'")
     .replaceAll("'./report-sources'", "'./report-sources.mjs'")
-    .replace(/from '\.\/(?:authenticated-shell|project-reference-ui|ui\/dialog)'/g, "from './view-stubs.mjs'")
+    .replace(/from '\.\/(?:authenticated-shell|project-reference-ui|ui\/dialog|ui\/confirm-action)'/g, "from './view-stubs.mjs'")
     .replace(/import styles from '\.\/[^']+\.module\.css';/, 'const styles = new Proxy({}, { get: (_, key) => String(key) });')
   await writeFile(join(temporary, 'view-stubs.mjs'), compile(`
     export const useMe = () => ({ role: 'Gestor' })
@@ -29,6 +29,7 @@ try {
     export const DialogDescription = () => null
     export const DialogHeader = () => null
     export const DialogTitle = () => null
+    export const ConfirmAction = () => null
   `))
   for (const [name, path] of [
     ['expediente', 'lib/expediente.ts'],
@@ -45,7 +46,7 @@ try {
   assert.match(loadingMarkup, /<button[^>]*disabled=""[^>]*>.*Preparar informe/)
   assert.match(loadingMarkup, /role="status">Cargando informes…<\/span><div aria-hidden="true"><div class="report-list">/)
   assert.equal([...loadingMarkup.matchAll(/<div class="report-row loadingRow">/g)].length, 3)
-  assert.doesNotMatch(loadingMarkup, /Una historia por documentar|<button class="report-row"/)
+  assert.doesNotMatch(loadingMarkup, /Este ciclo todavía no tiene informes|class="report-row"/)
   console.log('✓ Pending reports render three decorative rows, announce loading, and keep creation disabled')
 
   const { ReportSources } = await import(pathToFileURL(join(temporary, 'report-sources.mjs')))

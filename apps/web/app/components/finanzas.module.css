@@ -59,6 +59,7 @@
 .error p { margin-top: 4px; }
 .error button { margin-top: 12px; }
 .hint { color: var(--finance-muted); font-size: 12px; line-height: 1.65; margin: 10px 0 0; }
+.refreshing { color: var(--finance-muted); font-size: 13px; margin: 0 0 8px; }
 .disclosure { color: var(--finance-muted); font-size: 13px; margin-top: 16px; }
 .disclosure summary { cursor: pointer; padding: 8px 0; color: var(--finance-accent); }
 .disclosure p { margin: 8px 0; max-width: 72ch; overflow-wrap: anywhere; }

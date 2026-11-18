@@ -75,7 +75,7 @@ export function MeetingsPanel({ cycleId, program }: { cycleId: string; program: 
   if (!tracked(program)) {
     return <p className={shell.meta}>Este programa no tiene reuniones en el alcance inicial.</p>
   }
-  return <MeetingsCycle cycleId={cycleId} />
+  return <MeetingsCycle key={cycleId} cycleId={cycleId} />
 }
 
 function MeetingsCycle({ cycleId }: { cycleId: string }) {
@@ -84,6 +84,8 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
   const [view, setView] = useState<'calendar' | 'history'>('calendar')
   const [calendarRevision, setCalendarRevision] = useState(0)
   const [notice, setNotice] = useState('')
+  const [formVersion, setFormVersion] = useState(0)
+  const writeLock = useRef(false)
   const heading = useRef<HTMLHeadingElement>(null)
   let historyPage: ((limit: number, offset: number) => string) | null = null
   if (view === 'history') historyPage = (limit, offset) => meetingsUrl(cycleId, '', { limit, offset })
@@ -105,17 +107,23 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
   }
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
-    if (pendingId) {
+    if (writeLock.current) {
       return
     }
+    writeLock.current = true
     setPendingId(id)
     setActionError(null)
+    setNotice('')
     const result = await exec()
+    writeLock.current = false
     setPendingId(null)
     if (!result.ok) {
       setActionError({ id, message: result.message })
       return
     }
+    setNotice('Reunión registrada. Puedes consultarla en Calendario o Historial.')
+    setFormVersion((value) => value + 1)
+    heading.current?.focus()
     reloadMeetings()
   }
 
@@ -134,7 +142,11 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
       </>
     }
     return <>
-      {state.data.length === 0 && <p className={shell.meta}>No hay reuniones en este ciclo.</p>}
+      {state.data.length === 0 && <div className={styles.emptyNote}>
+        <strong>Este ciclo todavía no tiene reuniones</strong>
+        {manage && <p className={shell.meta}>Usa «Nueva reunión» para registrar la fecha, las personas participantes y la referencia de la reunión externa.</p>}
+        {!manage && <p className={shell.meta}>Aquí podrás consultar las reuniones que registre el equipo gestor del ciclo.</p>}
+      </div>}
       <div className={styles.stack}>{state.data.map(renderMeeting)}</div>
       <LoadMore
         hasMore={meetings.hasMore}
@@ -162,6 +174,7 @@ function MeetingsCycle({ cycleId }: { cycleId: string }) {
       {view === 'history' && renderHistory()}
       {manage ? (
         <MeetingForm
+          key={formVersion}
           id="meeting-new"
           title="Nueva reunión"
           submitLabel="Registrar reunión"
@@ -204,6 +217,7 @@ function MeetingCard({
   const readingId = `meeting-reading-${meeting.id}`
   const actionsId = `meeting-action-${meeting.id}`
   const completed = useRef(false)
+  const writeLock = useRef(false)
 
   function toggleAction(next: 'edit' | 'revoke', trigger: HTMLButtonElement) {
     actionTrigger.current = trigger
@@ -223,12 +237,14 @@ function MeetingCard({
   }
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
-    if (pendingId) {
+    if (writeLock.current) {
       return
     }
+    writeLock.current = true
     setPendingId(id)
     setActionError(null)
     const result = await exec()
+    writeLock.current = false
     setPendingId(null)
     if (!result.ok) {
       setActionError({ id, message: result.message })
@@ -368,21 +384,34 @@ function MeetingChildren({
   const [actionError, setActionError] = useState<ActionError>(null)
   const [generation, setGeneration] = useState(0)
   const [notice, setNotice] = useState('')
+  const writeLock = useRef(false)
 
   async function run(id: string, exec: () => Promise<{ ok: true } | { ok: false; message: string }>) {
-    if (pendingId) {
+    if (writeLock.current) {
       return
     }
+    writeLock.current = true
     setPendingId(id)
     setActionError(null)
     setNotice('')
     const result = await exec()
+    writeLock.current = false
     setPendingId(null)
     if (!result.ok) {
       setActionError({ id, message: result.message })
       return
     }
-    if (id.startsWith('approve-')) setNotice('Minuta publicada. Esta versión ya no se puede editar.')
+    if (id.startsWith('approve-')) {
+      setNotice('Minuta publicada. Esta versión ya no se puede editar.')
+    } else if (id.startsWith('draft-')) {
+      setNotice('Transcripción guardada como borrador. Completa la minuta antes de publicarla.')
+    } else if (id.startsWith('minutes-')) {
+      setNotice('Borrador de minuta guardado. Aún no está publicado.')
+    } else if (id.startsWith('agreement-new-')) {
+      setNotice('Acuerdo registrado con su fecha de compromiso.')
+    } else {
+      setNotice('Cambios del acuerdo guardados.')
+    }
     minutes.reload()
     agreements.reload()
     setGeneration((value) => value + 1)
@@ -487,9 +516,9 @@ function MinutesBlock({
   return (
     <div className={styles.stack}>
       <h4>Minutas</h4>
-      {minutes.length === 0 ? (
-        <p className={shell.meta}>{manage ? 'No hay minutas.' : 'No hay minutas publicadas.'}</p>
-      ) : null}
+      {minutes.length === 0 && canWrite && <p className={shell.meta}>Redacta una minuta manual o guarda una transcripción como borrador.</p>}
+      {minutes.length === 0 && manage && !canWrite && <p className={shell.meta}>Esta reunión quedó en el historial sin minutas registradas.</p>}
+      {minutes.length === 0 && !manage && <p className={shell.meta}>No hay minutas publicadas para esta reunión.</p>}
       {minutes.map((item) => (
         <article key={item.id} className={styles.block}>
           <div className={styles.row}>
@@ -621,7 +650,8 @@ function AgreementsBlock({
   return (
     <div className={styles.stack}>
       <h4>Acuerdos</h4>
-      {agreements.length === 0 ? <p className={shell.meta}>No hay acuerdos.</p> : null}
+      {agreements.length === 0 && <p className={shell.meta}>Esta reunión no tiene acuerdos registrados.</p>}
+      {agreements.length === 0 && canWrite && <p className={shell.meta}>Usa «Nuevo acuerdo» para guardar un compromiso y su fecha.</p>}
       {agreements.map((item) => (
         <article key={item.id} className={styles.block}>
           <p className={styles.prose}>{item.description}</p>

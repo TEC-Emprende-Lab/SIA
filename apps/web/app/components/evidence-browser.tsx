@@ -7,7 +7,7 @@ import { PrivateDocumentButton } from './tracking-review'
 import { ProjectLink } from './project-reference-ui'
 import { LoadingState, SkeletonBar } from './ui/loading-state'
 import { formatDateTime } from '../lib/expediente'
-import { requestSeguimiento, seguimientoUrl, type Evidence, type Activity, type Objective } from '../lib/seguimiento'
+import { httpUrl, requestSeguimiento, seguimientoUrl, type Evidence, type Activity, type Objective } from '../lib/seguimiento'
 import { filterEvidence, parseFolder, parseFolders, parsePlacement, parsePlacements, type EvidenceFolder, type EvidencePlacement } from '../lib/evidence-folders'
 import styles from './evidence-browser.module.css'
 
@@ -34,13 +34,15 @@ export function EvidenceBrowserLoading({ label }: { label: string }) {
   </LoadingState>
 }
 
-export function EvidenceBrowser({ cycleId, entrepreneurshipId, evidence, activities, objectives, focusId, onActivity, onFoldersChange, onFolderChange, onPlan, children }: {
-  cycleId: string; entrepreneurshipId?: string; evidence: Evidence[]; activities: Activity[]; objectives: Objective[]; focusId?: string; onActivity: (id: string) => void; onFoldersChange: (folders: EvidenceFolder[]) => void; onFolderChange: (id: string) => void; children: ReactNode; onPlan?: () => void
+export function EvidenceBrowser({ cycleId, entrepreneurshipId, evidence, activities, objectives, focusId, onActivity, onFoldersChange, onFolderChange, onPlan, emptyAction }: {
+  cycleId: string; entrepreneurshipId?: string; evidence: Evidence[]; activities: Activity[]; objectives: Objective[]; focusId?: string; onActivity: (id: string) => void; onFoldersChange: (folders: EvidenceFolder[]) => void; onFolderChange: (id: string) => void; emptyAction?: ReactNode; onPlan?: () => void
 }) {
   const [folders, setFolders] = useState<EvidenceFolder[]>([])
   const [placements, setPlacements] = useState<EvidencePlacement[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [folderError, setFolderError] = useState<{ message: string; forbidden: boolean } | null>(null)
+  const [actionError, setActionError] = useState('')
+  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [retry, setRetry] = useState(0)
   const [location, setLocation] = useState('all')
@@ -55,71 +57,191 @@ export function EvidenceBrowser({ cycleId, entrepreneurshipId, evidence, activit
   useEffect(() => {
     let active = true
     setLoading(true)
-    setError('')
+    setFolderError(null)
+    setFolders([])
+    setPlacements([])
     Promise.all([
       requestSeguimiento(seguimientoUrl(cycleId, 'folders'), parseFolders),
       requestSeguimiento(seguimientoUrl(cycleId, 'evidence-placements'), parsePlacements),
     ]).then(([f, p]) => {
       if (!active) return
-      if (f.ok && p.ok && f.data.every((item) => item.cycle_id === cycleId) && p.data.every((item) => item.cycle_id === cycleId)) { setFolders(f.data); setPlacements(p.data) }
-      else if (f.ok && p.ok) setError('La API devolvió carpetas de otro ciclo.')
-      else setError(!f.ok ? f.message : !p.ok ? p.message : '')
+      if (!f.ok) {
+        setFolderError({ message: f.message, forbidden: f.status === 403 || (!p.ok && p.status === 403) })
+      } else if (!p.ok) {
+        setFolderError({ message: p.message, forbidden: p.status === 403 })
+      } else if (f.data.some((item) => item.cycle_id !== cycleId) || p.data.some((item) => item.cycle_id !== cycleId)) {
+        setFolderError({ message: 'La API devolvió carpetas de otro ciclo.', forbidden: false })
+      } else {
+        setFolders(f.data)
+        setPlacements(p.data)
+      }
       setLoading(false)
     })
     return () => { active = false }
   }, [cycleId, retry, evidence])
+  const organizationReady = !loading && !folderError
   const folder = folders.find((item) => `folder:${item.id}` === location)
   const objective = objectives.find((item) => `objective:${item.id}` === location)
+  let visibleLocation = 'all'
+  if (objective || (organizationReady && (folder || location === 'unfiled'))) visibleLocation = location
   const placementOf = (id: string) => placements.find((item) => item.evidence_id === id)
-  const visible = filterEvidence(evidence, activities, placements, { location, activityId: activityFilter, query, kind })
+  const visible = filterEvidence(evidence, activities, placements, { location: visibleLocation, activityId: activityFilter, query, kind })
   const current = evidence.find((item) => item.id === selected)
-  function go(next: string) { setLocation(next); setActivityFilter(''); setQuery(''); onFolderChange(next.startsWith('folder:') ? next.slice(7) : '') }
+  const external = httpUrl(current?.url)
+  function go(next: string) {
+    setLocation(next)
+    setActivityFilter('')
+    setQuery('')
+    let folderId = ''
+    if (next.startsWith('folder:')) folderId = next.slice(7)
+    onFolderChange(folderId)
+  }
   async function saveFolder() {
-    if (!name.trim() || busy) return
-    setBusy(true); setError('')
-    const result = await requestSeguimiento(seguimientoUrl(cycleId, renaming && folder ? `folders/${folder.id}` : 'folders'), parseFolder, {
-      method: renaming ? 'PUT' : 'POST', body: { name: name.trim(), ...(renaming && folder ? { expected_revision: folder.revision } : {}) },
-    })
+    if (!name.trim() || busy || !organizationReady) return
+    setBusy(true); setActionError(''); setNotice('')
+    const body: { name: string; expected_revision?: number } = { name: name.trim() }
+    let resource = 'folders'
+    let method: 'POST' | 'PUT' = 'POST'
+    let success = 'Carpeta creada.'
+    if (renaming) {
+      if (!folder) {
+        setActionError('La carpeta ya no está disponible.')
+        setBusy(false)
+        return
+      }
+      resource = `folders/${folder.id}`
+      method = 'PUT'
+      body.expected_revision = folder.revision
+      success = 'Nombre de la carpeta guardado.'
+    }
+    const result = await requestSeguimiento(seguimientoUrl(cycleId, resource), parseFolder, { method, body })
     setBusy(false)
-    if (!result.ok) { setError(result.message); return }
+    if (!result.ok) { setActionError(result.message); return }
     setFolders((items) => [...items.filter((item) => item.id !== result.data.id), result.data])
     go(`folder:${result.data.id}`); setCreating(false); setRenaming(false); setName('')
+    setNotice(success)
   }
   async function move(folderId: string) {
-    if (!current || busy) return
-    setBusy(true); setError('')
+    if (!current || busy || !organizationReady) return
+    setBusy(true); setActionError(''); setNotice('')
     const result = await requestSeguimiento(seguimientoUrl(cycleId, `evidence/${current.id}/folder`), parsePlacement, {
       method: 'PUT', body: { folder_id: folderId || null, expected_revision: placementOf(current.id)?.revision ?? 0 },
     })
     setBusy(false)
-    if (!result.ok) { setError(result.message); return }
+    if (!result.ok) { setActionError(result.message); return }
     setPlacements((items) => [...items.filter((item) => item.evidence_id !== result.data.evidence_id), result.data])
+    setNotice('Ubicación de la evidencia guardada.')
+  }
+  function retryFolders() {
+    setActionError('')
+    setLoading(true)
+    setRetry((value) => value + 1)
+  }
+  function openEvidence(id: string) {
+    setActionError('')
+    setNotice('')
+    setSelected(id)
+  }
+  function emptyEvidence() {
+    let title = 'Esta vista aún no tiene evidencias'
+    let description = 'Consulta Todas las evidencias para ver los respaldos del ciclo.'
+    let action: ReactNode = <button type="button" className="btn secondary" onClick={() => go('all')}>Ver todas las evidencias</button>
+    if (query.trim() || kind || activityFilter) {
+      title = 'No hay coincidencias en esta vista'
+      description = 'Prueba con otro nombre o restablece los filtros para ver el contenido disponible.'
+      action = <button type="button" className="btn secondary" onClick={() => { setQuery(''); setKind(''); setActivityFilter('') }}>Limpiar filtros</button>
+    } else if (!evidence.length) {
+      title = 'El ciclo aún no tiene evidencias'
+      if (activities.length > 0) {
+        description = 'Vincula un archivo o enlace a una actividad. Puedes organizarlo en carpetas después.'
+        action = emptyAction
+      } else {
+        description = 'Registra primero un objetivo y una actividad en el plan de trabajo. Después podrás añadir sus archivos o enlaces aquí.'
+        action = null
+        if (onPlan) action = <button type="button" className="btn secondary" onClick={onPlan}>Ir al plan de trabajo</button>
+      }
+    }
+    return <div className="guided-empty"><h3>{title}</h3><p>{description}</p>{action && <div className="welcome-actions">{action}</div>}</div>
   }
   const kindLabels: Record<string, string> = { link: 'Enlace', file: 'Documento', photograph: 'Fotografía', video: 'Video' }
+  let locationLabel = objective?.title ?? 'Todas'
+  if (organizationReady && folder) locationLabel = folder.name
+  if (visibleLocation === 'unfiled') locationLabel = 'Sin carpeta personalizada'
+  let folderTitle = 'Nueva carpeta'
+  if (renaming) folderTitle = 'Renombrar carpeta'
+  let saveLabel = 'Guardar carpeta'
+  if (busy) saveLabel = 'Guardando…'
+  const actionFeedback = actionError && <>
+    <p role="alert">{actionError}</p>
+    <button type="button" className="btn secondary" onClick={retryFolders}>Volver a consultar carpetas</button>
+  </>
   return <>
-    <div className={styles.toolbar}>{children}<button type="button" className={styles.button} disabled={loading || busy || Boolean(error)} onClick={() => { setName(''); setRenaming(false); setCreating(true) }}><Plus size={16} />Nueva carpeta</button></div>
-    {error && <div role="alert" className={styles.error}>{error} <button type="button" disabled={busy} onClick={() => setRetry((value) => value + 1)}>Volver a consultar</button></div>}
-    {loading && <EvidenceBrowserLoading label="Cargando carpetas…" />}
-    {!loading && <div className={styles.layout}>
+    <div className={styles.toolbar}><button type="button" className={styles.button} disabled={!organizationReady || busy} onClick={() => { setName(''); setRenaming(false); setCreating(true); setActionError(''); setNotice('') }}><Plus size={16} aria-hidden="true" />Nueva carpeta</button></div>
+    {!current && <p className={styles.notice} role="status">{notice}</p>}
+    <div className={styles.layout}>
       <nav className={styles.sidebar} aria-label="Carpetas de evidencias">
-        <button type="button" aria-current={location === 'all' ? 'page' : undefined} onClick={() => go('all')}>Todas las evidencias <span>{evidence.length}</span></button>
-        <button type="button" aria-current={location === 'unfiled' ? 'page' : undefined} onClick={() => go('unfiled')}>Sin carpeta personalizada</button>
+        <button type="button" aria-current={currentLocation('all')} onClick={() => go('all')}>Todas las evidencias <span>{evidence.length}</span></button>
         <h3>Por objetivo</h3>
-        {objectives.map((item) => <button type="button" key={item.id} aria-current={location === `objective:${item.id}` ? 'page' : undefined} onClick={() => go(`objective:${item.id}`)}><FolderOpen size={17} /><span>{item.title}</span></button>)}
+        {objectives.map((item) => <button type="button" key={item.id} aria-current={currentLocation(`objective:${item.id}`)} onClick={() => go(`objective:${item.id}`)}><FolderOpen size={17} aria-hidden="true" /><span>{item.title}</span></button>)}
         <h3>Carpetas personalizadas</h3>
-        {folders.map((item) => <button type="button" key={item.id} aria-current={location === `folder:${item.id}` ? 'page' : undefined} onClick={() => go(`folder:${item.id}`)}><FolderOpen size={17} /><span>{item.name}</span><small>{placements.filter((p) => p.folder_id === item.id).length}</small></button>)}
-        {!folders.length && <p>Crea una carpeta para organizar respaldos por tema.</p>}
+        {loading && <LoadingState label="Cargando carpetas…"><SkeletonBar size="text" /><SkeletonBar size="short" /></LoadingState>}
+        {folderError && <div className={styles.folderFeedback}>
+          <p role="alert">No se pudieron consultar las carpetas personalizadas. {folderError.message} Todavía puedes consultar evidencias por objetivo.</p>
+          {!folderError.forbidden && <button type="button" className="btn secondary" onClick={retryFolders}>Reintentar carpetas</button>}
+        </div>}
+        {organizationReady && <>
+          <button type="button" aria-current={currentLocation('unfiled')} onClick={() => go('unfiled')}>Sin carpeta personalizada</button>
+          {folders.map((item) => <button type="button" key={item.id} aria-current={currentLocation(`folder:${item.id}`)} onClick={() => go(`folder:${item.id}`)}><FolderOpen size={17} aria-hidden="true" /><span>{item.name}</span><small>{placements.filter((p) => p.folder_id === item.id).length}</small></button>)}
+          {!folders.length && <p>Usa Nueva carpeta para organizar respaldos por tema.</p>}
+        </>}
       </nav>
       <section className={styles.content} aria-label="Contenido de la carpeta">
-        <div className={styles.breadcrumb}><button type="button" onClick={() => go('all')}>Evidencias</button><ChevronRight size={16} /><strong>{folder?.name ?? objective?.title ?? (location === 'unfiled' ? 'Sin carpeta personalizada' : 'Todas')}</strong>{folder && <button type="button" disabled={busy} onClick={() => { setName(folder.name); setRenaming(true); setCreating(true) }}>Renombrar</button>}</div>
+        <div className={styles.breadcrumb}><button type="button" onClick={() => go('all')}>Evidencias</button><ChevronRight size={16} aria-hidden="true" /><strong>{locationLabel}</strong>{organizationReady && folder && <button type="button" disabled={busy} onClick={() => { setName(folder.name); setRenaming(true); setCreating(true); setActionError(''); setNotice('') }}>Renombrar</button>}</div>
         <p className={styles.help}>Las carpetas ordenan los respaldos sin cambiar sus actividades ni aprobaciones.</p>
         {objective && <div className={styles.activities}><button type="button" aria-pressed={!activityFilter} onClick={() => setActivityFilter('')}>Todo el objetivo</button>{activities.filter((a) => a.objective_id === objective.id).map((a) => <button type="button" key={a.id} aria-pressed={activityFilter === a.id} onClick={() => setActivityFilter(a.id)}><FolderOpen size={15} />{a.title}</button>)}</div>}
         <div className={styles.filters}><label><Search size={16} /><input aria-label="Buscar evidencias" placeholder="Buscar por nombre, descripción o actividad…" value={query} onChange={(e) => setQuery(e.target.value)} /></label><select aria-label="Tipo de evidencia" value={kind} onChange={(e) => setKind(e.target.value)}><option value="">Todos los tipos</option>{Object.entries(kindLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><span>{visible.length} evidencias</span></div>
-        <div className="evidence-grid">{visible.map((item) => <button type="button" className="evidence-card" key={item.id} onClick={() => setSelected(item.id)}><div className={`evidence-cover ${item.kind === 'link' ? 'blue' : 'sand'}`}><FileText size={32} strokeWidth={1} /><span>{kindLabels[item.kind]}</span></div><div><h3>{item.title}</h3><p>{activities.find((a) => a.id === item.activity_id)?.title}</p><footer>{formatDateTime(item.created_at)}</footer></div></button>)}</div>
-        {!error && !visible.length && <div className="guided-empty"><span className="welcome-icon" aria-hidden="true"><FolderOpen size={28} /></span><h3>{query.trim() || kind || activityFilter ? 'No hay coincidencias en esta vista' : !evidence.length ? 'Cada avance merece un respaldo' : 'Esta carpeta aún no tiene evidencias'}</h3><p>{query.trim() || kind || activityFilter ? 'Prueba con otro nombre o restablece los filtros para ver el contenido disponible.' : !activities.length ? 'Primero registra un objetivo y una actividad en el plan de trabajo. Después podrás añadir sus archivos o enlaces aquí.' : !evidence.length ? 'Usa Agregar evidencia para vincular un archivo o enlace a una actividad. Las carpetas te ayudan a organizarlo después.' : 'Puedes mover un respaldo desde Todas las evidencias sin modificar su actividad ni su aprobación.'}</p><div className="welcome-actions">{(query.trim() || kind || activityFilter) ? <button type="button" className="btn secondary" onClick={() => { setQuery(''); setKind(''); setActivityFilter('') }}>Limpiar filtros</button> : !activities.length && onPlan ? <button type="button" className="btn secondary" onClick={onPlan}>Ir al plan de trabajo</button> : location !== 'all' ? <button type="button" className="btn secondary" onClick={() => go('all')}>Ver todas las evidencias</button> : null}</div></div>}
+        <div className="evidence-grid">{visible.map((item) => {
+          let cover = 'sand'
+          if (item.kind === 'link') cover = 'blue'
+          return <button type="button" className="evidence-card" key={item.id} onClick={() => openEvidence(item.id)}><div className={`evidence-cover ${cover}`}><FileText size={32} strokeWidth={1} aria-hidden="true" /><span>{kindLabels[item.kind]}</span></div><div><h3>{item.title}</h3><p>{activities.find((a) => a.id === item.activity_id)?.title}</p><footer>{formatDateTime(item.created_at)}</footer></div></button>
+        })}</div>
+        {!visible.length && emptyEvidence()}
       </section>
-    </div>}
-    <Dialog open={creating} onOpenChange={(open) => { if (!busy) setCreating(open) }}><DialogContent><DialogHeader><DialogTitle>{renaming ? 'Renombrar carpeta' : 'Nueva carpeta'}</DialogTitle><DialogDescription>Visible para las personas autorizadas de este ciclo.</DialogDescription></DialogHeader><form className={styles.folderForm} onSubmit={(e) => { e.preventDefault(); void saveFolder() }}><label>Nombre de la carpeta<input required maxLength={200} value={name} disabled={busy} onChange={(e) => setName(e.target.value)} /></label>{error && <p role="alert">{error}</p>}<button type="submit" disabled={busy || !name.trim()}>{busy ? 'Guardando…' : 'Guardar carpeta'}</button></form></DialogContent></Dialog>
-    <Dialog open={Boolean(current)} onOpenChange={(open) => { if (!busy && !open) setSelected('') }}><DialogContent><DialogHeader><DialogTitle>{current?.title}</DialogTitle><DialogDescription>Respaldo privado vinculado a su actividad original.</DialogDescription></DialogHeader>{current && <><p>{current.description || 'Sin descripción registrada.'}</p><p className={styles.help}>{kindLabels[current.kind]}, {formatDateTime(current.created_at)}</p>{current.document_id && entrepreneurshipId ? <PrivateDocumentButton entrepreneurshipId={entrepreneurshipId} documentId={current.document_id} title={current.title} /> : current.url ? <a className="text-link" href={current.url} target="_blank" rel="noopener noreferrer">Abrir referencia</a> : null}<ProjectLink onClick={() => onActivity(current.activity_id)}>Ver actividad de origen</ProjectLink><label className={styles.move}>Carpeta personalizada<select disabled={busy || loading} value={placementOf(current.id)?.folder_id ?? ''} onChange={(e) => void move(e.target.value)}><option value="">Sin carpeta personalizada</option>{folders.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><p className={styles.help}>Mover solo cambia la organización; no modifica la evidencia aprobada.</p>{busy && <p role="status">Guardando ubicación…</p>}{error && <p role="alert">{error}</p>}</>}</DialogContent></Dialog>
+    </div>
+    <Dialog open={creating} onOpenChange={(open) => { if (!busy) setCreating(open) }}><DialogContent>
+      <DialogHeader><DialogTitle>{folderTitle}</DialogTitle><DialogDescription>Visible para las personas autorizadas de este ciclo.</DialogDescription></DialogHeader>
+      <form className={styles.folderForm} onSubmit={(e) => { e.preventDefault(); void saveFolder() }}>
+        <label>Nombre de la carpeta<input required maxLength={200} value={name} disabled={busy} onChange={(e) => setName(e.target.value)} /></label>
+        {actionFeedback}
+        {!organizationReady && <p className={styles.help}>No puedes guardar mientras las carpetas no estén disponibles.</p>}
+        <button type="submit" disabled={busy || !name.trim() || !organizationReady}>{saveLabel}</button>
+        {busy && <p role="status">Guardando carpeta…</p>}
+      </form>
+    </DialogContent></Dialog>
+    <Dialog open={Boolean(current)} onOpenChange={(open) => { if (!busy && !open) setSelected('') }}><DialogContent>
+      <DialogHeader><DialogTitle>{current?.title}</DialogTitle><DialogDescription>Respaldo vinculado a su actividad original.</DialogDescription></DialogHeader>
+      {current && <>
+        <p>{current.description || 'Sin descripción registrada.'}</p>
+        <p className={styles.help}>{kindLabels[current.kind]}, {formatDateTime(current.created_at)}</p>
+        {current.document_id && entrepreneurshipId && <PrivateDocumentButton key={current.document_id} entrepreneurshipId={entrepreneurshipId} documentId={current.document_id} title={current.title} />}
+        {!current.document_id && 'url' in external && <a className="text-link" href={external.url} target="_blank" rel="noopener noreferrer">Abrir referencia</a>}
+        {!current.document_id && 'error' in external && <p className={styles.help}>Referencia no disponible: URL inválida.</p>}
+        <ProjectLink onClick={() => onActivity(current.activity_id)}>Ver actividad de origen</ProjectLink>
+        {organizationReady && <>
+          <label className={styles.move}>Carpeta personalizada<select disabled={busy} value={placementOf(current.id)?.folder_id ?? ''} onChange={(e) => void move(e.target.value)}><option value="">Sin carpeta personalizada</option>{folders.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <p className={styles.help}>Mover solo cambia la organización; no modifica la evidencia aprobada.</p>
+        </>}
+        {loading && <p role="status">Consultando ubicación…</p>}
+        {folderError && <p className={styles.help}>Ubicación no disponible. Cierra este detalle para consultar el estado de las carpetas.</p>}
+        {busy && <p role="status">Guardando ubicación…</p>}
+        {actionFeedback}
+        <p className={styles.notice} role="status">{notice}</p>
+      </>}
+    </DialogContent></Dialog>
   </>
+
+  function currentLocation(key: string) {
+    if (visibleLocation === key) return 'page'
+    return undefined
+  }
 }

@@ -218,6 +218,7 @@ try {
     export default {}
     export { useMe, setRole } from './panels.mjs'
     export const LoadMore = () => null
+    export const ConfirmAction = () => null
     export const LoadingRows = () => null
     export const LoadingState = () => null
     export const SkeletonBar = () => null

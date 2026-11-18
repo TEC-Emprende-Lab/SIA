@@ -153,6 +153,12 @@ try {
   const cycle = declaration('SeguimientoCycle')
   assert(cycle.includes('useState<\'list\' | \'board\'>(\'list\')'), 'la vista elegida debe sobrevivir a la recarga posterior al guardado')
   assert(cycle.includes('<TrackingLoading view={view} projectName={projectName} program={program} viewMode={viewMode} board={board} />'))
+  assert(cycle.includes('writing.current'))
+  assert(cycle.includes('Cambios guardados.'))
+  const diagnosticSection = declaration('DiagnosticSection')
+  assert(diagnosticSection.includes('immutableSubject={`Fotografía del ${formatDay(diagnostic.assessed_on)}`}'))
+  assert(diagnosticSection.includes('expected_revision: diagnostic.revision'))
+  assert(validationForm.includes("onConfirm={() => { setApprovalAttempted(true); onSubmit('approve', approvalNote) }}"))
   const section = declaration('ObjectiveSection')
   assert(section.includes('viewMode: \'list\' | \'board\''), 'ObjectiveSection recibe la vista en props')
   assert(!section.includes('useState<\'list\' | \'board\'>'), 'no se guarda la vista dentro de la sección que se desmonta')
@@ -164,13 +170,50 @@ try {
 
   // Render the loading components in isolation, using the actual shared primitives.
   const evidenceSource = await readFile(new URL('../app/components/evidence-browser.tsx', import.meta.url), 'utf8')
-  assert(evidenceSource.includes('{loading && <EvidenceBrowserLoading label="Cargando carpetas…" />}'))
-  assert(evidenceSource.includes('{!loading && <div className={styles.layout}>'))
+  assert(evidenceSource.includes('{loading && <LoadingState label="Cargando carpetas…"'))
+  assert(!evidenceSource.includes('{!loading && <div className={styles.layout}>'))
   const readComponent = (name) => readFile(new URL(`../app/components/${name}.tsx`, import.meta.url), 'utf8')
   const [loadingSource, headingSource] = await Promise.all([readComponent('ui/loading-state'), readComponent('project-reference-ui')])
   const compileLoading = (code) => ts.transpileModule(code, {
     compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX },
   }).outputText.replace(/from ["'](react|react\/jsx-runtime|lucide-react)["']/g, (_, name) => `from ${JSON.stringify(pathToFileURL(require.resolve(name)).href)}`)
+  await writeFile(join(temporary, 'tracking-load-plan.mjs'), compileLoading(`
+    let mockRequest
+    export function useRequest(handler) { mockRequest = handler }
+    const seguimientoUrl = (cycleId, resource) => cycleId + '/' + resource
+    const requestSeguimiento = (path) => mockRequest(path)
+    const parseCanvas = null, parseAmbitionList = null, parseObjectiveList = null, parseActivityList = null
+    const parseEvidenceList = null, parseDiagnosticList = null, parseValidationList = null, parseTrackingSummary = null
+    ${declaration('loadFailure')}
+    ${declaration('loadTrackingView')}
+    export { loadTrackingView }
+  `))
+  const { loadTrackingView, useRequest } = await import(pathToFileURL(join(temporary, 'tracking-load-plan.mjs')))
+  const requiredReads = {
+    work: ['objectives', 'activities', 'canvas', 'summary', 'ambitions', 'evidence', 'validations'],
+    summary: ['objectives', 'activities', 'canvas', 'summary'],
+    evidence: ['objectives', 'activities', 'evidence'],
+    ambitions: ['objectives', 'activities', 'canvas', 'ambitions'],
+    diagnostics: ['canvas', 'diagnostics', 'validations'],
+    evolution: ['canvas', 'diagnostics'],
+  }
+  for (const [view, resources] of Object.entries(requiredReads)) {
+    const pending = new Map()
+    useRequest((path) => new Promise((resolve) => pending.set(path, resolve)))
+    const loaded = loadTrackingView('c1', view)
+    assert.deepEqual([...pending.keys()], resources.map((resource) => `c1/${resource}`), `consultas paralelas de ${view}`)
+    for (const resolve of pending.values()) resolve({ ok: true, data: [] })
+    assert.equal((await loaded).view, view)
+  }
+  useRequest(async (path) => {
+    if (path === 'c1/canvas') return { ok: false, status: 500, message: 'Error de consulta' }
+    if (path === 'c1/validations') return { ok: false, status: 403, message: 'Acceso denegado' }
+    return { ok: true, data: [] }
+  })
+  assert.deepEqual(await loadTrackingView('c1', 'work'), { status: 'forbidden', message: 'Acceso denegado' })
+  assert.deepEqual(await loadTrackingView('c1', 'evolution'), { status: 'error', message: 'Error de consulta (API: seguimiento/canvas, HTTP 500).' })
+  assert.equal((await loadTrackingView('c1', 'evidence')).view, 'evidence')
+  console.log('✓ Las vistas consultan solo sus dependencias, en paralelo; los errores obligatorios no se publican como vacíos')
   await writeFile(join(temporary, 'tracking-loading.mjs'), compileLoading(`
     import { ACTIVITY_COLUMNS, OBJECTIVE_COLUMNS } from './kanban.mjs'
     const styles = new Proxy({}, { get: (_, key) => String(key) })
